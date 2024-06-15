@@ -6,7 +6,7 @@ categories: [Computer Grahics, LearnOpenGL, AdvancedLighting]
 tags: [computergraphics, learnopengl, postprocess, hdr]     # TAG names should always be lowercase
 ---
 
-# Introduce
+## Introduce
 
 Brightness and color values, by default, are clamped between 0.0 and 1.0 when stored into a framebuffer. This, at first seemingly innocent, statement caused us to always specify light and color values somewhere in this range, trying to make them fit into the scene. This works oké and gives decent results, but what happens if we walk in a really bright area with multiple bright light sources that as a total sum exceed 1.0? The answer is that all fragments that have a brightness or color sum over 1.0 get clamped to 1.0, which isn't pretty to look at:
 
