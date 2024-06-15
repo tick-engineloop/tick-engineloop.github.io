@@ -636,5 +636,3 @@ Play around with different scenes and different parameters to appreciate the cus
 Even though SSAO is a subtle effect that isn't too clearly noticeable, it adds a great deal of realism to properly lit scenes and is definitely a technique you'd want to have in your toolkit.
 
 尽管 SSAO 是一种不太明显的细微效果，但它为有适当光照的场景增加了大量的真实感，绝对是你希望塞进工具包中的一种技术。
-
-[back](./../)
