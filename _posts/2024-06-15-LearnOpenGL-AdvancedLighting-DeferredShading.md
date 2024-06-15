@@ -529,7 +529,7 @@ As a final note I'd like to mention that basically all effects that can be accom
 
 最后，我想提一下，基本上所有可以通过前向渲染实现的效果也可以在延迟渲染上下文中实现;这通常只需要一小步的转换。例如，如果我们想在延迟渲染器中使用法线贴图，我们会更改几何通道着色器以输出从法线贴图（使用 TBN 矩阵）提取的世界空间法线，而不是表面法线;光照通道中的光照计算根本不需要更改。如果想让视差贴图发挥作用，则需要先变换几何通道中的纹理坐标，然后再对对象的漫反射、镜面反射和法线纹理进行采样。一旦你理解了延迟渲染背后的理念，就不难发挥创意了。
 
-> ## References:
+## References
 >
 > * [Deferred Shading](https://learnopengl.com/Advanced-Lighting/Deferred-Shading)
 >
