@@ -612,7 +612,7 @@ The only thing (aside from the change to view-space) we really changed is the mu
 
 ![Final](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-Final.png)
 
-You can find the full source code of the demo scene [here]().
+You can find the full source code of the demo scene [here](https://github.com/tick-engineloop/LearnOpenGL).
 
 您可以在此处找到示例场景的完整源代码。
 
