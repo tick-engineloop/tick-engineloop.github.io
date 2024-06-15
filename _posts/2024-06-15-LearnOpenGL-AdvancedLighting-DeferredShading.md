@@ -7,7 +7,7 @@ tags: [computergraphics, learnopengl, postprocess, deferredshading]     # TAG na
 math: true
 ---
 
-# Introduction
+## Introduction
 
 The way we did lighting so far was called forward rendering or forward shading. A straightforward approach where we render an object and light it according to all light sources in a scene. We do this for every object individually for each object in the scene. While quite easy to understand and implement it is also quite heavy on performance as each rendered object has to iterate over each light source for every rendered fragment, which is a lot! Forward rendering also tends to waste a lot of fragment shader runs in scenes with a high depth complexity (multiple objects cover the same screen pixel) as fragment shader outputs are overwritten.
 
@@ -47,7 +47,7 @@ Filling the G-buffer (in the geometry pass) isn't too expensive as we directly s
 
 填充 G-buffer（在几何通道中）成本不高，因为我们能以很少或为零的处理量，直接将位置、颜色或法线等对象信息存储到帧缓冲区中。通过使用多渲染目标（MRT）技术，我们甚至可以在单个渲染过程中完成所有这些操作。
 
-# The G-buffer
+## The G-buffer
 
 The G-buffer is the collective term of all textures used to store lighting-relevant data for the final lighting pass. Let's take this moment to briefly review all the data we need to light a fragment with forward rendering:
 
@@ -192,7 +192,7 @@ Try to visualize that the world-space position and normal vectors are indeed cor
 
 上图中世界空间位置和法向量的可视化尝试显然是正确的。例如，指向右侧的法向量将更符合红色，从场景原点指向右侧的位置向量同样也是这样。一旦你对 G-buffer 的内容感到满意，就该进入下一步了：光照通道。
 
-# The deferred lighting pass
+## The deferred lighting pass
 
 With a large collection of fragment data in the G-Buffer at our disposal we have the option to completely calculate the scene's final lit colors. We do this by iterating over each of the G-Buffer textures pixel by pixel and use their content as input to the lighting algorithms. Because the G-buffer texture values all represent the final transformed fragment values we only have to do the expensive lighting operations once per pixel. This is especially useful in complex scenes where we'd easily invoke multiple expensive fragment shader calls per pixel in a forward rendering setting.
 
@@ -291,7 +291,7 @@ To overcome these disadvantages (especially blending) we often split the rendere
 
 为了克服这些缺点（尤其是混合），我们经常将渲染器拆分为两部分：一部分是延迟渲染部分，另一部分是专门用于混合的前向渲染部分或不适合延迟渲染管线的特殊着色效果。为了说明其工作原理，我们将使用前向渲染器将光源渲染为小立方体，因为光源立方体需要特殊的着色（只输出单一光照颜色）。
 
-# Combining deferred rendering with forward rendering
+## Combining deferred rendering with forward rendering
 
 Say we want to render each of the light sources as a 3D cube positioned at the light source's position emitting the color of the light. A first idea that comes to mind is to simply forward render all the light sources on top of the deferred lighting quad at the end of the deferred shading pipeline. So basically render the cubes as we'd normally do, but only after we've finished the deferred rendering operations. In code this will look a bit like this:
 
@@ -359,7 +359,7 @@ With this approach we can easily combine deferred shading with forward shading. 
 
 通过这种方法，可以轻松地将延迟着色与前向着色相结合，这很棒，使得我们依然可以应用混合效果和渲染需要特殊着色效果的对象，以及做一些在单纯的延迟渲染环境中不可能做到的事情。
 
-# A larger number of lights
+## A larger number of lights
 
 What deferred rendering is often praised for, is its ability to render an enormous amount of light sources without a heavy cost on performance. Deferred rendering by itself doesn't allow for a very large amount of light sources as we'd still have to calculate each fragment's lighting component for each of the scene's light sources. What makes a large amount of light sources possible is a very neat optimization we can apply to the deferred rendering pipeline: that of light volumes.
 
@@ -373,7 +373,7 @@ The idea behind light volumes is to calculate the radius, or volume, of a light 
 
 光体积背后的想法是计算光源的影响半径或体积，即就是光能够到达片段的范围。由于大多数光源都遵循某种形式的衰减，我们可以用这种衰减函数来计算光源的光能够达到的最大距离或半径。然后，只有当片段位于一个或多个这些光体积内时，我们才会进行昂贵的光照计算。这会为我们节省一个可观的计算量，因为我们现在只计算必要的光照。
 
-## Calculating a light's volume or radius
+### Calculating a light's volume or radius
 
 To obtain a light's volume radius we have to solve the attenuation equation for when its light contribution becomes 0.0. For the attenuation function we'll use the function introduced in the light casters chapter:
 
@@ -488,7 +488,7 @@ You can find the final source code of the demo [here](https://github.com/tick-en
 
 你可以在[此处](https://github.com/tick-engineloop/LearnOpenGL)找到示例的最终源代码。
 
-## How we really use light volumes
+### How we really use light volumes
 
 The fragment shader shown above doesn't really work in practice and only illustrates how we can sort of use a light's volume to reduce lighting calculations. The reality is that your GPU and GLSL are pretty bad at optimizing loops and branches. The reason for this is that shader execution on the GPU is highly parallel and most architectures have a requirement that for large collection of threads they need to run the exact same shader code for it to be efficient. This often means that a shader is run that executes all branches of an if statement to ensure the shader runs are the same for that group of threads, making our previous radius check optimization completely useless; we'd still calculate lighting for all light sources!
 
@@ -515,7 +515,7 @@ Rendering light volumes does take its toll on performance, and while it is gener
 
 渲染光源确实会对性能造成影响，虽然到这一步后渲染大量光源时，比普通的延迟着色快了许多，但我们仍有很多可以优化的地方。在延迟着色的基础上，还有另外两种流行的（更高效的）扩展，即延迟光照和基于瓦片的延迟着色。这两种扩展在渲染大量光线时效率更高，而且还能实现相对高效的 MSAA。
 
-# Deferred rendering vs forward rendering
+## Deferred rendering vs forward rendering
 
 By itself (without light volumes), deferred shading is a nice optimization as each pixel only runs a single fragment shader, compared to forward rendering where we'd often run the fragment shader multiple times per pixel. Deferred rendering does come with a few disadvantages though: a large memory overhead, no MSAA, and blending still has to be done with forward rendering.
 
