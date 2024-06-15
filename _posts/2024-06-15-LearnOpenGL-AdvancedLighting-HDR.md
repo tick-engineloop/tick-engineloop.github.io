@@ -1,5 +1,5 @@
 ---
-title: title: HDR
+title: HDR
 description: 通过允许片段颜色值超过 1.0，我们可以在更高的色彩值范围内工作，这就是所谓的高动态范围（HDR）。有了高动态范围，亮的东西可以非常亮，暗的东西也可以非常暗，而且明暗区域中都可以看到细节信息。HDR 的原理是我们允许渲染时使用更大范围的色彩值，从而收集场景中大范围的明暗区域细节，最后将所有 HDR 值转换回 [0.0, 1.0] 的低动态范围 (LDR)。
 date: 2024-06-15 00:00:00 +0800
 categories: [Computer Grahics, LearnOpenGL, AdvancedLighting]
