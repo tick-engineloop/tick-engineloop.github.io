@@ -89,7 +89,7 @@ As we should have per-fragment position and normal data available from the scene
 
 因为我们应该从场景对象中获得每个片段的位置和法线数据，所以几何阶段的片段着色器相当简单：
 
-```GLSL
+```glsl
 #version 330 core
 layout (location = 0) out vec4 gPosition;
 layout (location = 1) out vec3 gNormal;
@@ -326,7 +326,7 @@ The shaderSSAO shader takes as input the relevant G-buffer textures, the noise t
 
 shaderSSAO 着色器将相关的 G-buffer 纹理、噪声纹理和法向半球核样本作为输入：
 
-```GLSL
+```glsl
 #version 330 core
 out float FragColor;
   
@@ -352,7 +352,7 @@ Interesting to note here is the noiseScale variable. We want to tile the noise t
 
 这里需要注意的是 noiseScale 变量。我们想在整个屏幕上铺满之前创建的 4x4 噪声纹理瓦片，但由于 TexCoords 在 0.0 和 1.0 之间变化，texNoise 纹理根本不会被按这样的预想方式平铺开来。因此，我们通过将屏幕的尺寸除以噪声纹理尺寸来计算所需的 TexCoords 缩放量。
 
-```GLSL
+```glsl
 vec3 fragPos   = texture(gPosition, TexCoords).xyz;             // 片段在视图空间中的位置
 vec3 normal    = texture(gNormal, TexCoords).rgb;               // 片段在视图空间中的法线
 vec3 randomVec = texture(texNoise, TexCoords * noiseScale).xyz;
@@ -362,7 +362,7 @@ As we set the tiling parameters of texNoise to GL_REPEAT, the random values will
 
 当我们将 texNoise 的平铺参数设置为 GL_REPEAT 时，随机值将在整个屏幕上重复出现。结合 fragPos 和法向量，我们现在有足够的数据来创建一个 TBN 矩阵了，该矩阵将任何向量从切线空间转换为视图空间：
 
-```GLSL
+```glsl
 vec3 tangent   = normalize(randomVec - normal * dot(randomVec, normal));
 vec3 bitangent = cross(normal, tangent);
 mat3 TBN       = mat3(tangent, bitangent, normal); 
@@ -379,7 +379,7 @@ Next we iterate over each of the kernel samples, transform the samples from tang
 
 接下来，我们遍历每个核样本，将样本从切线空间转换为视图空间，将它们加到当前片段位置上，并将片段位置的深度与存储在视图空间位置缓冲中的样本深度进行比较。让我们一步一步地讨论这个问题：
 
-```GLSL
+```glsl
 float occlusion = 0.0;
 for(int i = 0; i < kernelSize; ++i)
 {
@@ -399,7 +399,7 @@ Next we want to transform sample to screen-space so we can sample the position/d
 
 接下来，我们要将样本转换到屏幕空间，以便我们可以对（位置缓冲纹理中）样本（对应）的位置/深度值进行采样，就好像我们将其位置直接渲染到屏幕上一样。由于向量当前位于视图空间中，我们将首先使用投影矩阵 uniform 将其转换到裁剪空间：
 
-```GLSL
+```glsl
 vec4 offset = vec4(samplePos, 1.0);
 offset      = projection * offset;    // from view to clip-space
 offset.xyz /= offset.w;               // perspective divide
@@ -410,7 +410,7 @@ After the variable is transformed to clip-space, we perform the perspective divi
 
 将变量转换到裁剪空间后，我们通过将其 xyz 分量与其 w 分量相除来执行透视除法步骤。然后将生成的标准化设备坐标转换到 [0.0, 1.0] 范围，以便我们可以使用它们对位置纹理进行采样：
 
-```GLSL
+```glsl
 float sampleDepth = texture(gPosition, offset.xy).z;
 ```
 
@@ -418,7 +418,7 @@ We use the offset vector's x and y component to sample the position texture to r
 
 我们使用偏移向量的 x 和 y 分量对位置纹理进行采样，以获取从观察者视角看到的样本位置的深度（或 z 值）（第一个未被遮挡的可见片段）。然后，我们检查样本的当前深度值是否大于存储的深度值，如果是，则添加到最终贡献因子中：
 
-```GLSL
+```glsl
 // 判断样本有没有被遮挡
 // 如果 sampleDepth 大于或等于 sample.z + bias，则认为样本点没有被遮挡，返回 1.0；否则，认为样本点被遮挡，返回 0.0。
 occlusion += (sampleDepth >= samplePos.z + bias ? 1.0 : 0.0);
@@ -450,7 +450,7 @@ We introduce a range check that makes sure a fragment contributes to the occlusi
 
 我们引入了一个范围检查，以确保如果片段的深度值是在样本的半径范围内，则片段对遮挡因子有贡献。我们将最后一行更改为：
 
-```GLSL
+```glsl
 // 当前片段和样本点对应在屏幕上可见片段之间深度差越大，离的就越远，遮蔽影响越小，
 // rangeCheck 越趋近于 0，遮挡权重就越小
 float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
