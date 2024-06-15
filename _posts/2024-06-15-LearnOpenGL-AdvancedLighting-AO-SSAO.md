@@ -31,8 +31,7 @@ The basics behind screen-space ambient occlusion are simple: for each fragment o
 屏幕空间环境光遮蔽背后的基本原理很简单：对于填充屏幕的四边形上的每个片段，我们根据片段周围的深度值计算一个遮挡因子。然后使用这个遮挡因子来减少或消除片段的环境光照分量。遮挡因子是通过在片段位置周围的球形样本核中获取多个深度样本，并将每个样本与当前片段的深度值进行比较来获得的。将样本深度和片段深度相比较，具有更高深度值的样本的个数即就是遮挡因子。
 
 ![Crysis Circle](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-CrysisCircle.png)
-_黑色点是当前正在进行遮蔽效果计算的片段，白色样本是对观察者可见的样本，灰色样本是对观察者不可见的样本_
-_白色样本越多说明片段周围越空旷；黑色样本越多说明片段周围遮挡越多_
+_黑色点是当前正在进行遮蔽效果计算的片段，白色样本是对观察者可见的样本，灰色样本是对观察者不可见的样本。白色样本越多说明片段周围越空旷；黑色样本越多说明片段周围遮挡越多_
 
 Each of the gray depth samples that are inside geometry contribute to the total occlusion factor; the more samples we find inside geometry, the less ambient lighting the fragment should eventually receive.
 
@@ -90,7 +89,7 @@ As we should have per-fragment position and normal data available from the scene
 
 因为我们应该从场景对象中获得每个片段的位置和法线数据，所以几何阶段的片段着色器相当简单：
 
-```glsl
+```GLSL
 #version 330 core
 layout (location = 0) out vec4 gPosition;
 layout (location = 1) out vec3 gNormal;
@@ -327,7 +326,7 @@ The shaderSSAO shader takes as input the relevant G-buffer textures, the noise t
 
 shaderSSAO 着色器将相关的 G-buffer 纹理、噪声纹理和法向半球核样本作为输入：
 
-```glsl
+```GLSL
 #version 330 core
 out float FragColor;
   
@@ -353,7 +352,7 @@ Interesting to note here is the noiseScale variable. We want to tile the noise t
 
 这里需要注意的是 noiseScale 变量。我们想在整个屏幕上铺满之前创建的 4x4 噪声纹理瓦片，但由于 TexCoords 在 0.0 和 1.0 之间变化，texNoise 纹理根本不会被按这样的预想方式平铺开来。因此，我们通过将屏幕的尺寸除以噪声纹理尺寸来计算所需的 TexCoords 缩放量。
 
-```glsl
+```GLSL
 vec3 fragPos   = texture(gPosition, TexCoords).xyz;             // 片段在视图空间中的位置
 vec3 normal    = texture(gNormal, TexCoords).rgb;               // 片段在视图空间中的法线
 vec3 randomVec = texture(texNoise, TexCoords * noiseScale).xyz;
@@ -363,7 +362,7 @@ As we set the tiling parameters of texNoise to GL_REPEAT, the random values will
 
 当我们将 texNoise 的平铺参数设置为 GL_REPEAT 时，随机值将在整个屏幕上重复出现。结合 fragPos 和法向量，我们现在有足够的数据来创建一个 TBN 矩阵了，该矩阵将任何向量从切线空间转换为视图空间：
 
-```glsl
+```GLSL
 vec3 tangent   = normalize(randomVec - normal * dot(randomVec, normal));
 vec3 bitangent = cross(normal, tangent);
 mat3 TBN       = mat3(tangent, bitangent, normal); 
@@ -380,7 +379,7 @@ Next we iterate over each of the kernel samples, transform the samples from tang
 
 接下来，我们遍历每个核样本，将样本从切线空间转换为视图空间，将它们加到当前片段位置上，并将片段位置的深度与存储在视图空间位置缓冲中的样本深度进行比较。让我们一步一步地讨论这个问题：
 
-```glsl
+```GLSL
 float occlusion = 0.0;
 for(int i = 0; i < kernelSize; ++i)
 {
@@ -400,7 +399,7 @@ Next we want to transform sample to screen-space so we can sample the position/d
 
 接下来，我们要将样本转换到屏幕空间，以便我们可以对（位置缓冲纹理中）样本（对应）的位置/深度值进行采样，就好像我们将其位置直接渲染到屏幕上一样。由于向量当前位于视图空间中，我们将首先使用投影矩阵 uniform 将其转换到裁剪空间：
 
-```glsl
+```GLSL
 vec4 offset = vec4(samplePos, 1.0);
 offset      = projection * offset;    // from view to clip-space
 offset.xyz /= offset.w;               // perspective divide
@@ -411,7 +410,7 @@ After the variable is transformed to clip-space, we perform the perspective divi
 
 将变量转换到裁剪空间后，我们通过将其 xyz 分量与其 w 分量相除来执行透视除法步骤。然后将生成的标准化设备坐标转换到 [0.0, 1.0] 范围，以便我们可以使用它们对位置纹理进行采样：
 
-```glsl
+```GLSL
 float sampleDepth = texture(gPosition, offset.xy).z;
 ```
 
@@ -419,7 +418,7 @@ We use the offset vector's x and y component to sample the position texture to r
 
 我们使用偏移向量的 x 和 y 分量对位置纹理进行采样，以获取从观察者视角看到的样本位置的深度（或 z 值）（第一个未被遮挡的可见片段）。然后，我们检查样本的当前深度值是否大于存储的深度值，如果是，则添加到最终贡献因子中：
 
-```glsl
+```GLSL
 // 判断样本有没有被遮挡
 // 如果 sampleDepth 大于或等于 sample.z + bias，则认为样本点没有被遮挡，返回 1.0；否则，认为样本点被遮挡，返回 0.0。
 occlusion += (sampleDepth >= samplePos.z + bias ? 1.0 : 0.0);
@@ -451,7 +450,7 @@ We introduce a range check that makes sure a fragment contributes to the occlusi
 
 我们引入了一个范围检查，以确保如果片段的深度值是在样本的半径范围内，则片段对遮挡因子有贡献。我们将最后一行更改为：
 
-```glsl
+```GLSL
 // 当前片段和样本点对应在屏幕上可见片段之间深度差越大，离的就越远，遮蔽影响越小，
 // rangeCheck 越趋近于 0，遮挡权重就越小
 float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
@@ -472,7 +471,7 @@ As a final step we normalize the occlusion contribution by the size of the kerne
 
 最后一步，我们使用核的大小对遮挡贡献进行归一化，并输出结果。请注意，我们从 1.0 中减去遮挡因子，以便我们可以直接使用遮挡因子来缩放环境光照项。
 
-```glsl
+```GLSL
 occlusion = 1.0 - (occlusion / kernelSize);
 FragColor = occlusion;
 ```
@@ -513,7 +512,7 @@ Because the tiled random vector texture gives us a consistent randomness, we can
 
 由于平铺的是随机矢量纹理瓦片，这为我们提供了一致的随机性，因此我们可以利用此属性来创建简单的模糊着色器：
 
-```glsl
+```GLSL
 #version 330 core
 out float FragColor;
   
@@ -555,7 +554,7 @@ Applying the occlusion factors to the lighting equation is incredibly easy: all 
 
 将遮挡因子应用于光照方程非常容易：我们所要做的就是将每个片段的环境光遮蔽因子乘以光照的环境分量，然后就完成了。如果我们采用上一章的 Blinn-Phong 延迟光照着色器并对其进行一些调整，我们将得到以下片段着色器：
 
-```glsl
+```GLSL
 #version 330 core
 out vec4 FragColor;
   
@@ -624,7 +623,7 @@ Some parameters you can tweak (by using uniforms for example): kernel size, radi
 
 你可以调整一些参数（例如，通过使用 uniforms 设置 shader 中的参数值）：核大小、半径、偏置、和/或噪声核的大小。你还可以将最终遮挡值提升到用户定义的幂上，以增加其强度：
 
-```glsl
+```GLSL
 occlusion = 1.0 - (occlusion / kernelSize);       
 FragColor = pow(occlusion, power);
 ```
