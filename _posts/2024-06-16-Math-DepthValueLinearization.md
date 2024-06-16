@@ -9,7 +9,7 @@ math: true
 
 ## Perspective projection Matrix
 
-![Perpective Frustum And NDC](/assets/images/Math-DepthValueLinearization-PerpectiveFrustumAndNDC.png)
+![Perpective Frustum And NDC](/assets/img/post/Math-DepthValueLinearization-PerpectiveFrustumAndNDC.png)
 _Perspective Frustum and Normalized Device Coordinates (NDC)_
 
 Note that the eye coordinates are defined in the right-handed coordinate system, but NDC uses the left-handed coordinate system. That is, the camera at the origin is looking along -Z axis in eye space, but it is looking along +Z axis in NDC.

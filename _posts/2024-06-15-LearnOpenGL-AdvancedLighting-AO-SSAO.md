@@ -16,7 +16,7 @@ Below is an example image of a scene with and without ambient occlusion. Notice 
 
 下面是有和没有环境光遮蔽的场景示例图。请注意，尤其是在拐角处，（环境）光被遮挡得更多：
 
-![Example](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-Example.png)
+![Example](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-Example.png)
 
 While not an incredibly obvious effect, the image with ambient occlusion enabled does feel a lot more realistic due to these small occlusion-like details, giving the entire scene a greater feel of depth.
 
@@ -30,7 +30,7 @@ The basics behind screen-space ambient occlusion are simple: for each fragment o
 
 屏幕空间环境光遮蔽背后的基本原理很简单：对于填充屏幕的四边形上的每个片段，我们根据片段周围的深度值计算一个遮挡因子。然后使用这个遮挡因子来减少或消除片段的环境光照分量。遮挡因子是通过在片段位置周围的球形样本核中获取多个深度样本，并将每个样本与当前片段的深度值进行比较来获得的。将样本深度和片段深度相比较，具有更高深度值的样本的个数即就是遮挡因子。
 
-![Crysis Circle](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-CrysisCircle.png)
+![Crysis Circle](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-CrysisCircle.png)
 _黑色点是当前正在进行遮蔽效果计算的片段，白色样本是对观察者可见的样本，灰色样本是对观察者不可见的样本。白色样本越多说明片段周围越空旷；黑色样本越多说明片段周围遮挡越多_
 
 Each of the gray depth samples that are inside geometry contribute to the total occlusion factor; the more samples we find inside geometry, the less ambient lighting the fragment should eventually receive.
@@ -41,7 +41,7 @@ It is clear the quality and precision of the effect directly relates to the numb
 
 很明显，效果的质量和精度与我们采集的周围样本数量直接相关。如果样本数量太少，精度会大大降低，画面上会呈现出一种称为条带的加工痕迹；如果它太多，则会损失一定的性能。我们可以通过在样本核中引入一些随机性来减少必须测试的样本数量。通过随机旋转每个片段的样本核，我们可以用更少的样本获得高质量的结果。这确实是有代价的，因为随机性引入了明显的噪声图案，我们必须通过对结果进行模糊来进一步修复。下面是一张图片（由John Chapman提供），展示了条带效果以及随机性对结果的影响：
 
-![Banding Noise](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-BandingNoise.jpg)
+![Banding Noise](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-BandingNoise.jpg)
 
 As you can see, even though we get noticeable banding on the SSAO results due to a low sample count, by introducing some randomness the banding effects are completely gone.
 
@@ -51,13 +51,13 @@ The SSAO method developed by Crytek had a certain visual style. Because the samp
 
 Crytek开发的SSAO方法有一个特定的视觉风格。因为使用的样本核是一个球体，核内一半的样本最终是在周围的几何体里，它会导致平坦的墙壁看起来是灰色的。下面是《孤岛危机》的屏幕空间环境光遮蔽图像，清楚地描绘了这种灰色的感觉(平坦墙壁墙面的中间显示为深灰色，带有环境光遮蔽的效果，其实是不应该有的，因为墙面的中间部位四周并没有被遮挡)：
 
-![Crysis](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-Crysis.jpg)
+![Crysis](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-Crysis.jpg)
 
 For that reason we won't be using a sphere sample kernel, but rather a hemisphere sample kernel oriented along a surface's normal vector.
 
 因此，我们不会使用球形样本核，而是用一个半球样本核，这个半球样本核朝向表面的法向量方向。
 
-![Hemisphere](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-Hemisphere.png)
+![Hemisphere](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-Hemisphere.png)
 
 By sampling around this normal-oriented hemisphere we do not consider the fragment's underlying geometry to be a contribution to the occlusion factor. This removes the gray-feel of ambient occlusion and generally produces more realistic results. This chapter's technique is based on this normal-oriented hemisphere method and a slightly modified version of John Chapman's brilliant SSAO tutorial.
 
@@ -79,7 +79,7 @@ Using a per-fragment view-space position we can orient a sample hemisphere kerne
 
 使用一个每片段的视图空间位置，根据这个片段的视图空间表面法线，我们可以确定半球样本核的位置和朝向，并使用这个核在不同偏移上去采样位置缓冲纹理。对于每片段的每个核样本，我们将其深度与其在位置缓冲区中的深度进行比较，以确定遮挡量。然后使用生成的遮挡因子来限制最终的环境光照分量。下面很快就会看到，通过进一步使用每个片段的旋转向量，我们可以显著减少需要采集的样本数量。
 
-![Overview](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-Overview.png)
+![Overview](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-Overview.png)
 
 As SSAO is a screen-space technique we calculate its effect on each fragment on a screen-filled 2D quad. This does mean we have no geometrical information of the scene. What we could do, is render the geometrical per-fragment data into screen-space textures that we then later send to the SSAO shader so we have access to the per-fragment geometrical data. If you've followed along with the previous chapter you'll realize this looks quite like a deferred renderer's G-buffer setup. For that reason SSAO is perfectly suited in combination with deferred rendering as we already have the position and normal vectors in the G-buffer.
 
@@ -142,7 +142,7 @@ We need to generate a number of samples oriented along the normal of a surface. 
 
 我们需要沿表面法线方向生成许多的样本。正如我们在本章开头简要讨论的那样，我们希望生成的样本呈半球状。
 
-![Hemisphere](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-Hemisphere.png)
+![Hemisphere](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-Hemisphere.png)
 
 As it is difficult nor plausible to generate a sample kernel for each surface normal direction, we're going to generate a sample kernel in tangent space, with the normal vector pointing in the positive z direction. Assuming we have a unit hemisphere, we can obtain a sample kernel with a maximum of 64 sample values as follows:
 
@@ -175,7 +175,7 @@ We vary the x and y direction in tangent space between -1.0 and 1.0, and vary th
 
 我们在切线空间中变换 x 和 y 范围到 -1.0 和 1.0 之间，并变换样本的 z 范围到 0.0 和 1.0 之间（如果我们变换 z 范围到 -1.0 和 1.0 之间，我们将得到一个球形样本核）。由于样本核将沿表面法线定向，因此生成的样本向量最终将全部在半球内。
 
-![Hemisphere Kernel](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-HemisphereKernel.png)
+![Hemisphere Kernel](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-HemisphereKernel.png)
 
 Currently, all samples are randomly distributed in the sample kernel, but we'd rather place a larger weight on occlusions close to the actual fragment. We want to distribute more kernel samples closer to the origin. We can do this with an accelerating interpolation function:
 
@@ -199,19 +199,19 @@ float lerp(float a, float b, float f)
 }
 ```
 
-![Scale Lerp](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-ScaleLerp.png)
+![Scale Lerp](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-ScaleLerp.png)
 
 This gives us a kernel distribution that places most samples closer to its origin.
 
 这为我们提供了一个使大多数样本更接近其原点的核分布。
 
-![Weighted Kernel](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-WeightedKernel.png)
+![Weighted Kernel](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-WeightedKernel.png)
 
 Each of the kernel samples will be used to offset the view-space fragment position to sample surrounding geometry. 
 
 每个核样本将用于偏移视图空间片段位置，以对周围的几何体进行采样。将带权重的样本核应用到表面将会是如下图所示效果：
 
-![Apply Weighted Kernel](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-ApplyWeightedKernel.png)
+![Apply Weighted Kernel](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-ApplyWeightedKernel.png)
 
 We do need quite a lot of samples in view-space in order to get realistic results, which may be too heavy on performance. However, if we can introduce some semi-random rotation/noise on a per-fragment basis, we can significantly reduce the number of samples required.
 
@@ -444,7 +444,7 @@ We're not completely finished yet as there is still a small issue we have to tak
 
 我们还没有完全完成，因为还有一个小问题我们必须考虑。每当为环境光遮蔽测试靠近表面边缘的片段时，它还会将远在测试片段后面的表面的深度值考虑在内（以下面左侧图片为例说明，这会导致佛像边缘和后面墙壁间产生环境光遮蔽效果，但其实佛像和后面墙壁距离还很远，它们之间没有这么明显的影响）;这些值将（错误地）影响遮挡因子。我们可以通过引入范围检查来解决这个问题，如下图所示（由 John Chapman 提供）：
 
-![Range Check](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-RangeCheck.png)
+![Range Check](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-RangeCheck.png)
 
 We introduce a range check that makes sure a fragment contributes to the occlusion factor if its depth values is within the sample's radius. We change the last line to:
 
@@ -461,7 +461,7 @@ Here we used GLSL's smoothstep function that smoothly interpolates its third par
 
 在这里，我们使用了 GLSL 的 smoothstep 函数，该函数根据其第三个参数在第一个和第二个参数之间平滑地插值，如果小于或等于其第一个参数返回 0.0，如果等于或大于其第二个参数返回 1.0。如果深度差最终在 radius 之内，则其值将按照以下曲线在 0.0 和 1.0 之间平滑插值：
 
-![Smoothstep](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-Smoothstep.png)
+![Smoothstep](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-Smoothstep.png)
 
 If we were to use a hard cut-off range check that would abruptly remove occlusion contributions if the depth values are outside radius, we'd see obvious (unattractive) borders at where the range check is applied.
 
@@ -480,7 +480,7 @@ If we'd imagine a scene where our favorite backpack model is taking a little nap
 
 如果我们想象一个静置背包的场景，环境光遮蔽着色器会生成下面的纹理：
 
-![Without Blur](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-WithoutBlur.png)
+![Without Blur](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-WithoutBlur.png)
 
 As we can see, ambient occlusion gives a great sense of depth. With just the ambient occlusion texture we can already clearly see the model is indeed laying on the floor, instead of hovering slightly above it.
 
@@ -542,7 +542,7 @@ Here we traverse the surrounding SSAO texels between -2.0 and 2.0, sampling the 
 
 这里，我们在 -2.0 和 2.0 之间遍历周围的 SSAO 纹素，采样 SSAO 纹理次数与噪声纹理的规模相同。我们使用 textureSize 将每个纹理坐标偏移单个纹素大小的确切倍数，textureSize 返回给定纹理的一个 vec2 类型尺寸。我们对获得的结果进行平均，以获得简单但有效的模糊：
 
-![With Blur](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-WithBlur.png)
+![With Blur](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-WithBlur.png)
 
 And there we go, a texture with per-fragment ambient occlusion data; ready for use in the lighting pass.
 
@@ -609,7 +609,7 @@ The only thing (aside from the change to view-space) we really changed is the mu
 
 我们唯一真正改变的（除了对观察空间的更改）是场景的环境分量现在乘以了 AmbientOcclusion。在场景中使用单个蓝色点光源时，我们将得到以下结果：
 
-![Final](/assets/images/LearnOpenGL-AdvancedLighting-SSAO-Final.png)
+![Final](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-Final.png)
 
 You can find the full source code of the demo scene [here](https://github.com/tick-engineloop/LearnOpenGL).
 

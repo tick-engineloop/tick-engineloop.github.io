@@ -221,13 +221,13 @@ layout(origin_upper_left) in vec4 gl_FragCoord;
 
 另外，这里引用 LearnOpenGL 中的一幅 OpenGL 渲染管线执行流程（简化版）图帮助加深理解：
 
-![OpenGL Pipeline 2](/assets/images/LearnOpenGL-Basics-RenderingPipeline-OpenGL.png)
+![OpenGL Pipeline 2](/assets/img/post/LearnOpenGL-Basics-RenderingPipeline-OpenGL.png)
 
 ## Vulkan
 
 Vulkan 图形管线执行流程：
 
-![Vulkan Pipeline](/assets/images/LearnOpenGL-Basics-RenderingPipeline-Vulkan.svg)
+![Vulkan Pipeline](/assets/img/post/LearnOpenGL-Basics-RenderingPipeline-Vulkan.svg)
 
 ## Conclusion
 

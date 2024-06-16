@@ -33,7 +33,7 @@ In the next PBR chapters we'll be focusing on the PBR approach as originally exp
 
 在接下来的 PBR 章节中，我们将重点介绍最先由迪斯尼探索、后被 Epic Games 用于实时显示的 PBR 方法。他们的方法以金属工作流为基础，记录详实，并被大多数主流引擎广泛采用，视觉效果惊人。在这几章结束时，我们将得到这样的效果：
 
-![IBL Specular Result Textured](/assets/images/LearnOpenGL-PBR-Theory-IBLSpecularResultTextured.png)
+![IBL Specular Result Textured](/assets/img/post/LearnOpenGL-PBR-Theory-IBLSpecularResultTextured.png)
 
 Keep in mind, the topics in these chapters are rather advanced so it is advised to have a good understanding of OpenGL and shader lighting. Some of the more advanced knowledge you'll need for this series are: framebuffers, cubemaps, gamma correction, HDR, and normal mapping. We'll also delve into some advanced mathematics, but I'll do my best to explain the concepts as clear as possible.
 
@@ -45,13 +45,13 @@ All the PBR techniques are based on the theory of microfacets. The theory descri
 
 所有的PBR技术都基于微平面理论。该理论认为，达到微观尺度后任何表面都可以用被称为微平面的完美反射微小镜面来描绘。根据表面粗糙度的不同，这些微小镜面的排列会有很大差异：
 
-![Microfacets](/assets/images/LearnOpenGL-PBR-Theory-Microfacets.png)
+![Microfacets](/assets/img/post/LearnOpenGL-PBR-Theory-Microfacets.png)
 
 The rougher a surface is, the more chaotically aligned each microfacet will be along the surface. The effect of these tiny-like mirror alignments is, that when specifically talking about specular lighting/reflection, the incoming light rays are more likely to scatter along completely different directions on rougher surfaces, resulting in a more widespread specular reflection. In contrast, on a smooth surface the light rays are more likely to reflect in roughly the same direction, giving us smaller and sharper reflections:
 
 一个平面越是粗糙，这个平面上的微表面的排列就越混乱。这些微小镜面混乱排列所产生的影响就是，当特指镜面光照/反射时，在粗糙的表面上入射光线被反射后更趋向于向着完全不同的方向散射，从而产生出分布范围更广的镜面反射。与此相反，在光滑的表面上，光线更有可能沿着大致相同的方向反射，从而产生更小、更锐利的反射：
 
-![Microfacets Light Reflections](/assets/images/LearnOpenGL-PBR-Theory-MicrofacetsLightReflections.png)
+![Microfacets Light Reflections](/assets/img/post/LearnOpenGL-PBR-Theory-MicrofacetsLightReflections.png)
 
 No surface is completely smooth on a microscopic level, but seeing as these microfacets are small enough that we can't make a distinction between them on a per-pixel basis, we statistically approximate the surface's microfacet roughness given a roughness parameter. Based on the roughness of a surface, we can calculate the ratio of microfacets roughly aligned to some vector $h$. This vector $h$ is the halfway vector that sits halfway between the light $l$ and view $v$ vector. We've discussed the halfway vector before in the advanced lighting chapter which is calculated as the sum of $l$ and $v$ divided by its length:
 
@@ -65,7 +65,7 @@ The more the microfacets are aligned to the halfway vector, the sharper and stro
 
 微表面的朝向与半程向量的方向越是一致（即微表面的法线与半程向量越是一致），镜面反射就越锐利、越强烈。结合在 0 和 1 之间变化的粗糙度参数，我们可以从统计学角度对微表面的排列情况进行近似：
 
-![NDF](/assets/images/LearnOpenGL-PBR-Theory-NDF.png)
+![NDF](/assets/img/post/LearnOpenGL-PBR-Theory-NDF.png)
 
 We can see that higher roughness values display a much larger specular reflection shape, in contrast with the smaller and sharper specular reflection shape of smooth surfaces.
 
@@ -85,7 +85,7 @@ There are some nuances here as refracted light doesn't immediately get absorbed 
 
 这里有一些细微差别，折射光不会在接触表面后立即被吸收。通过物理学我们可以得知，光线实际上可以被认为是一束没有耗尽就不停向前运动的能量，而光线是通过碰撞的方式来消耗能量的。如下图所示，每种材料都由微小的粒子组成，它们可以与光线发生碰撞。每次碰撞时，这些粒子都会吸收部分或全部光能，并转化为热量。
 
-![Surface Reaction](/assets/images/LearnOpenGL-PBR-Theory-SurfaceReaction.png)
+![Surface Reaction](/assets/img/post/LearnOpenGL-PBR-Theory-SurfaceReaction.png)
 
 Generally, not all energy is absorbed and the light will continue to scatter in a (mostly) random direction at which point it collides with other particles until its energy is depleted or it leaves the surface again. Light rays re-emerging out of the surface contribute to the surface's observed (diffuse) color. In physically based rendering however, we make the simplifying assumption that all refracted light gets absorbed and scattered at a very small area of impact, ignoring the effect of scattered light rays that would've exited the surface at a distance. Specific shader techniques that do take this into account are known as subsurface scattering techniques that significantly improve the visual quality on materials like skin, marble, or wax, but come at the price of performance.
 
@@ -130,7 +130,7 @@ The reflectance equation appears daunting at first, but as we'll dissect it you'
 
 **辐射通量**: 辐射通量 $\Phi$ 是光源所输出的能量，以瓦特为单位。光是多种不同波长的能量总和，每种波长和一种特定的（可见）颜色相关。因此，光源放射出的能量可以看作是光源包含的所有不同波长的一个函数。波长在 390 纳米到 700 纳米（纳米）之间的光被认为是可见光光谱的一部分，即人眼能够感知的波长。下面是日光各波长的不同能量图像：
 
-![Day light Spectral Distribution](/assets/images/LearnOpenGL-PBR-Theory-DaylightSpectralDistribution.png)
+![Day light Spectral Distribution](/assets/img/post/LearnOpenGL-PBR-Theory-DaylightSpectralDistribution.png)
 
 The radiant flux measures the total area of this function of different wavelengths. Directly taking this measure of wavelengths as input is slightly impractical so we often make the simplification of representing radiant flux, not as a function of varying wavelength strengths, but as a light color triplet encoded as RGB (or as we'd commonly call it: light color). This encoding does come at quite a loss of information, but this is generally negligible for visual aspects.
 
@@ -140,7 +140,7 @@ The radiant flux measures the total area of this function of different wavelengt
 
 **立体角**: 立体角，用 $\omega$ 表示，它告诉我们投影到单位球上的一个截面的大小或面积。投影到这个单位球上的面积被称为立体角，你可以将立体角想象成一个带有体积的方向：
 
-![Solid Angle](/assets/images/LearnOpenGL-PBR-Theory-SolidAngle.png)
+![Solid Angle](/assets/img/post/LearnOpenGL-PBR-Theory-SolidAngle.png)
 
 Think of being an observer at the center of this unit sphere and looking in the direction of the shape; the size of the silhouette you make out of it is the solid angle.
 
@@ -150,7 +150,7 @@ Think of being an observer at the center of this unit sphere and looking in the 
 
 **辐射强度**: 辐射强度表示的是每单位立体角上的辐射通量，或者说是光源在单位球上的一个投影面积上的强度。例如，如果一个全向光在所有方向上的辐射量相同，那么辐射强度就能给出它在特定区域（立体角）上的能量大小：
 
-![Radiant Intensity](/assets/images/LearnOpenGL-PBR-Theory-RadiantIntensity.png)
+![Radiant Intensity](/assets/img/post/LearnOpenGL-PBR-Theory-RadiantIntensity.png)
 
 The equation to describe the radiant intensity is defined as follows:
 
@@ -172,7 +172,7 @@ $$
 L=\frac{d^2\Phi}{ dA d\omega \cos\theta}
 $$
 
-![Radiance](/assets/images/LearnOpenGL-PBR-Theory-Radiance.png)
+![Radiance](/assets/img/post/LearnOpenGL-PBR-Theory-Radiance.png)
 
 Radiance is a radiometric measure of the amount of light in an area, scaled by the incident (or incoming) angle $\theta$ of the light to the surface's normal as $\cos \theta$: light is weaker the less it directly radiates onto the surface, and strongest when it is directly perpendicular to the surface. This is similar to our perception of diffuse lighting from the [basic lighting](https://learnopengl.com/Lighting/Basic-lighting) chapter as $\cos \theta$ directly corresponds to the dot product between the light's direction vector and the surface normal:
 
@@ -201,13 +201,13 @@ We now know that $L$ in the render equation represents the radiance of some poin
 
 现在我们知道，渲染方程中的 $L$ 代表了某个点 $p$ 和某个无穷小的入射立体角 $\omega_i$，可以将这个无穷小的入射立体角视为入射方向向量 $\omega_i$。请记住，我们利用光线到表面的入射角的余弦值 $\cos \theta$ 来计算能量，即就是反射方程中的 $n \cdot \omega_i$。用 $\omega_o$ 表示向着观察者的出射方向，反射方程计算的是一个点 $p$ 在 $\omega_o$ 方向上被反射的辐射率总和 $L_o(p,\omega_o)$。或者换一种说法：$L_o$ 测量的是从 $\omega_o$ 方向看向 $p$ 点时被反射的光线辐照度总和。
 
-![Incident Angle](/assets/images/LearnOpenGL-PBR-Theory-IncidentAngle.jpg)
+![Incident Angle](/assets/img/post/LearnOpenGL-PBR-Theory-IncidentAngle.jpg)
 
 The reflectance equation is based around irradiance, which is the sum of all incoming radiance we measure light of. Not just of a single incoming light direction, but of all incoming light directions within a hemisphere $\Omega$ centered around point $p$. A hemisphere can be described as half a sphere aligned around a surface's normal $n$:
 
 反射方程以辐照度为基础，而辐照度是我们测量的所有入射光的辐射率的总和。所以我们需要计算的就不只是单一入射光方向，而是以点 $p$ 为中心的半球 $\Omega$ 内所有入射光方向的辐射率总和。一个半球可以描述为与表面法线 $n$ 对齐的法向半球：
 
-![Hemisphere](/assets/images/LearnOpenGL-PBR-Theory-Hemisphere.png)
+![Hemisphere](/assets/img/post/LearnOpenGL-PBR-Theory-Hemisphere.png)
 
 To calculate the total of values inside an area or (in the case of a hemisphere) a volume, we use a mathematical construct called an integral denoted in the reflectance equation as $\int$ over all incoming directions $d\omega_i$ within the hemisphere $\Omega$ . An integral measures the area of a function, which can either be calculated analytically or numerically. As there is no analytical solution to both the render and reflectance equation, we'll want to numerically solve the integral discretely. This translates to taking the result of small discrete steps of the reflectance equation over the hemisphere $\Omega$ and averaging their results over the step size. This is known as the Riemann sum that we can roughly visualize in code as follows:
 
@@ -319,7 +319,7 @@ Here $h$ is the halfway vector to measure against the surface's microfacets, wit
 
 这里的 $h$ 是用来与物体表面的微表面做比较用的半程向量，$a$ 是表面粗糙度的测量值。点[此处](https://www.desmos.com/calculator/8otf8w37ke?lang=zh-CN)可查看 Trowbridge-Reitz GGX desmos 曲线。如果将 $h$ 作为观察方向和光照方向之间的半程向量，在改变粗糙度参数的情况下，我们会得到以下直观的镜面反射结果：
 
-![NDF](/assets/images/LearnOpenGL-PBR-Theory-NDF.png)
+![NDF](/assets/img/post/LearnOpenGL-PBR-Theory-NDF.png)
 
 When the roughness is low (thus the surface is smooth), a highly concentrated number of microfacets are aligned to halfway vectors over a small radius. Due to this high concentration, the NDF displays a very bright spot. On a rough surface however, where the microfacets are aligned in much more random directions, you'll find a much larger number of halfway vectors $h$ somewhat aligned to the microfacets (but less concentrated), giving us the more grayish results.
 
@@ -350,7 +350,7 @@ The geometry function statistically approximates the relative surface area where
 
 几何函数从统计学角度近似地计算了相互遮挡的微表面的相对表面积，这种相互遮蔽会导致光线被遮挡，无法反射到观察者的位置。
 
-![Geometry Shadowing](/assets/images/LearnOpenGL-PBR-Theory-GeometryShadowing.png)
+![Geometry Shadowing](/assets/img/post/LearnOpenGL-PBR-Theory-GeometryShadowing.png)
 
 Similar to the NDF, the Geometry function takes a material's roughness parameter as input with rougher surfaces having a higher probability of overshadowing microfacets. The geometry function we will use is a combination of the GGX and Schlick-Beckmann approximation known as Schlick-GGX:
 
@@ -391,7 +391,7 @@ Using Smith's method with Schlick-GGX as $G_{sub}$ gives the following visual ap
 
 使用史密斯方法，以 Schlick-GGX 作为 $G_{sub}$，在粗糙度 R 不同的情况下，可以得到如下视觉效果：
 
-![Geometry](/assets/images/LearnOpenGL-PBR-Theory-Geometry.png)
+![Geometry](/assets/img/post/LearnOpenGL-PBR-Theory-Geometry.png)
 
 The geometry function is a multiplier between [0.0, 1.0] with 1.0 (or white) measuring no microfacet shadowing, and 0.0 (or black) complete microfacet shadowing.
 
@@ -427,7 +427,7 @@ Look at the image below and notice how the brightness of the tabletop changes.
 
 当我们以不同的观察角度看向光滑桌面时，桌面亮度有如下图的变化。
 
-![Fresnel Animation](/assets/images/LearnOpenGL-PBR-Theory-FresnelAnimation.gif)
+![Fresnel Animation](/assets/img/post/LearnOpenGL-PBR-Theory-FresnelAnimation.gif)
 
 This phenomenon is known as Fresnel Effect and is described by the Fresnel equation. The Fresnel equation (pronounced as Freh-nel) describes the ratio of light that gets reflected over the light that gets refracted, which varies over the angle we're looking at a surface. The moment light hits a surface, based on the surface-to-view angle, the Fresnel equation tells us the percentage of light that gets reflected. From this ratio of reflection and the energy conservation principle we can directly obtain the refracted portion of light.
 
@@ -437,7 +437,7 @@ Every surface or material has a level of base reflectivity when looking straight
 
 光线垂直照射到表面或材质上时，会发生一部分反射，此时对应的反射率称为基础反射率。如果以非垂直的角度往平面上看，所有反光都会变得明显起来，并随着角度慢慢变大，反光会越来越明显。你可以通过观察你的木制/金属书桌（大概）来验证这一点，从垂直视角看，此时只有最基础的反射，但从近乎 90 度的角度（指视线和法线的夹角，即接近平行桌面的视角）看你的书桌，你会发现反射变得更加明显。如果从完全 90 度的角度观察，理论上所有表面都能完全反射光线。
 
-![Box Side View](/assets/images/LearnOpenGL-PBR-Theory-BoxSideView.jpg)
+![Box Side View](/assets/img/post/LearnOpenGL-PBR-Theory-BoxSideView.jpg)
 
 The Fresnel equation is a rather complex equation, but luckily the Fresnel equation can be approximated using the Fresnel-Schlick approximation:
 
@@ -452,7 +452,7 @@ $F_0$ represents the base reflectivity of the surface, which we calculate using 
 
 $F_0$ 是表面的基本反射率，这可以由折射率或 IOR 计算得出。正如你在球面上所看到的，我们越看向表面的掠射角（此时视线和表面法线的夹角接近90度），菲涅尔现象越明显，因此反射也就越强：
 
-![Fresnel Sphere](/assets/images/LearnOpenGL-PBR-Theory-FresnelSphere.png)
+![Fresnel Sphere](/assets/img/post/LearnOpenGL-PBR-Theory-FresnelSphere.png)
 
 > 掠射角（glancing angle）指的是投射光线与表面之间的夹角。掠射通常指的是光从一种介质向另一种介质传播时，入射角接近于 90° 的情况。这里需要注意的是，掠射一定要从光疏介质（折射率小）向光密介质（折射率大）传播，且入射角要极其接近于 90°。
 {: .prompt-tip }
@@ -553,7 +553,7 @@ Below you'll see a list of textures you'll frequently find in a PBR pipeline tog
 
 下面列出了 PBR 管线中常见的纹理，以及将它们输入 PBR 渲染器后所能得到的视觉输出：
 
-![PBR Textures](/assets/images/LearnOpenGL-PBR-Theory-PBRTextures.png)
+![PBR Textures](/assets/img/post/LearnOpenGL-PBR-Theory-PBRTextures.png)
 
 **Albedo**: the albedo texture specifies for each texel the color of the surface, or the base reflectivity if that texel is metallic. This is largely similar to what we've been using before as a diffuse texture, but all lighting information is extracted from the texture. Diffuse textures often have slight shadows or darkened crevices inside the image which is something you don't want in an albedo texture; it should only contain the color (or refracted absorption coefficients) of the surface. 
 

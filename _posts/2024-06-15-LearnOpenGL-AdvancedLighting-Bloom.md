@@ -16,25 +16,25 @@ Let's illustrate this process in a step by step fashion. We render a scene fille
 
 让我们来逐步说明这一过程。我们在场景中渲染 4 个明亮的彩色立方体光源。彩色立方体的亮度值在 1.5 和 15.0 之间。如果我们将其渲染到 HDR 颜色缓冲区，场景看起来是下面这样：
 
-![HDR](/assets/images/LearnOpenGL-AdvancedLighting-Bloom-HDR.png)
+![HDR](/assets/img/post/LearnOpenGL-AdvancedLighting-Bloom-HDR.png)
 
 We take this HDR color buffer texture and extract all the fragments that exceed a certain brightness. This gives us an image that only show the bright colored regions as their fragment intensities exceeded a certain threshold:
 
 我们利用 HDR 颜色缓冲纹理，提取所有亮度超过一定值的片段。这样得到的图像只显示亮光区域，因为它们的片段强度超过了一定的阈值：
 
-![Extracted Bright Regions](/assets/images/LearnOpenGL-AdvancedLighting-Bloom-ExtractedBrightRegions.png)
+![Extracted Bright Regions](/assets/img/post/LearnOpenGL-AdvancedLighting-Bloom-ExtractedBrightRegions.png)
 
 We then take this thresholded brightness texture and blur the result. The strength of the bloom effect is largely determined by the range and strength of the blur filter used.
 
 然后，我们将这个超过一定亮度阈值的亮光纹理进行模糊处理。泛光效果的强度主要取决于所使用的模糊滤波器的范围和强度。
 
-![Blurred Bright Regions](/assets/images/LearnOpenGL-AdvancedLighting-Bloom-BlurredBrightRegions.png)
+![Blurred Bright Regions](/assets/img/post/LearnOpenGL-AdvancedLighting-Bloom-BlurredBrightRegions.png)
 
 The resulting blurred texture is what we use to get the glow or light-bleeding effect. This blurred texture is added on top of the original HDR scene texture. Because the bright regions are extended in both width and height due to the blur filter, the bright regions of the scene appear to glow or bleed light.
 
 产生的模糊纹理被添加到原始 HDR 场景纹理上之后，就形成了发光或渗光效果。由于模糊滤波器的作用，亮光区域的宽度和高度都得到了延伸，因此场景中的亮光区域看起来会发光或渗光。
 
-![Combined HDR With Blurred Bright](/assets/images/LearnOpenGL-AdvancedLighting-Bloom-CombinedHDRWithBlurredBright.png)
+![Combined HDR With Blurred Bright](/assets/img/post/LearnOpenGL-AdvancedLighting-Bloom-CombinedHDRWithBlurredBright.png)
 
 Bloom by itself isn't a complicated technique, but difficult to get exactly right. Most of its visual quality is determined by the quality and type of blur filter used for blurring the extracted brightness regions. Simply tweaking the blur filter can drastically change the quality of the Bloom effect.
 
@@ -44,7 +44,7 @@ Following these steps gives us the Bloom post-processing effect. The next image 
 
 按照这些步骤，我们就能得到泛光后期处理效果。下图简要总结了实现泛光所需的步骤：
 
-![Bloom Steps](/assets/images/LearnOpenGL-AdvancedLighting-Bloom-BloomSteps.png)
+![Bloom Steps](/assets/img/post/LearnOpenGL-AdvancedLighting-Bloom-BloomSteps.png)
 
 The first step requires us to extract all the bright colors of a scene based on some threshold. Let's first delve into that.
 

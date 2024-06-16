@@ -24,19 +24,19 @@ To transform the coordinates from one space to the next coordinate space we'll u
 
 局部空间是指模型创建时参照的坐标空间。想象你在一个建模软件（比如说Blender）中创建了一个立方体，你所创建的立方体现在就位于局部空间中，立方体的中心可能就在局部空间的原点，也可能有一定偏移（相比于世界空间中的移动，这种偏移通常来说不会太大）。
 
-![Local Space](/assets/images/LearnOpenGL-Basics-CoordinateSystems-LocalSpace.png)
+![Local Space](/assets/img/post/LearnOpenGL-Basics-CoordinateSystems-LocalSpace.png)
 
 ### World space
 
 搭建关卡场景时，如果我们将在局部空间中创建的物体模型导入到程序当中，它们有可能会全挤在原点 (0, 0, 0) 附近，这并不是我们想要的结果。我们想让每一个物体都位于它应该出现的位置上，从而构建出一个有意义的场景。所以我们需要将物体从局部空间转换到世界空间，该变换由模型矩阵实现。如下图所示为立方体应用一个平移操作，使其变换到了世界空间中：
 
-![World Space](/assets/images/LearnOpenGL-Basics-CoordinateSystems-WorldSpace.png)
+![World Space](/assets/img/post/LearnOpenGL-Basics-CoordinateSystems-WorldSpace.png)
 
 ### View space
 
 OpenGL 既没有明确定义相机对象，也没有明确定义用于相机转换的特定矩阵。相反，OpenGL 将整个场景（包括摄像机）反向变换为一个空间，其中固定摄像机位于原点（0,0,0）并始终看向 -Z 轴。这个空间称为视图（或观察、眼睛）空间。即就是说摄像机在视图空间中从原点看向 -Z 轴。从世界空间变换到视图空间由视图矩阵实现。
 
-![View Space](/assets/images/LearnOpenGL-Basics-CoordinateSystems-ViewSpace.png)
+![View Space](/assets/img/post/LearnOpenGL-Basics-CoordinateSystems-ViewSpace.png)
 
 视图空间坐标被定义在右手坐标系系统中，X 轴向右，Y 轴向上，Z 轴朝屏幕外。
 
@@ -48,11 +48,11 @@ OpenGL 既没有明确定义相机对象，也没有明确定义用于相机转�
 
 正射投影矩阵定义了一个类似立方体的平截头体，它定义了一个裁剪空间，由宽、高、近(Near)平面和远(Far)平面所指定，在这空间之外的顶点都会被裁剪掉。
 
-![Orthographic Frustum](/assets/images/LearnOpenGL-Basics-CoordinateSystems-OrthographicFrustum.png)
+![Orthographic Frustum](/assets/img/post/LearnOpenGL-Basics-CoordinateSystems-OrthographicFrustum.png)
 
 立方体在正射视图下观察是这样的：
 
-![Object In Orthographic Frustum](/assets/images/LearnOpenGL-Basics-CoordinateSystems-ObjectInOrthographicFrustum.png)
+![Object In Orthographic Frustum](/assets/img/post/LearnOpenGL-Basics-CoordinateSystems-ObjectInOrthographicFrustum.png)
 
 因为正射投影不会改变每个位置向量齐次坐标的 $w$ 分量，如果 $w$ 分量等于1.0，那么透视除法就不会改变这个坐标的值，正射平截头体直接将平截头体内部的所有坐标映射为了标准化设备坐标。
 
@@ -60,21 +60,21 @@ OpenGL 既没有明确定义相机对象，也没有明确定义用于相机转�
 
 实际生活中近大远小的视觉现象被称之为透视。下面定义了一个四棱锥的平截头体，它由视野(fov)、宽高比、近(Near)平面和远(Far)平面所指定。
 
-![Perspective Frustum](/assets/images/LearnOpenGL-Basics-CoordinateSystems-PerspectiveFrustum.png)
+![Perspective Frustum](/assets/img/post/LearnOpenGL-Basics-CoordinateSystems-PerspectiveFrustum.png)
 
 立方体在透视视图下观察是这样的：
 
-![Object In Perspective Frustum](/assets/images/LearnOpenGL-Basics-CoordinateSystems-ObjectInPerspectiveFrustum.png)
+![Object In Perspective Frustum](/assets/img/post/LearnOpenGL-Basics-CoordinateSystems-ObjectInPerspectiveFrustum.png)
 
 这种近大远小的效果可使用透视矩阵来完成。这个投影矩阵将给定的平截头体范围映射到裁剪空间，除此之外还修改了每个顶点位置向量齐次坐标的 $w$ 分量，使得离观察者越远的顶点坐标 $w$ 分量越大。被变换到裁剪空间的坐标都会在 $-w$ 到 $w$ 的范围之间（任何大于这个范围的坐标都会被裁剪掉）。在下一步透视除法环节中，顶点坐标的每个分量都会除以它的 $w$ 分量，结果坐标就是处于标准化设备空间中的，距离观察者越远顶点坐标就会越小。这是 $w$ 分量非常重要的另一个原因，它能够帮助我们进行透视投影。
 
-![Clip Space](/assets/images/LearnOpenGL-Basics-CoordinateSystems-ClipSpace.png)
+![Clip Space](/assets/img/post/LearnOpenGL-Basics-CoordinateSystems-ClipSpace.png)
 
 ### NDC 
 
 从裁剪空间变换到 NDC 由透视除法实现。裁剪坐标变换到归一化设备坐标中 XYZ 映射到 [-1, 1] 之间。
 
-![NDC](/assets/images/LearnOpenGL-Basics-CoordinateSystems-NDC.png)
+![NDC](/assets/img/post/LearnOpenGL-Basics-CoordinateSystems-NDC.png)
 _OpenGL NDC_
 
 注意 OpenGL 的 NDC 使用左手坐标系统，其原点位于空间中心，X 轴向右，Y 轴向上，Z 轴朝屏幕内。Vulkan 的 NDC 坐标系默认是右手坐标系，其原点位于屏幕正中间，X 轴向右，Y 轴向下，Z 轴朝屏幕内。摄像机在 NDC 中看向 +Z 轴。

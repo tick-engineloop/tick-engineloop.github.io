@@ -14,11 +14,11 @@ math: true
 
 &emsp;&emsp;与切向量的变换相比，法向量的变换要复杂一些。下图是一个带有法向量 $\mathbf{T}$ 和切向量 $\mathbf{N}$ 的三角形：
 
-![Before Transform](/assets/images/Math-TheNormalTransform-1-BeforeTransform.png)
+![Before Transform](/assets/img/post/Math-TheNormalTransform-1-BeforeTransform.png)
 
 当用一个包含非均匀缩放的非正交矩阵 $\mathbf{M}$ 变换法向量时，变换后的法向量常常指向一个与变换表面不垂直的方向，如下图所示：
 
-![After Nonuniform Transform](/assets/images/Math-TheNormalTransform-2-AfterNonuniformTransform.png)
+![After Nonuniform Transform](/assets/img/post/Math-TheNormalTransform-2-AfterNonuniformTransform.png)
 
 &emsp;&emsp;因为切向量和法向量总是垂直的，则同一个顶点的切向量 $\mathbf{T}$ 和法向量 $\mathbf{N}$ 一定满足方程 $\mathbf{T} \cdot \mathbf{N}=0$（垂直向量点积为零），变换后的切向量 $\mathbf{T}^{\prime}$ 和法向量 $\mathbf{N}^{\prime}$ 也满足该方程，给定一个变换矩阵 $\mathbf{M}$，$\mathbf{T}^{\prime}=\mathbf{MT}$。假设法向量 $\mathbf{N}$ 的变换矩阵为 $\mathbf{G}$，则下式成立：
 
@@ -39,11 +39,11 @@ $$
 
 ## 涉及的向量与矩阵知识点
 
-![Matrix Arithmetic Properties](/assets/images/Math-TheNormalTransform-3-MatrixArithmeticProperties.png)
+![Matrix Arithmetic Properties](/assets/img/post/Math-TheNormalTransform-3-MatrixArithmeticProperties.png)
 
-![Matrix Inverse Properties](/assets/images/Math-TheNormalTransform-4-MatrixInverseProperties.png)
+![Matrix Inverse Properties](/assets/img/post/Math-TheNormalTransform-4-MatrixInverseProperties.png)
 
-![Dot Product as Matrix-Matrix Multiplication](/assets/images/Math-TheNormalTransform-5-DotProductasMatrixMatrixMultiplication.png)
+![Dot Product as Matrix-Matrix Multiplication](/assets/img/post/Math-TheNormalTransform-5-DotProductasMatrixMatrixMultiplication.png)
 
 
 ## References

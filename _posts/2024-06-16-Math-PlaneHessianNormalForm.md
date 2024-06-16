@@ -67,7 +67,7 @@ If the point $\mathbf{p}_0$ is in the half-space determined by the direction of 
 
 ## 涉及的向量与矩阵知识点
 
-![Dot Product as Matrix-Matrix Multiplication](/assets/images/Math-PlaneHessianNormalForm-DotProductasMatrixMatrixMultiplication.png)
+![Dot Product as Matrix-Matrix Multiplication](/assets/img/post/Math-PlaneHessianNormalForm-DotProductasMatrixMatrixMultiplication.png)
 
 
 ## References

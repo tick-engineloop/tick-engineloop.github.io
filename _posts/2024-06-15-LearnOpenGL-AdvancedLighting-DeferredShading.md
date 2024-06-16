@@ -17,13 +17,13 @@ Deferred shading or deferred rendering aims to overcome these issues by drastica
 
 延迟着色或延迟渲染旨在通过彻底改变我们渲染对象的方式来克服这些问题。这为我们提供了几个新选项来显著优化具有大量光源的场景，使我们能够以可接受的帧速率渲染数百个（甚至数千个）光源。下图是使用延迟着色渲染 1847 个点光源的场景（图片由 Hannes Nevalainen 提供），这是前向渲染很难实现的。
 
-![Deferred Example](/assets/images/LearnOpenGL-AdvancedLighting-DeferredShading-DeferredExample.png)
+![Deferred Example](/assets/img/post/LearnOpenGL-AdvancedLighting-DeferredShading-DeferredExample.png)
 
 Deferred shading is based on the idea that we defer or postpone most of the heavy rendering (like lighting) to a later stage. Deferred shading consists of two passes: in the first pass, called the geometry pass, we render the scene once and retrieve all kinds of geometrical information from the objects that we store in a collection of textures called the G-buffer; think of position vectors, color vectors, normal vectors, and/or specular values. The geometric information of a scene stored in the G-buffer is then later used for (more complex) lighting calculations. Below is the content of a G-buffer of a single frame:
 
 延迟着色是基于将大多数繁重的渲染（如光照）延迟或推迟到稍后的阶段中这样一种想法。延迟着色由两个通道组成：在第一个通道（称为几何通道）中，我们渲染一次场景，并获取对象的各种几何信息（例如位置向量、颜色向量、法线向量和/或镜面反射值），将其存储在称为 G-buffer 的纹理集合中。然后，存储在 G-buffer 中的场景几何信息稍后用于（更复杂的）光照计算。以下是单个帧的 G-buffer 的内容：
 
-![Gbuffer](/assets/images/LearnOpenGL-AdvancedLighting-DeferredShading-Gbuffer.png)
+![Gbuffer](/assets/img/post/LearnOpenGL-AdvancedLighting-DeferredShading-Gbuffer.png)
 
 We use the textures from the G-buffer in a second pass called the lighting pass where we render a screen-filled quad and calculate the scene's lighting for each fragment using the geometrical information stored in the G-buffer; pixel by pixel we iterate over the G-buffer. Instead of taking each object all the way from the vertex shader to the fragment shader, we decouple its advanced fragment processes to a later stage. The lighting calculations are exactly the same, but this time we take all required input variables from the corresponding G-buffer textures, instead of the vertex shader (plus some uniform variables).
 
@@ -33,7 +33,7 @@ The image below nicely illustrates the process of deferred shading.
 
 下图很好地说明了延迟着色的过程。
 
-![Overview](/assets/images/LearnOpenGL-AdvancedLighting-DeferredShading-Overview.png)
+![Overview](/assets/img/post/LearnOpenGL-AdvancedLighting-DeferredShading-Overview.png)
 
 A major advantage of this approach is that whatever fragment ends up in the G-buffer is the actual fragment information that ends up as a screen pixel. The depth test already concluded this fragment to be the last and top-most fragment. This ensures that for each pixel we process in the lighting pass, we only calculate lighting once. Furthermore, deferred rendering opens up the possibility for further optimizations that allow us to render a much larger amount of light sources compared to forward rendering.
 
@@ -186,7 +186,7 @@ If we'd now were to render a large collection of backpack objects into the gBuff
 
 如果我们现在将大量背包对象的顶点属性渲染到 gBuffer 帧缓冲区中，并将 gBuffer 每个颜色缓冲区一个接一个地投影到填充屏幕的四边形上来可视化其内容，我们会看到如下内容：
 
-![Visualized Gbuffer](/assets/images/LearnOpenGL-AdvancedLighting-DeferredShading-VisualizedGbuffer.png)
+![Visualized Gbuffer](/assets/img/post/LearnOpenGL-AdvancedLighting-DeferredShading-VisualizedGbuffer.png)
 
 Try to visualize that the world-space position and normal vectors are indeed correct. For instance, the normal vectors pointing to the right would be more aligned to a red color, similarly for position vectors that point from the scene's origin to the right. As soon as you're satisfied with the content of the G-buffer it's time to move to the next step: the lighting pass.
 
@@ -281,7 +281,7 @@ Running a simple demo with a total of 32 small lights looks a bit like this:
 
 运行包含 32 个小光源的一个简单示例，看起来是像这样一点：
 
-![Deferred Shading](/assets/images/LearnOpenGL-AdvancedLighting-DeferredShading-DeferredShading.png)
+![Deferred Shading](/assets/img/post/LearnOpenGL-AdvancedLighting-DeferredShading-DeferredShading.png)
 
 One of the disadvantages of deferred shading is that it is not possible to do blending as all values in the G-buffer are from single fragments, and blending operates on the combination of multiple fragments. Another disadvantage is that deferred shading forces you to use the same lighting algorithm for most of your scene's lighting; you can somehow alleviate this a bit by including more material-specific data in the G-buffer.
 
@@ -321,7 +321,7 @@ However, these rendered cubes do not take any of the stored geometry depth of th
 
 然而，这些立方体在被渲染的时候没有考虑延迟渲染器存储的任何几何深度，因此始终渲染在先前渲染的对象之上，这不是我们想要的结果。
 
-![Deferred Lights No Depth](/assets/images/LearnOpenGL-AdvancedLighting-DeferredShading-DeferredLightsNoDepth.png)
+![Deferred Lights No Depth](/assets/img/post/LearnOpenGL-AdvancedLighting-DeferredShading-DeferredLightsNoDepth.png)
 
 What we need to do, is first copy the depth information stored in the geometry pass into the default framebuffer's depth buffer and only then render the light cubes. This way the light cubes' fragments are only rendered when on top of the previously rendered geometry.
 
@@ -349,7 +349,7 @@ Here we copy the entire read framebuffer's depth buffer content to the default f
 
 在这里，我们将整个读帧缓冲的深度缓冲内容复制到默认帧缓冲的深度缓冲中;这同样可以用于颜色缓冲和模板缓冲。随后我们再次渲染光源立方体，立方体确实被正确渲染在场景的几何体之上了：
 
-![Deferred Lights Depth](/assets/images/LearnOpenGL-AdvancedLighting-DeferredShading-DeferredLightsDepth.png)
+![Deferred Lights Depth](/assets/img/post/LearnOpenGL-AdvancedLighting-DeferredShading-DeferredLightsDepth.png)
 
 You can find the full source code of the demo [here](https://github.com/tick-engineloop/LearnOpenGL).
 
@@ -498,7 +498,7 @@ The appropriate approach to using light volumes is to render actual spheres, sca
 
 使用光体积更好的方法是渲染按光体积半径缩放的实际球体。这些球体的中心位于光源的位置上，当它按光体积半径缩放时，正好包含了光源的可见范围体。这就是技巧所在：我们使用延迟光照着色器来渲染球体。由于渲染球体时光栅化后产生的屏幕像素区域与光源影响的屏幕像素区域完全一致，因此我们将会跳过所有其他像素只渲染相关像素（现在是一个一个的在光源位置渲染体积球，而非之前渲染一整个填充屏幕的四边形）。下图说明了这一点：
 
-![Light Volume Deferred Rendered](/assets/images/LearnOpenGL-AdvancedLighting-DeferredShading-LightVolumeDeferredRendered.png)
+![Light Volume Deferred Rendered](/assets/img/post/LearnOpenGL-AdvancedLighting-DeferredShading-LightVolumeDeferredRendered.png)
 
 This is done for each light source in the scene, and the resulting fragments are additively blended together. The result is then the exact same scene as before, but this time rendering only the relevant fragments per light source. This effectively reduces the computations from nr_objects * nr_lights to nr_objects + nr_lights, which makes it incredibly efficient in scenes with a large number of lights. This approach is what makes deferred rendering so suitable for rendering a large number of lights.
 

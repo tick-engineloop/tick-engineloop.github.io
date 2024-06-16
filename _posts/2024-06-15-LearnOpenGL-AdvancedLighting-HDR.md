@@ -12,7 +12,7 @@ Brightness and color values, by default, are clamped between 0.0 and 1.0 when st
 
 默认情况下，当存储亮度和色彩值到帧缓冲区时，它们会被限制到 0.0 和 1.0 之间。然后我们总是在这个范围内指定光照亮度和色彩值，并尽力用它们来生动描绘出场景信息。这个方法还可以，效果也不错，搭眼看起来是没什么问题，但如果我们遇上有多个明亮光源的一个非常明亮的区域，区域内某些片段的亮度或色彩值在光照积聚下超过 1.0 的话，会发生什么情况呢？答案是，光照积聚下亮度或色彩值超过 1.0 的所有片段，其亮度或色彩值都会被限制在 1.0 的范围之内，从而导致明亮区域过曝，难以看清细节：
 
-![LDR](/assets/images/LearnOpenGL-AdvancedLighting-HDR-LDR.png)
+![LDR](/assets/img/post/LearnOpenGL-AdvancedLighting-HDR-LDR.png)
 
 Due to a large number of fragments' color values getting clamped to 1.0, each of the bright fragments have the exact same white color value in large regions, losing a significant amount of detail and giving it a fake look.
 
@@ -30,7 +30,7 @@ High dynamic range was originally only used for photography where a photographer
 
 高动态范围最初只用于摄影，摄影师在同一场景中拍摄多张不同曝光水平的照片，从而捕捉到大范围的色彩值。根据曝光级别或观察时的指定曝光，将这些照片组合起来就形成了 HDR 图像，在其中可以看到很大范围的细节。例如，下面这张图片（归功于科林-史密斯）在低曝光时明亮区域显示出了大量的细节（看窗户），逐渐增加曝光时这些细节就消失了。当然，随着曝光增加，在以前低曝光下看不到的较暗区域又会显示出大量细节。
 
-![Different Exposure Level HDR Image.png](/assets/images/LearnOpenGL-AdvancedLighting-HDR-DifferentExposureLevelHDRImage.png)
+![Different Exposure Level HDR Image.png](/assets/img/post/LearnOpenGL-AdvancedLighting-HDR-DifferentExposureLevelHDRImage.png)
 
 This is also very similar to how the human eye works and the basis of high dynamic range rendering. When there is little light, the human eye adapts itself so the darker parts become more visible and similarly for bright areas. It's like the human eye has an automatic exposure slider based on the scene's brightness.
 
