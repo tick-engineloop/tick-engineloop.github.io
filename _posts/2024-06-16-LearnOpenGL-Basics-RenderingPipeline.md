@@ -43,7 +43,7 @@ OpenGL 渲染管线执行流程（标准版）：
     style FragmentShader fill:#bbf,stroke:#f66,stroke-width:2px,color:#fff,stroke-dasharray: 5 5
 ```
 
-上图中灰色阶段是可编程阶段，黄色阶段是固定功能阶段。
+上图中紫色虚框阶段是可编程阶段，其余阶段是固定功能阶段。
 
 ### Vertex Post-Processing
 
