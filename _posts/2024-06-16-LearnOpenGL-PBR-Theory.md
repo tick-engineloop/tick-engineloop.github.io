@@ -461,9 +461,9 @@ There are a few subtleties involved with the Fresnel equation. One is that the F
 
 菲涅尔方程还存在一些细微的问题。其一，菲涅尔-施利克近似法只针对电介质或非金属表面。对于导体（金属）表面，用折射率计算基础反射率并不正确，我们需要对导体使用一种不同的菲涅尔方程。对于电介质和导体，由于使用两种不同的方程，不能统一处理的话这样很不方便，所以我们预计算出平面对于法向入射（入射角为 0 度，直接垂直看向表面）的结果（$F_0$）。按照菲涅尔-施利克近似法，根据视角对该值进行插值，这样我们就可以对金属和非金属使用相同的方程了。
 
-The surface's response at normal incidence, or the base reflectivity, can be found in large databases like [these](http://refractiveindex.info/) with some of the more common values listed below as taken from Naty Hoffman's course notes:
+The surface's response at normal incidence, or the base reflectivity, can be found in large databases like [these](https://refractiveindex.info/) with some of the more common values listed below as taken from Naty Hoffman's course notes:
 
-平面对于法向入射的响应或者说基础反射率可以在一些大型数据库中找到，比如[这个](http://refractiveindex.info/)。下面列举了一些从 Naty Hoffman 的课程讲义中所得到的常见数值：
+平面对于法向入射的响应或者说基础反射率可以在一些大型数据库中找到，比如[这个](https://refractiveindex.info/)。下面列举了一些从 Naty Hoffman 的课程讲义中所得到的常见数值：
 
 | Material               | $F_0$ (Linear)       |         $F_0$ (sRGB) | 
 | :--------------------- | :------------------- | -------------------: | 
@@ -561,7 +561,7 @@ Below you'll see a list of textures you'll frequently find in a PBR pipeline tog
 
 **Normal**: the normal map texture is exactly as we've been using before in the [normal mapping]("https://learnopengl.com/Advanced-Lighting/Normal-Mapping") chapter. The normal map allows us to specify, per fragment, a unique normal to give the illusion that a surface is bumpier than its flat counterpart. 
 
-**法线贴图**：法线贴图纹理与我们之前在[法线贴图](("https://learnopengl.com/Advanced-Lighting/Normal-Mapping"))章节中使用的完全相同。通过法线贴图，我们可以为每个片段指定一个独特的法线，从而为表面制造出凹凸不平的假象。
+**法线贴图**：法线贴图纹理与我们之前在[法线贴图]("https://learnopengl.com/Advanced-Lighting/Normal-Mapping")章节中使用的完全相同。通过法线贴图，我们可以为每个片段指定一个独特的法线，从而为表面制造出凹凸不平的假象。
 
 **Metallic**: the metallic map specifies per texel whether a texel is either metallic or it isn't. Based on how the PBR engine is set up, artists can author metalness as either grayscale values or as binary black or white.
 
@@ -591,17 +591,11 @@ Artists set and tweak these physically based input values on a per-texel basis a
 >
 > * [Reflection Models I - stanford](https://graphics.stanford.edu/courses/cs348b-11/lectures/reflection_i/reflection_i.pdf)
 >
-> * [Background: Physics and Math of Shading by Naty Hoffmann](http://blog.selfshadow.com/publications/s2013-shading-course/hoffman/s2013_pbs_physics_math_notes.pdf)
+> * [Background: Physics and Math of Shading by Naty Hoffmann](https://blog.selfshadow.com/publications/s2013-shading-course/hoffman/s2013_pbs_physics_math_notes.pdf)
 >
-> * [Real shading in Unreal Engine 4](http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf)
+> * [Real shading in Unreal Engine 4](https://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf)
 >
 > * [[SH17C] Physically Based Shading, by knarkowicz](https://www.shadertoy.com/view/4sSfzK)
 >
 > * [Marmoset: PBR Theory](https://www.marmoset.co/toolbag/learn/pbr-theory)
->
-> * [Coding Labs: Physically based rendering](http://www.codinglabs.net/article_physically_based_rendering.aspx)
->
-> * [Coding Labs: Physically Based Rendering - Cook-Torrance](http://www.codinglabs.net/article_physically_based_rendering_cook_torrance.aspx)
->
-> * [Wolfire Games - Physically based rendering](http://blog.wolfire.com/2015/10/Physically-based-rendering)
 >
