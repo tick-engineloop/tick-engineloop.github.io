@@ -559,9 +559,9 @@ Below you'll see a list of textures you'll frequently find in a PBR pipeline tog
 
 **反照率**：反照率纹理为每个表面像素指定了颜色，如果是金属表面像素，则指定的是基础反射率。这与我们之前使用的漫反射纹理大体相似，但所有光照信息都是从纹理中提取的。漫反射纹理通常会在图像内部产生轻微的阴影或变暗的缝隙，而反照率纹理则不希望出现这种情况；它应该只包含表面的颜色（或折射吸收系数）。
 
-**Normal**: the normal map texture is exactly as we've been using before in the [normal mapping]("https://learnopengl.com/Advanced-Lighting/Normal-Mapping") chapter. The normal map allows us to specify, per fragment, a unique normal to give the illusion that a surface is bumpier than its flat counterpart. 
+**Normal**: the normal map texture is exactly as we've been using before in the normal mapping chapter. The normal map allows us to specify, per fragment, a unique normal to give the illusion that a surface is bumpier than its flat counterpart. 
 
-**法线贴图**：法线贴图纹理与我们之前在[法线贴图]("https://learnopengl.com/Advanced-Lighting/Normal-Mapping")章节中使用的完全相同。通过法线贴图，我们可以为每个片段指定一个独特的法线，从而为表面制造出凹凸不平的假象。
+**法线贴图**：法线贴图纹理与我们之前在法线贴图章节中使用的完全相同。通过法线贴图，我们可以为每个片段指定一个独特的法线，从而为表面制造出凹凸不平的假象。
 
 **Metallic**: the metallic map specifies per texel whether a texel is either metallic or it isn't. Based on how the PBR engine is set up, artists can author metalness as either grayscale values or as binary black or white.
 
