@@ -48,7 +48,7 @@ $$
 
 ## References
 >
-> * [The Normal Matrix --- lighthouse3d](http://www.lighthouse3d.com/tutorials/glsl-12-tutorial/the-normal-matrix/)
+> * [The Normal Matrix --- lighthouse3d](http://www.lighthouse3d.com/tutorials/glsl-12-tutorial/the-normal-matrix)
 >
 > * [The Matrix --- immersivemath](https://immersivemath.com/ila/ch06_matrices/ch06.html)
 >
