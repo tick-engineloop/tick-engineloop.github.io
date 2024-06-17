@@ -1,6 +1,6 @@
 ---
 title: SSAO
-description: 环境光遮蔽(Ambient Occlusion)是间接光照的一种近似，它试图通过使折缝、孔洞和彼此靠近的表面变暗来近似间接光照。这些区域在很大程度上被周围的几何形状遮挡，因此光线能去逃逸的地方较少，所以这些地方看起来会更暗一些。屏幕空间环境光遮蔽(Screen-Space Ambient Occlusion)背后的基本原理很简单：对于填充屏幕的四边形上的每个片段，我们根据片段周围的深度值计算一个遮挡因子。
+description: 环境光遮蔽(Ambient Occlusion)是间接光照的一种近似，它试图通过使折缝、孔洞和彼此靠近的表面变暗来近似间接光照。屏幕空间环境光遮蔽(Screen-Space Ambient Occlusion)背后的基本原理很简单：对于填充屏幕的四边形上的每个片段，我们根据片段周围的深度值计算一个遮挡因子。然后使用这个遮挡因子来减少或消除片段的环境光照分量。
 date: 2024-06-15 00:00:00 +0800
 categories: [Computer Grahics, LearnOpenGL, AdvancedLighting, AO]
 tags: [computergraphics, learnopengl, postprocess, ao]     # TAG names should always be lowercase
