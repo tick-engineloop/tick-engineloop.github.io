@@ -1,6 +1,6 @@
 ---
 title: SSAO
-description: 环境光遮蔽(Ambient Occlusion)是间接光照的一种近似，它试图通过使折缝、孔洞和彼此靠近的表面变暗来近似间接光照。这些区域在很大程度上被周围的几何形状遮挡，因此光线能去逃逸的地方较少，所以这些地方看起来会更暗一些。屏幕空间环境光遮蔽(Screen-Space Ambient Occlusion)背后的基本原理很简单：对于填充屏幕的四边形上的每个片段，我们根据片段周围的深度值计算一个遮挡因子。
+description: 环境光遮蔽(Ambient Occlusion)是间接光照的一种近似，它试图通过使折缝、孔洞和彼此靠近的表面变暗来近似间接光照。屏幕空间环境光遮蔽(Screen-Space Ambient Occlusion)背后的基本原理很简单：对于填充屏幕的四边形上的每个片段，我们根据片段周围的深度值计算一个遮挡因子。然后使用这个遮挡因子来减少或消除片段的环境光照分量。
 date: 2024-06-15 00:00:00 +0800
 categories: [Computer Grahics, LearnOpenGL, AdvancedLighting, AO]
 tags: [computergraphics, learnopengl, postprocess, ao]     # TAG names should always be lowercase
@@ -393,7 +393,7 @@ for(int i = 0; i < kernelSize; ++i)
 
 Here kernelSize and radius are variables that we can use to tweak the effect; in this case a value of 64 and 0.5 respectively. For each iteration we first transform the respective sample to view-space. We then add the view-space kernel offset sample to the view-space fragment position. Then we multiply the offset sample by radius to increase (or decrease) the effective sample radius of SSAO.
 
-这里 kernelSize 和 radius 是我们可以用来调整效果的变量；在本例中，值分别为 64 和 0.5。对于每次迭代，首先我们将相应的样本转换到视图空间。然后，我们将偏移样本乘以半径以增加（或减少）SSAO 的有效样本半径。再然后，我们将视图空间核偏移样本添加到视图空间片段位置上。
+这里 kernelSize 和 radius 是我们可以用来调整效果的变量；在本例中，值分别为 64 和 0.5。对于每次迭代，首先我们将相应的样本转换到视图空间。然后，我们将偏移样本乘以 radius 以增加（或减少）SSAO 的有效样本半径。再然后，我们将视图空间核偏移样本添加到视图空间片段位置上。
 
 Next we want to transform sample to screen-space so we can sample the position/depth value of sample as if we were rendering its position directly to the screen. As the vector is currently in view-space, we'll transform it to clip-space first using the projection matrix uniform:
 
@@ -442,7 +442,7 @@ Note that we add a small bias here to the original fragment's depth value (set t
 
 We're not completely finished yet as there is still a small issue we have to take into account. Whenever a fragment is tested for ambient occlusion that is aligned close to the edge of a surface, it will also consider depth values of surfaces far behind the test surface; these values will (incorrectly) contribute to the occlusion factor. We can solve this by introducing a range check as the following image (courtesy of John Chapman) illustrates:
 
-我们还没有完全完成，因为还有一个小问题我们必须考虑。每当为环境光遮蔽测试靠近表面边缘的片段时，它还会将远在测试片段后面的表面的深度值考虑在内（以下面左侧图片为例说明，这会导致佛像边缘和后面墙壁间产生环境光遮蔽效果，但其实佛像和后面墙壁距离还很远，它们之间没有这么明显的影响）;这些值将（错误地）影响遮挡因子。我们可以通过引入范围检查来解决这个问题，如下图所示（由 John Chapman 提供）：
+到目前为止还没有完全完成，因为还有一个小问题我们必须要考虑。每当为环境光遮蔽测试靠近表面边缘的片段时，它还会将远在测试片段后面的表面的深度值考虑在内（以下面左侧图片为例说明，这会导致佛像边缘和后面墙壁间产生环境光遮蔽效果，但其实佛像和后面墙壁距离还很远，它们之间没有这么明显的影响）；这些值将（错误地）影响遮挡因子。我们可以通过引入范围检查来解决这个问题，如下图所示（由 John Chapman 提供）：
 
 ![Range Check](/assets/img/post/LearnOpenGL-AdvancedLighting-SSAO-RangeCheck.png)
 
@@ -488,7 +488,7 @@ As we can see, ambient occlusion gives a great sense of depth. With just the amb
 
 It still doesn't look perfect, as the repeating pattern of the noise texture is clearly visible. To create a smooth ambient occlusion result we need to blur the ambient occlusion texture.
 
-这看起来仍不完美，因为使用重复噪声纹理的模式，不平滑的遮蔽效果清晰可见。为了创建平滑的环境光遮蔽结果，我们需要环境光遮蔽纹理进行模糊。
+这看起来仍不完美，因为使用重复噪声纹理的模式，不平滑的遮蔽效果清晰可见。为了创建平滑的环境光遮蔽结果，我们需要对环境光遮蔽纹理进行模糊。
 
 ## Ambient occlusion blur
 
@@ -617,7 +617,7 @@ You can find the full source code of the demo scene [here](https://github.com/ti
 
 Screen-space ambient occlusion is a highly customizable effect that relies heavily on tweaking its parameters based on the type of scene. There is no perfect combination of parameters for every type of scene. Some scenes only work with a small radius, while other scenes require a larger radius and a larger sample count for them to look realistic. The current demo uses 64 samples, which is a bit much; play around with a smaller kernel size and try to get good results.
 
-屏幕空间环境光遮蔽是一种可高度自定义的效果，它在很大程度上依赖于根据场景类型而进行的参数调整。对于每种类型的场景，没有完美的参数组合。一些场景仅在小半径时才表现的好，而另一些场景需要更大的半径和更大的样本数才能使它们看起来逼真。当前的示例使用了 64 个样本，这有点多;感兴趣的话可以尝试使用较小的核大小来获得好的结果。
+屏幕空间环境光遮蔽是一种可高度自定义的效果，它在很大程度上依赖于根据场景类型而进行的参数调整。对于每种类型的场景，没有完美的参数组合。一些场景仅在小半径时才表现的好，而另一些场景需要更大的半径和更大的样本数才能使它们看起来逼真。当前的示例使用了 64 个样本，这有点多；感兴趣的话可以尝试使用较小的核大小来获得好的结果。
 
 Some parameters you can tweak (by using uniforms for example): kernel size, radius, bias, and/or the size of the noise kernel. You can also raise the final occlusion value to a user-defined power to increase its strength:
 
