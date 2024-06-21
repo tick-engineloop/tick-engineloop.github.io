@@ -282,7 +282,7 @@ The specular part of the BRDF is a bit more advanced and is described as:
 BRDF 的镜面反射部分更为高级，其形式如下所示
 
 $$
-f_{CookTorrance} = \frac{DFG}{4(\omega_o \cdot n)(\omega_i \cdot n)}
+f_{cook-torrance} = \frac{DFG}{4(\omega_o \cdot n)(\omega_i \cdot n)}
 $$
 
 The Cook-Torrance specular BRDF is composed three functions and a normalization factor in the denominator. Each of the D, F and G symbols represent a type of function that approximates a specific part of the surface's reflective properties. These are defined as the normal **D**istribution function, the **F**resnel equation and the **G**eometry function:
@@ -577,7 +577,7 @@ Below you'll see a list of textures you'll frequently find in a PBR pipeline tog
 
 Artists set and tweak these physically based input values on a per-texel basis and can base their texture values on the physical surface properties of real-world materials. This is one of the biggest advantages of a PBR render pipeline as these physical properties of a surface remain the same, regardless of environment or lighting setup, making life easier for artists to get physically plausible results. Surfaces authored in a PBR pipeline can easily be shared among different PBR render engines, will look correct regardless of the environment they're in, and as a result look much more natural.
 
-美术师可以在纹素级别设置和调整这些基于物理的输入值，并根据真实世界材料的物理表面属性来设置纹理值。这是 PBR 渲染管线的最大优势之一，因为无论环境或光照如何设置，表面的这些物理属性都保持不变，从而使艺术家更容易获得物理上可信的效果。在 PBR 管线中制作的表面可以很容易地在不同的 PBR 渲染引擎中共享，无论它们处于何种环境中，看起来都是正确的，因此看起来也会更加自然。
+美术师可以在纹素级别设置和调整这些基于物理的输入值，并根据真实世界材料的物理表面属性来设置纹理值。这是 PBR 渲染管线的最大优势之一，因为无论环境或光照如何设置，表面的这些物理属性都保持不变，从而使美术师更容易获得物理上可信的效果。在 PBR 管线中制作的表面可以很容易地在不同的 PBR 渲染引擎中共享，无论它们处于何种环境中，看起来都是正确的，因此看起来也会更加自然。
 
 ## References
 >
