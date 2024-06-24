@@ -6,6 +6,26 @@ categories: [Computer Grahics, LearnOpenGL, AdvancedLighting]
 tags: [computergraphics, learnopengl, postprocess，shadow]     # TAG names should always be lowercase
 ---
 
+## Introduction
+
+Shadows are a result of the absence of light due to occlusion. When a light source's light rays do not hit an object because it gets occluded by some other object, the object is in shadow. Shadows add a great deal of realism to a lit scene and make it easier for a viewer to observe spatial relationships between objects. They give a greater sense of depth to our scene and objects. For example, take a look at the following image of a scene with and without shadows:
+
+阴影是光线被遮挡后在被遮挡区域出现的一种光照缺失的现象。当光源的光线由于被其他物体遮挡而无法照射到物体时，该物体就处于阴影中。阴影为光照场景增添了许多真实感，使观众更容易观察到物体之间的空间关系。它会使我们的场景和物体更具深度感。例如，请看下面有阴影和没有阴影的场景图像：
+
+![WithoutShadow And WithShadow](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-WithoutShadowAndWithShadow.png)
+
+You can see that with shadows it becomes much more obvious how the objects relate to each other. For instance, the fact that one of the cubes is floating above the others is only really noticeable when we have shadows.
+
+你可以看到，有了阴影之后，物体之间的关系就变得更加明显了。例如，其中一个立方体漂浮在其他立方体之上的事实，只有在有阴影的情况下才会非常明显。
+
+Shadows are a bit tricky to implement though, specifically because in current real-time (rasterized graphics) research a perfect shadow algorithm hasn't been developed yet. There are several good shadow approximation techniques, but they all have their little quirks and annoyances which we have to take into account.
+
+不过阴影的实现有点棘手，特别是因为在当前的实时（光栅化图形）研究中，还没有开发出完美的阴影算法。虽然有几种很好的阴影近似技术，但它们都有各自的小瑕疵和恼人之处，这是不容忽视的。
+
+One technique used by most videogames that gives decent results and is relatively easy to implement is shadow mapping. Shadow mapping is not too difficult to understand, doesn't cost too much in performance and quite easily extends into more advanced algorithms (like Omnidirectional Shadow Maps and Cascaded Shadow Maps).
+
+与之相比较而言，下面介绍的阴影贴图就很容易理解，而且实现起来很简单，在带来不错效果的同时，也不会对性能造成太大影响，很容易就能扩展到更高级的算法（如全向阴影贴图和级联阴影贴图），是大多数电子游戏都会使用的一种技术。
+
 ## Improving shadow maps
 
 We managed to get the basics of shadow mapping working, but as you can we're not there yet due to several (clearly visible) artifacts related to shadow mapping we need to fix. We'll focus on fixing these artifacts in the next sections.
