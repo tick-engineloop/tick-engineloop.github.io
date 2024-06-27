@@ -166,7 +166,7 @@ Where $I$ is the radiant flux $\Phi$ over the solid angle $\omega$.
 
 With knowledge of radiant flux, radiant intensity, and the solid angle, we can finally describe the equation for **radiance**. Radiance is described as the total observed energy in an area $A$ over the solid angle $\omega$ of a light of radiant intensity $\Phi$:
 
-有了辐射通量、辐射强度和立体角的知识后，我们终于可以描述 **辐射率** 方程了。辐射率是辐射通量为 $\Phi$ 的光从立体角 $\omega$ 方向投射到区域 $A$ 上时能观测到的总能量：
+有了辐射通量、辐射强度和立体角的知识后，我们终于可以描述 **辐射率** 方程了。辐射率是单位投射表面 $dA$ 自单位立体角 $d{\omega}_i$ 接收（或向单位立体角 $d{\omega}_o$ 射出）的辐射通量 $\Phi$：
 
 $$
 L=\frac{d^2\Phi}{ dA d\omega \cos\theta}
@@ -176,7 +176,7 @@ $$
 
 Radiance is a radiometric measure of the amount of light in an area, scaled by the incident (or incoming) angle $\theta$ of the light to the surface's normal as $\cos \theta$: light is weaker the less it directly radiates onto the surface, and strongest when it is directly perpendicular to the surface. This is similar to our perception of diffuse lighting from the [basic lighting](https://learnopengl.com/Lighting/Basic-lighting) chapter as $\cos \theta$ directly corresponds to the dot product between the light's direction vector and the surface normal:
 
-辐射率是一个区域内光线数量的辐射度量，它受到入射（或来射）光线与表面法线间夹角 $\theta$ 的余弦值 $\cos \theta$ 的影响：当直接辐射到表面上的辐射率越少时，光线就越弱，而当光线直接垂直于表面时，辐射率最大。这与我们在[基础光照](https://learnopengl.com/Lighting/Basic-lighting)一章中对漫反射光的感知类似，因为 $\cos \theta$ 直接对应于光线方向向量与表面法线之间的点积：
+辐射率是一个区域内光线数量的辐射度量，它受到入射（或来射）光线与表面法线间夹角 $\theta$ 的余弦值 $\cos \theta$ 的影响：光线相对于表面越倾斜，辐射就越弱，而当光线直接垂直于表面时，辐射最强。这与我们在[基础光照](https://learnopengl.com/Lighting/Basic-lighting)一章中对漫反射光的感知类似，因为 $\cos \theta$ 直接对应于光线方向向量与表面法线之间的点积：
 
 ```glsl
 float cosTheta = dot(lightDir, N);
@@ -184,14 +184,14 @@ float cosTheta = dot(lightDir, N);
 
 The radiance equation is quite useful as it contains most physical quantities we're interested in. If we consider the solid angle $\omega$ and the area $A$ to be infinitely small, we can use radiance to measure the flux of a single ray of light hitting a single point in space. This relation allows us to calculate the radiance of a single light ray influencing a single (fragment) point; we effectively translate the solid angle $\omega$ into a direction vector $\omega$, and $A$ into a point $p$. This way, we can directly use radiance in our shaders to calculate a single light ray's per-fragment contribution.
 
-辐射率方程非常有用，因为它包含了大多数我们感兴趣的物理量。如果认为立体角 $\omega$ 和面积 $A$ 是无穷小的，那么就可以把立体角 $\omega$ 转化为方向向量 $\omega$，把 $A$ 转化为点 $p$，我们就可以用辐射率来测量单束光线射向空间中单个点时的通量。通过这种关系，我们可以计算出作用于单个（片段）点上的单束光线的辐射率。这样，我们就可以在着色器中直接使用辐射率来计算单束光线对每个片段的贡献。
+辐射率方程非常有用，因为它包含了大多数我们感兴趣的物理量。如果认为立体角 $\omega$ 和面积 $A$ 是无穷小的，那么就可以把立体角 $\omega$ 转化为方向向量 $\omega$，把 $A$ 转化为点 $p$，我们就可以用辐射率来度量单束光线射向空间中单个点时的通量。通过这种关系，我们可以计算出作用于单个（片段）点上的单束光线的辐射率。这样，我们就可以在着色器中直接使用辐射率来计算单束光线对每个片段的贡献。
 
 > **Radient energy**: 辐射能量，单位为焦耳。<br>  **Radient flux**: 辐射通量，每单位时间的辐射能量，单位为瓦特。亦可称作“辐射功率（Radiant power）”。<br>  **Radient Intensity**: 辐射强度，每单位立体角的辐射通量。表示的是一个光源向以它自身为球心的单位球面每单位立体角所投射的辐射通量。<br>  **Radiant exitance**: 辐射出射度，表面出射的辐射通量，单位为瓦特每平方米。<br>  **Radiance**: 辐射率，每单位立体角每单位投射表面的辐射通量，单位为瓦特每球面度每平方米。可分为 exiting radiance 和 incident radiance。<br>  **Irradiance**: 辐照度，入射表面的辐射通量，单位为瓦特每平方米。Irradiance 是面积 $dA$ 上从整个半球方向上接收到的辐射通量。Radiance 只关注 $dA$ 从某一特定方向单位立体角上得到的辐射通量，Radiance 是 Irradiance 在某一方向上的微分，在半球域内对 Radiance 积分就可以得到 Irradiance。
 {: .prompt-tip }
 
 In fact, when it comes to radiance we generally care about all incoming light onto a point $p$, which is the sum of all radiance known as irradiance. With knowledge of both radiance and irradiance we can get back to the reflectance equation:
 
-事实上，在谈到辐射率时，我们通常关心的是照射到点 $p$ 上的所有入射光，即称为辐照度的所有辐射率的总和。有了辐射度和辐照度的知识，我们就可以回到反射方程：
+事实上，在谈到辐射率时，我们通常关心的是照射到点 $p$ 上的所有入射光，即称为辐照度的所有辐射率的总和。有了辐射率和辐照度的知识，我们就可以回到反射方程：
 
 $$
 L_o(p,\omega_o) = \int\limits_{\Omega} f_r(p,\omega_i,\omega_o) L_i(p,\omega_i) n \cdot \omega_i  d\omega_i
@@ -199,7 +199,7 @@ $$
 
 We now know that $L$ in the render equation represents the radiance of some point $p$ and some incoming infinitely small solid angle $\omega_i$ which can be thought of as an incoming direction vector $\omega_i$. Remember that $\cos \theta$ scales the energy based on the light's incident angle to the surface, which we find in the reflectance equation as $n \cdot \omega_i$. The reflectance equation calculates the sum of reflected radiance $L_o(p, \omega_o)$ of a point $p$ in direction $\omega_o$ which is the outgoing direction to the viewer. Or to put it differently: $L_o$ measures the reflected sum of the lights' irradiance onto point $p$ as viewed from $\omega_o$.
 
-现在我们知道，渲染方程中的 $L$ 代表了某个点 $p$ 和某个无穷小的入射立体角 $\omega_i$，可以将这个无穷小的入射立体角视为入射方向向量 $\omega_i$。请记住，我们利用光线到表面的入射角的余弦值 $\cos \theta$ 来计算能量，即就是反射方程中的 $n \cdot \omega_i$。用 $\omega_o$ 表示向着观察者的出射方向，反射方程计算的是一个点 $p$ 在 $\omega_o$ 方向上被反射的辐射率总和 $L_o(p,\omega_o)$。或者换一种说法：$L_o$ 测量的是从 $\omega_o$ 方向看向 $p$ 点时被反射的光线辐照度总和。
+现在我们知道，渲染方程中的 $L_i$ 代表了某个点 $p$ 上来自某个无穷小入射立体角 $\omega_i$ 的辐射率，可以将这个无穷小的入射立体角视为入射方向向量 $\omega_i$。请记住，我们利用光线到表面的入射角的余弦值 $\cos \theta$ 来计算能量，即就是反射方程中的 $n \cdot \omega_i$。用 $\omega_o$ 表示向着观察者的出射方向，反射方程计算的是一个点 $p$ 在 $\omega_o$ 方向上被反射的辐射率总和 $L_o(p,\omega_o)$。或者换一种说法：$L_o$ 度量的是从 $\omega_o$ 方向看向 $p$ 点时被反射的光线辐照度总和。
 
 ![Incident Angle](/assets/img/post/LearnOpenGL-PBR-Theory-IncidentAngle.jpg)
 
@@ -237,7 +237,7 @@ The reflectance equation sums up the radiance of all incoming light directions $
 
 Now the only unknown left is the $f_r$ symbol known as the BRDF or bidirectional reflective distribution function that scales or weighs the incoming radiance based on the surface's material properties.
 
-现在剩下的唯一未知数就是 $f_r$ 符号了，它被称为 BRDF 或双向反射分布函数，它的作用是根据表面的材料属性对入射辐射率进行缩放或加权。
+现在剩下的唯一未知数就是 $f_r$ 符号了，它被称为 BRDF 或双向反射分布函数，它的作用是根据表面的材质属性对入射辐射率进行缩放或加权。
 
 ## BRDF
 
