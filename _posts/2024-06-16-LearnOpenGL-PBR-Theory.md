@@ -186,12 +186,12 @@ The radiance equation is quite useful as it contains most physical quantities we
 
 辐射率方程非常有用，因为它包含了大多数我们感兴趣的物理量。如果认为立体角 $\omega$ 和面积 $A$ 是无穷小的，那么就可以把立体角 $\omega$ 转化为方向向量 $\omega$，把 $A$ 转化为点 $p$，我们就可以用辐射率来度量单束光线射向空间中单个点时的通量。通过这种关系，我们可以计算出作用于单个（片段）点上的单束光线的辐射率。这样，我们就可以在着色器中直接使用辐射率来计算单束光线对每个片段的贡献。
 
-> **Radient energy**: 辐射能量，单位为焦耳。<br>  **Radient flux**: 辐射通量，每单位时间的辐射能量，单位为瓦特。亦可称作“辐射功率（Radiant power）”。<br>  **Radient Intensity**: 辐射强度，每单位立体角的辐射通量。表示的是一个光源向以它自身为球心的单位球面每单位立体角所投射的辐射通量。<br>  **Radiant exitance**: 辐射出射度，表面出射的辐射通量，单位为瓦特每平方米。<br>  **Radiance**: 辐射率，每单位立体角每单位投射表面的辐射通量，单位为瓦特每球面度每平方米。可分为 exiting radiance 和 incident radiance。<br>  **Irradiance**: 辐照度，入射表面的辐射通量，单位为瓦特每平方米。Irradiance 是面积 $dA$ 上从整个半球方向上接收到的辐射通量。Radiance 只关注 $dA$ 从某一特定方向单位立体角上得到的辐射通量，Radiance 是 Irradiance 在某一方向上的微分，在半球域内对 Radiance 积分就可以得到 Irradiance。
+> **Radient energy**: 辐射能量，单位为焦耳。<br>  **Radient flux**: 辐射通量，每单位时间的辐射能量，单位为瓦特。亦可称作“辐射功率（Radiant power）”。<br>  **Radient Intensity**: 辐射强度，每单位立体角的辐射通量。表示的是一个光源向以它自身为球心的单位球面每单位立体角所投射的辐射通量。<br>  **Radiance**: 辐射率，每单位立体角每单位投射表面的辐射通量，单位为瓦特每球面度每平方米。可分为 exiting radiance 和 incident radiance。<br>  **Irradiance**: 辐照度，每单位入射表面的辐射通量，单位为瓦特每平方米。Irradiance 是面积 $dA$ 上从整个半球方向上接收到的辐射通量。Radiance 只关注 $dA$ 在某一特定方向单位立体角上的辐射通量，Incident Radiance 是 Irradiance 在某一方向上的微分，在半球域内对 Incident Radiance 积分就可以得到 Irradiance。<br>  **Radiant exitance**: 辐射出射度，表面出射的辐射通量，单位为瓦特每平方米。
 {: .prompt-tip }
 
 In fact, when it comes to radiance we generally care about all incoming light onto a point $p$, which is the sum of all radiance known as irradiance. With knowledge of both radiance and irradiance we can get back to the reflectance equation:
 
-事实上，在谈到辐射率时，我们通常关心的是照射到点 $p$ 上的所有入射光，即称为辐照度的所有辐射率的总和。有了辐射率和辐照度的知识，我们就可以回到反射方程：
+事实上，在谈到辐射率时，我们通常关心的是照射到点 $p$ 上的所有入射光，即称为辐照度的所有入射辐射率的总和。有了辐射率和辐照度的知识，我们就可以回到反射方程：
 
 $$
 L_o(p,\omega_o) = \int\limits_{\Omega} f_r(p,\omega_i,\omega_o) L_i(p,\omega_i) n \cdot \omega_i  d\omega_i
@@ -199,7 +199,10 @@ $$
 
 We now know that $L$ in the render equation represents the radiance of some point $p$ and some incoming infinitely small solid angle $\omega_i$ which can be thought of as an incoming direction vector $\omega_i$. Remember that $\cos \theta$ scales the energy based on the light's incident angle to the surface, which we find in the reflectance equation as $n \cdot \omega_i$. The reflectance equation calculates the sum of reflected radiance $L_o(p, \omega_o)$ of a point $p$ in direction $\omega_o$ which is the outgoing direction to the viewer. Or to put it differently: $L_o$ measures the reflected sum of the lights' irradiance onto point $p$ as viewed from $\omega_o$.
 
-现在我们知道，渲染方程中的 $L_i$ 代表了某个点 $p$ 上来自某个无穷小入射立体角 $\omega_i$ 的辐射率，可以将这个无穷小的入射立体角视为入射方向向量 $\omega_i$。请记住，我们利用光线到表面的入射角的余弦值 $\cos \theta$ 来计算能量，即就是反射方程中的 $n \cdot \omega_i$。用 $\omega_o$ 表示向着观察者的出射方向，反射方程计算的是一个点 $p$ 在 $\omega_o$ 方向上被反射的辐射率总和 $L_o(p,\omega_o)$。或者换一种说法：$L_o$ 度量的是从 $\omega_o$ 方向看向 $p$ 点时被反射的光线辐照度总和。
+现在我们知道，渲染方程中的 $L_i$ 代表了某个点 $p$ 上来自某个无穷小立体角 $\omega_i$ 的入射辐射率，可以将这个无穷小的立体角视为入射方向向量 $\omega_i$。请注意，我们利用表面上光线入射角的余弦值 $\cos \theta$ 来对能量进行缩放，即就是反射方程中的 $n \cdot \omega_i$。用 $\omega_o$ 表示向着观察者的出射方向，反射方程计算的是一个点 $p$ 从半球上各入射方向辐射率中往 $\omega_o$ 反射的那部分辐射率之和 $L_o(p,\omega_o)$。或者换一种说法：$L_o$ 度量的是从 $\omega_o$ 方向看向 $p$ 点时光线辐照度中被反射的部分。
+
+> p 点上来自半球所有 $\omega_i$ 方向的入射辐射能量都会往某个 $\omega_o$ 出射方向反射一部分能量，那么 p 点往 $\omega_o$ 方向辐出的能量就是这些入射辐射能量中被反射部分总和。
+{: .prompt-tip }
 
 ![Incident Angle](/assets/img/post/LearnOpenGL-PBR-Theory-IncidentAngle.jpg)
 
@@ -233,7 +236,7 @@ By scaling the steps by dW, the sum will equal the total area or volume of the i
 
 The reflectance equation sums up the radiance of all incoming light directions $\omega_i$ over the hemisphere $\Omega$ scaled by $f_r$ that hit point $p$ and returns the sum of reflected light $L_o$ in the viewer's direction. The incoming radiance can come from [light sources](https://learnopengl.com/PBR/Lighting) as we're familiar with, or from an environment map measuring the radiance of every incoming direction as we'll discuss in the [IBL](https://learnopengl.com/PBR/IBL/Diffuse-irradiance) chapters.
 
-反射方程将半球 $\Omega$ 上所有到达入射点 $p$ 的入射光方向 $\omega_i$ 的辐射率经 $f_r$ 缩放后相加，并返回观察者方向的反射光总和 $L_o$。入射辐射率可以来自我们熟悉的[光源](https://learnopengl.com/PBR/Lighting)，也可以来自测量了每个入射方向辐射率的环境图，我们将在 [IBL](https://learnopengl.com/PBR/IBL/Diffuse-irradiance) 章节中讨论。
+反射方程将到达点 $p$ 的半球 $\Omega$ 上所有入射光方向 $\omega_i$ 的辐射率经 $f_r$ 缩放后相加，并返回观察者方向的反射光总和 $L_o$。入射辐射率可以来自我们熟悉的[光源](https://learnopengl.com/PBR/Lighting)，也可以来自测量了每个入射方向辐射率的环境图，我们将在 [IBL](https://learnopengl.com/PBR/IBL/Diffuse-irradiance) 章节中讨论。
 
 Now the only unknown left is the $f_r$ symbol known as the BRDF or bidirectional reflective distribution function that scales or weighs the incoming radiance based on the surface's material properties.
 
