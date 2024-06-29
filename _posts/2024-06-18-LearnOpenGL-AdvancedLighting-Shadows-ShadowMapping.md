@@ -26,6 +26,430 @@ One technique used by most videogames that gives decent results and is relativel
 
 与之相比较而言，下面介绍的阴影贴图就很容易理解，而且实现起来很简单，在带来不错效果的同时，也不会对性能造成太大影响，很容易就能扩展到更高级的算法（如全向阴影贴图和级联阴影贴图），是大多数电子游戏都会使用的一种技术。
 
+## Shadow mapping
+
+The idea behind shadow mapping is quite simple: we render the scene from the light's point of view and everything we see from the light's perspective is lit and everything we can't see must be in shadow. Imagine a floor section with a large box between itself and a light source. Since the light source will see this box and not the floor section when looking in its direction that specific floor section should be in shadow.
+
+阴影贴图背后的原理非常简单：我们从光源的视角来渲染场景，这样视野范围内能看到的所有东西都是亮的，其他看不到的东西都必然处于阴影当中。试想一下，在地板和光源之间有一个大盒子。由于光源从它的方向看去会看到这个盒子，而不是地板部分，所以地板部分应该处于阴影中。
+
+![Theory](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-Theory.png)
+
+Here all the blue lines represent the fragments that the light source can see. The occluded fragments are shown as black lines: these are rendered as being shadowed. If we were to draw a line or ray from the light source to a fragment on the right-most box we can see the ray first hits the floating container before hitting the right-most container. As a result, the floating container's fragment is lit and the right-most container's fragment is not lit and thus in shadow.
+
+上图中所有用蓝色标识的区域代表光源可以照射到的片段。用黑色标识的区域是被遮挡的片段：这些片段会被渲染为阴影。如果我们在光源和最右边盒子上的片段之间画一条线或射线，可以看到射线首先击中悬浮的盒子，然后才击中最右边的盒子。因此，悬浮盒子上用蓝色标识的首先被击中的片段会被照亮，而最右边盒子上用黑色标识的后来才被击中的片段不会被照亮，从而处于阴影中。
+
+We want to get the point on the ray where it first hit an object and compare this closest point to other points on this ray. We then do a basic test to see if a test point's ray position is further down the ray than the closest point and if so, the test point must be in shadow. Iterating through possibly thousands of light rays from such a light source is an extremely inefficient approach and doesn't lend itself too well for real-time rendering. We can do something similar, but without casting light rays. Instead, we use something we're quite familiar with: the depth buffer.
+
+从光源发出的射线可能会与场景里众多物体相交，随之产生一系列相交点，我们希望得到的是射线最先击中的物体上离光源最近的交点，并将这个最近的点与射线上的其他点进行比较，看看其他点是否比最近点更远，如果是，则这个测试点一定处于阴影中。但是从这样一个光源中迭代可能成千上万条光线是一种效率极低的方法，而且不太适合实时渲染。所以我们可以使用深度缓冲来做类似的事情，这样就可以避免投射光线。
+
+You may remember from the depth testing chapter that a value in the depth buffer corresponds to the depth of a fragment clamped to [0,1] from the camera's point of view. What if we were to render the scene from the light's perspective and store the resulting depth values in a texture? This way, we can sample the closest depth values as seen from the light's perspective. After all, the depth values show the first fragment visible from the light's perspective. We store all these depth values in a texture that we call a depth map or shadow map.
+
+大家可能还记得，在深度测试一章中，深度缓冲区中的值对应于摄像机视角下被限制在 [0,1] 范围内的片段深度。如果我们从光源的视角渲染场景，并将生成的深度值存储在纹理中，会怎么样呢？通过这种方式，我们就可以采样光源视角下的最近深度值。毕竟，深度纹理中存储的深度值代表的是光源视角下第一个可见片段的深度信息。我们将存储所有这些深度值的纹理称之为深度贴图或阴影贴图。
+
+![Light Space](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-LightSpace.png)
+
+The left image shows a directional light source (all light rays are parallel) casting a shadow on the surface below the cube. Using the depth values stored in the depth map we find the closest point and use that to determine whether fragments are in shadow. We create the depth map by rendering the scene (from the light's perspective) using a view and projection matrix specific to that light source. This projection and view matrix together form a transformation $T$ that transforms any 3D position to the light's (visible) coordinate space.
+
+左图显示的是一个定向光（所有光线都是平行的）在立方体下方的表面上投射了一块阴影，其中黄色标识区域场景片段的深度将被存储到深度贴图中。我们通过使用光源专用的视图和投影矩阵渲染场景（从光源的视角）来创建深度图。投影矩阵和视图矩阵共同构成一个变换 $T$，可将场景中任何三维位置变换到光源的（视图）坐标空间。利用深度图中存储的深度值，我们可以在光线与场景众多物体的一系列交点中找到离光源最近的点，并以此来确定观察者视角下看到的片段是否处于阴影中。
+
+> A directional light doesn't have a position as it's modelled to be infinitely far away. However, for the sake of shadow mapping we need to render the scene from a light's perspective and thus render the scene from a position somewhere along the lines of the light direction. <br> <br> 类似于太阳光这样的定向光没有光源位置，因为它被视为无穷远的。但是，在实现阴影贴图时，从光源的视角来渲染场景又是我们所需要的，因此可以选择光线方向上某个合适的位置来进行渲染。
+{: .prompt-tip }
+
+In the right image we see the same directional light and the viewer. We render a fragment at point $\bar{\color{red}{P}}$ for which we have to determine whether it is in shadow. To do this, we first transform point $\bar{\color{red}{P}}$ to the light's coordinate space using $T$. Since point $\bar{\color{red}{P}}$ is now as seen from the light's perspective, its `z` coordinate corresponds to its depth which in this example is `0.9`. Using point $\bar{\color{red}{P}}$ we can also index the depth/shadow map to obtain the closest visible depth from the light's perspective, which is at point $\bar{\color{green}{C}}$ with a sampled depth of `0.4`. Since indexing the depth map returns a depth smaller than the depth at point $\bar{\color{red}{P}}$ we can conclude point $\bar{\color{red}{P}}$ is occluded and thus in shadow. 
+
+在右图中，我们看到了方向相同的光线和观察者。我们渲染一个在 $\bar{\color{red}{P}}$ 点处的片段，需要确定它是否处于阴影当中。为此，我们首先使用 $T$ 将 $\bar{\color{red}{P}}$ 点转换到光源的视图坐标空间。由于 $\bar{\color{red}{P}}$ 点现在是从光源的视角看到的，所以它的 `z` 坐标对应于深度，在本例中为 `0.9`。通过使用点 $\bar{\color{red}{P}}$，我们还可以对深度/阴影贴图进行索引，以获得从光源视角看时最近的可见深度，即采样深度为 `0.4` 的点 $\bar{\color{green}{C}}$。由于深度图索引返回的深度小于  $\bar{\color{red}{P}}$ 点的深度，我们可以得出结论：$\bar{\color{red}{P}}$ 点被遮挡，因此它处于阴影当中。
+
+Shadow mapping therefore consists of two passes: first we render the depth map, and in the second pass we render the scene as normal and use the generated depth map to calculate whether fragments are in shadow. It may sound a bit complicated, but as soon as we walk through the technique step-by-step it'll likely start to make sense.
+
+因此，阴影映射由两部分组成：第一部分是渲染深度图，第二部分是像往常一样渲染场景，并使用生成的深度图来计算片段是否处于阴影当中。这听起来可能有点复杂，但只要我们一步一步地了解这项技术，就会明白其中的道理。
+
+## The depth map
+
+The first pass requires us to generate a depth map. The depth map is the depth texture as rendered from the light's perspective that we'll be using for testing for shadows. Because we need to store the rendered result of a scene into a texture we're going to need [framebuffers](https://learnopengl.com/Advanced-OpenGL/Framebuffers) again.
+
+第一个通道用来生成深度贴图。深度贴图是以光源的视角渲染的深度纹理，我们将使用它来计算阴影。因为需要将场景的渲染结果存储到纹理中，所以我们再一次需要[帧缓冲](https://learnopengl.com/Advanced-OpenGL/Framebuffers)。
+
+First we'll create a framebuffer object for rendering the depth map:
+
+首先，我们要为渲染深度贴图创建一个帧缓冲对象：
+
+```c++
+unsigned int depthMapFBO;
+glGenFramebuffers(1, &depthMapFBO); 
+```
+
+Next we create a 2D texture that we'll use as the framebuffer's depth buffer:
+
+接下来，创建一个 2D 纹理，用作帧缓冲的深度缓冲：
+
+```c++
+const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+
+unsigned int depthMap;
+glGenTextures(1, &depthMap);
+glBindTexture(GL_TEXTURE_2D, depthMap);
+glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 
+             SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); 
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+```
+Generating the depth map shouldn't look too complicated. Because we only care about depth values we specify the texture's formats as GL_DEPTH_COMPONENT. We also give the texture a width and height of `1024`: this is the resolution of the depth map.
+
+生成深度贴图看起来并不复杂。因为我们只关心深度值，所以将纹理的格式指定为了 GL_DEPTH_COMPONENT。我们还将纹理的宽度和高度设定为 `1024`：这就是深度贴图的分辨率。
+
+With the generated depth texture we can attach it as the framebuffer's depth buffer:
+
+有了生成的深度纹理，我们就可以关联它将其作为帧缓冲的深度缓冲：
+
+```c++
+glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+glDrawBuffer(GL_NONE);
+glReadBuffer(GL_NONE);
+glBindFramebuffer(GL_FRAMEBUFFER, 0);  
+```
+
+We only need the depth information when rendering the scene from the light's perspective so there is no need for a color buffer. A framebuffer object however is not complete without a color buffer so we need to explicitly tell OpenGL we're not going to render any color data. We do this by setting both the read and draw buffer to GL_NONE with glDrawBuffer and glReadbuffer.
+
+在从光源的视角渲染场景时，我们只需要其中的深度信息，因此不需要颜色缓冲区。然而，没有颜色缓冲区的帧缓冲对象是不完整的，因此需要明确告诉 OpenGL 我们不会渲染任何颜色数据。为此，可以使用 glDrawBuffer 和 glReadbuffer 将读取和绘制缓冲区都设置为 GL_NONE。
+
+With a properly configured framebuffer that renders depth values to a texture we can start the first pass: generate the depth map. When combined with the second pass, the complete rendering stage will look a bit like this:
+
+有了正确配置的帧缓冲，就能将深度值渲染到纹理，然后我们可以开始第一个通道了：生成深度贴图。结合第二个通道，整个渲染阶段看起来就是这样：
+
+```c++
+// 1. first render to depth map
+glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    ConfigureShaderAndMatrices();
+    RenderScene();
+glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+// 2. then render scene as normal with shadow mapping (using depth map)
+glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+ConfigureShaderAndMatrices();
+glBindTexture(GL_TEXTURE_2D, depthMap);
+RenderScene();
+```
+
+This code left out some details, but it'll give you the general idea of shadow mapping. What is important to note here are the calls to glViewport. Because shadow maps often have a different resolution compared to what we originally render the scene in (usually the window resolution), we need to change the viewport parameters to accommodate for the size of the shadow map. If we forget to update the viewport parameters, the resulting depth map will be either incomplete or too small.
+
+这段代码隐藏了一些细节，但可以让你大致了解阴影贴图的一般思想。这里需要注意的是对 glViewport 的调用。由于阴影贴图的分辨率通常不同于我们最初渲染场景的分辨率（通常是窗口分辨率），因此需要在生成深度图的通道中一开始就更改视口参数，以适应阴影贴图的大小。如果忘记更改视口参数，那么生成的深度贴图可能会不完整或者尺寸过小。
+
+### Light space transform
+
+An unknown in the previous snippet of code is the ConfigureShaderAndMatrices function. In the second pass this is business as usual: make sure proper projection and view matrices are set, and set the relevant model matrices per object. However, in the first pass we need to use a different projection and view matrix to render the scene from the light's point of view.
+
+上一段代码中的一个未知项是配置着色器和矩阵函数（ConfigureShaderAndMatrices）。在第二个通道中，这个函数做的事情与往常一样：确保设置了适当的投影和视图矩阵，并为每个对象设置了相关的模型矩阵。不过，在第一个通道中，我们需要使用不同的投影和视图矩阵，以便从光源的视角渲染场景。
+
+Because we're modelling a directional light source, all its light rays are parallel. For this reason, we're going to use an orthographic projection matrix for the light source where there is no perspective deform:
+
+因为我们要模拟的是一个定向光源，所以它的所有光线都是平行的。基于这个原因，我们将为光源使用正交投影矩阵，这样就不存在透视变形：
+
+```c++
+float near_plane = 1.0f, far_plane = 7.5f;
+glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane); 
+```
+
+Here is an example orthographic projection matrix as used in this chapter's demo scene. Because a projection matrix indirectly determines the range of what is visible (e.g. what is not clipped) you want to make sure the size of the projection frustum correctly contains the objects you want to be in the depth map. When objects or fragments are not in the depth map they will not produce shadows.
+
+上面是本章演示场景中使用的正交投影矩阵示例。由于投影矩阵间接决定了可见区域的范围（例如什么物体不会被裁剪），因此您需要确保投影视锥体拥有合适的大小，能够正确包含您希望在深度图中出现的物体。当物体或片段因为被裁剪而不在深度图中时，它们就不会生成阴影。
+
+To create a view matrix to transform each object so they're visible from the light's point of view, we're going to use the infamous glm::lookAt function; this time with the light source's position looking at the scene's center.
+
+为了把每个物体转换到光源视点的视图空间中，我们将使用大名鼎鼎的 glm::lookAt 函数创建一个视图矩阵；这次光源的位置是在场景中心。
+
+```c++
+glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f), 
+                                  glm::vec3( 0.0f, 0.0f,  0.0f), 
+                                  glm::vec3( 0.0f, 1.0f,  0.0f)); 
+```
+
+Combining these two gives us a light space transformation matrix that transforms each world-space vector into the space as visible from the light source; exactly what we need to render the depth map.
+
+将视图和投影矩阵这两者结合起来，我们就得到了一个光源空间变换矩阵，它能将每个世界空间位置向量变换到光源视角下的可见空间中去；这正是我们渲染深度图所需要的。
+
+```c++
+glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+```
+
+This lightSpaceMatrix is the transformation matrix that we earlier denoted as $T$. With this lightSpaceMatrix, we can render the scene as usual as long as we give each shader the light-space equivalents of the projection and view matrices. However, we only care about depth values and not all the expensive fragment (lighting) calculations. To save performance we're going to use a different, but much simpler shader for rendering to the depth map.
+
+这个 lightSpaceMatrix 就是我们之前用 $T$ 表示的变换矩阵。有了这个 lightSpaceMatrix，只要给每个着色器提供光源视角空间变换矩阵，我们就可以像往常一样渲染场景。不过，我们只关心深度值，而不是所有昂贵的片段（光照）计算。为了提升性能，我们将使用另一种更简单的着色器来渲染深度贴图。
+
+### Render to depth map
+
+When we render the scene from the light's perspective we'd much rather use a simple shader that only transforms the vertices to light space and not much more. For such a simple shader called simpleDepthShader we'll use the following vertex shader:
+
+在从光源的视角渲染场景时，我们会使用一个比较简单的着色器，只将顶点转换到光源视角可见空间，而不做其他的事情。对于这样的简单着色器我们将其命名为 simpleDepthShader：
+
+```glsl
+#version 330 core
+layout (location = 0) in vec3 aPos;
+
+uniform mat4 lightSpaceMatrix;
+uniform mat4 model;
+
+void main()
+{
+    gl_Position = lightSpaceMatrix * model * vec4(aPos, 1.0);
+} 
+```
+
+This vertex shader takes a per-object model, a vertex, and transforms all vertices to light space using lightSpaceMatrix.
+
+这个顶点着色器接收每个物体对象的模型矩阵和一个顶点，并使用 lightSpaceMatrix 将所有顶点转换到光源视角可见空间。
+
+Since we have no color buffer and disabled the draw and read buffers, the resulting fragments do not require any processing so we can simply use an empty fragment shader:
+
+由于禁用了绘制和读取缓冲，我们就没有了颜色缓冲，所以生成的片段不需要任何处理，只需使用空的片段着色器即可：
+
+```glsl
+#version 330 core
+
+void main()
+{             
+    // gl_FragDepth = gl_FragCoord.z;
+}  
+```
+
+This empty fragment shader does no processing whatsoever, and at the end of its run the depth buffer is updated. We could explicitly set the depth by uncommenting its one line, but this is effectively what happens behind the scene anyways.
+
+这个空的片段着色器什么都不做，运行结束时会更新深度缓冲区。我们可以通过取消注释那一行来显式地设置深度，无论哪种方式实际上都是幕后发生的事情。
+
+Rendering the depth/shadow map now effectively becomes:
+
+现在，渲染深度/阴影贴图实际上变成了：
+
+```c++
+simpleDepthShader.use();
+glUniformMatrix4fv(lightSpaceMatrixLocation, 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+
+glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    RenderScene(simpleDepthShader);
+glBindFramebuffer(GL_FRAMEBUFFER, 0); 
+```
+
+Here the RenderScene function takes a shader program, calls all relevant drawing functions and sets the corresponding model matrices where necessary.
+
+在这里，RenderScene 函数接收着色器程序，调用所有相关的绘图函数，并在必要时设置相应的模型矩阵。
+
+The result is a nicely filled depth buffer holding the closest depth of each visible fragment from the light's perspective. By rendering this texture onto a 2D quad that fills the screen (similar to what we did in the post-processing section at the end of the [framebuffers](https://learnopengl.com/Advanced-OpenGL/Framebuffers) chapter) we get something like this:
+
+最终生成了一个深度缓冲，其中保存了从光源视角看到的每个可见片段的深度值。通过将此纹理渲染到填充窗口屏幕的 2D 四边形上（类似于在[帧缓冲](https://learnopengl.com/Advanced-OpenGL/Framebuffers)章节末尾的后处理中，我们所做的工作），我们可以得到类似下面的结果：
+
+![Depth Map](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-DepthMap.png)
+
+For rendering the depth map onto a quad we used the following fragment shader:
+
+为了将深度贴图渲染到四边形上，我们使用下面的片段着色器：
+
+```glsl
+#version 330 core
+out vec4 FragColor;
+  
+in vec2 TexCoords;
+
+uniform sampler2D depthMap;
+
+void main()
+{             
+    float depthValue = texture(depthMap, TexCoords).r;
+    FragColor = vec4(vec3(depthValue), 1.0);
+}
+```
+
+Note that there are some subtle changes when displaying depth using a perspective projection matrix instead of an orthographic projection matrix as depth is non-linear when using perspective projection. At the end of this chapter we'll discuss some of these subtle differences.
+
+请注意，因为相较于正交投影而言，透视投影变换后深度是非线性的，所以在使用透视投影生成深度贴图后，深度可视化会有一些微妙的变化。在本章结尾，我们将讨论其中的一些细微差别。
+
+You can find the source code for rendering a scene to a depth map [here](https://github.com/tick-engineloop/LearnOpenGL/tree/master/src/5.advanced_lighting/3.1.1.shadow_mapping_depth).
+
+您可以在[此处](https://github.com/tick-engineloop/LearnOpenGL/tree/master/src/5.advanced_lighting/3.1.1.shadow_mapping_depth)找到将场景渲染为深度图的源代码。
+
+## Rendering shadows
+
+With a properly generated depth map we can start rendering the actual shadows. The code to check if a fragment is in shadow is (quite obviously) executed in the fragment shader, but we do the light-space transformation in the vertex shader:
+
+正确地生成深度贴图后，我们就可以开始渲染实际的阴影了。检查片段是否处于阴影中的代码（很明显）是在片段着色器中执行的，不过在此之前，我们还要在顶点着色器中把顶点从世界空间转换到光源视角下的可见空间：
+
+```glsl
+#version 330 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+layout (location = 2) in vec2 aTexCoords;
+
+out VS_OUT {
+    vec3 FragPos;
+    vec3 Normal;
+    vec2 TexCoords;
+    vec4 FragPosLightSpace;
+} vs_out;
+
+uniform mat4 projection;
+uniform mat4 view;
+uniform mat4 model;
+uniform mat4 lightSpaceMatrix;
+
+void main()
+{    
+    vs_out.FragPos = vec3(model * vec4(aPos, 1.0));
+    vs_out.Normal = transpose(inverse(mat3(model))) * aNormal;
+    vs_out.TexCoords = aTexCoords;
+    vs_out.FragPosLightSpace = lightSpaceMatrix * vec4(vs_out.FragPos, 1.0);
+    gl_Position = projection * view * vec4(vs_out.FragPos, 1.0);
+}
+```
+
+What is new here is the extra output vector FragPosLightSpace. We take the same lightSpaceMatrix (used to transform vertices to light space in the depth map stage) and transform the world-space vertex position to light space for use in the fragment shader.
+
+这里新添加了额外的输出向量 FragPosLightSpace。我们使用相同的 lightSpaceMatrix（在生成深度贴图阶段，这个矩阵也被用于将顶点转换到光源视角下的可见空间），将世界空间顶点位置转换到光源视角下的可见空间中去，供片段着色器使用。
+
+The main fragment shader we'll use to render the scene uses the Blinn-Phong lighting model. Within the fragment shader we then calculate a shadow value that is either 1.0 when the fragment is in shadow or 0.0 when not in shadow. The resulting diffuse and specular components are then multiplied by this shadow component. Because shadows are rarely completely dark (due to light scattering) we leave the ambient component out of the shadow multiplications.
+
+主片段着色器使用 Blinn-Phong 光照模型来渲染场景。然后，我们在片段着色器中计算 `shadow`，当它是 1.0 时，片段处于阴影当中；当它是 0.0 时，片段不处于阴影当中。最后将得到的漫反射和镜面反射分量乘以这个阴影部件。由于阴影很少是完全黑暗的（由于光散射），所以我们在执行阴影乘操作时把环境分量排除在外。
+
+```glsl
+#version 330 core
+out vec4 FragColor;
+
+in VS_OUT {
+    vec3 FragPos;
+    vec3 Normal;
+    vec2 TexCoords;
+    vec4 FragPosLightSpace;
+} fs_in;
+
+uniform sampler2D diffuseTexture;
+uniform sampler2D shadowMap;
+
+uniform vec3 lightPos;
+uniform vec3 viewPos;
+
+float ShadowCalculation(vec4 fragPosLightSpace)
+{
+    [...]
+}
+
+void main()
+{           
+    vec3 color = texture(diffuseTexture, fs_in.TexCoords).rgb;
+    vec3 normal = normalize(fs_in.Normal);
+    vec3 lightColor = vec3(1.0);
+    // ambient
+    vec3 ambient = 0.15 * lightColor;
+    // diffuse
+    vec3 lightDir = normalize(lightPos - fs_in.FragPos);
+    float diff = max(dot(lightDir, normal), 0.0);
+    vec3 diffuse = diff * lightColor;
+    // specular
+    vec3 viewDir = normalize(viewPos - fs_in.FragPos);
+    float spec = 0.0;
+    vec3 halfwayDir = normalize(lightDir + viewDir);  
+    spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
+    vec3 specular = spec * lightColor;    
+    // calculate shadow
+    float shadow = ShadowCalculation(fs_in.FragPosLightSpace);       
+    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;    
+    
+    FragColor = vec4(lighting, 1.0);
+}
+```
+
+The fragment shader is largely a copy from what we used in the advanced lighting chapter, but with an added shadow calculation. We declared a function ShadowCalculation that does most of the shadow work. At the end of the fragment shader, we multiply the diffuse and specular contributions by the inverse of the shadow component e.g. how much the fragment is not in shadow. This fragment shader takes as extra input the light-space fragment position and the depth map generated from the first render pass.
+
+片段着色器中很大一部分是从高级光照章节中我们使用过的着色器里复制而来，但增加了阴影计算。我们声明了一个函数 ShadowCalculation，它做了大部分阴影计算工作。在片段着色器的末尾，我们将漫反射和镜面反射对光照的贡献乘以 `1.0 - shadow`（这表示一个片段中有多少部分没有在阴影中）。这个片段着色器还需要两个额外输入，一个是光源视角下可见空间内的片段位置，另一个是第一个渲染通道中得到的深度贴图。
+
+The first thing to do to check whether a fragment is in shadow, is transform the light-space fragment position in clip-space to normalized device coordinates. When we output a clip-space vertex position to gl_Position in the vertex shader, OpenGL automatically does a perspective divide e.g. transform clip-space coordinates in the range [-w,w] to [-1,1] by dividing the x, y and z component by the vector's w component. As the clip-space FragPosLightSpace is not passed to the fragment shader through gl_Position, we have to do this perspective divide ourselves:
+
+要检查片段是否处于阴影当中，首先要做的是将光源视角裁剪空间中片段位置转换为归一化设备坐标。当我们将裁剪空间顶点位置输出到顶点着色器中的 gl_Position 时，OpenGL 会自动进行透视除，例如，通过将向量的 x、y 和 z 分量分别除以其 w 分量，可以将范围为 [-w, w] 的裁剪空间坐标转换到 [-1, 1] 。由于裁剪空间坐标 FragPosLightSpace 并未通过 gl_Position 传递给片段着色器，因此我们必须自己进行透视除：
+
+```glsl
+float ShadowCalculation(vec4 fragPosLightSpace)
+{
+    // perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    [...]
+}
+```
+
+This returns the fragment's light-space position in the range [-1, 1].
+
+这返回片段的光源视角归一化设备坐标位置，位于 [-1, 1] 范围之内。
+
+> When using an orthographic projection matrix the w component of a vertex remains untouched so this step is actually quite meaningless. However, it is necessary when using perspective projection so keeping this line ensures it works with both projection matrices. <br> <br> 在使用正交投影矩阵时，顶点的 w 分量不会产生任何影响，因此这一步实际上毫无意义。不过，在使用透视投影时，这一步是必要的，因此保留这一行可确保在两种投影矩阵下都能正常工作。
+{: .prompt-tip }
+
+Because the depth from the depth map is in the range [0, 1] and we also want to use projCoords to sample from the depth map, we transform the NDC coordinates to the range [0, 1]:
+
+由于深度图中的深度范围是 [0, 1]，并且我们要使用 projCoords 从深度图中采样，因此我们将其 NDC 坐标转换到 [0, 1] 范围：
+
+```glsl
+projCoords = projCoords * 0.5 + 0.5;
+```
+
+With these projected coordinates we can sample the depth map as the resulting [0, 1] coordinates from projCoords directly correspond to the transformed NDC coordinates from the first render pass. This gives us the closest depth from the light's point of view:
+
+有了这个 [0, 1] 范围内的 projCoords，就可以对深度图进行采样。这样，我们就能获得光源视角下最近可见物体片段的深度：
+
+```
+float closestDepth = texture(shadowMap, projCoords.xy).r; 
+```
+
+To get the current depth at this fragment we simply retrieve the projected vector's z coordinate which equals the depth of this fragment from the light's perspective.
+
+要获得这个片段的当前深度，我们只需查询 projCoords 的 z 坐标，它等于从光源视角看向该片段时的深度。
+
+```glsl
+float currentDepth = projCoords.z; 
+```
+
+The actual comparison is then simply a check whether currentDepth is higher than closestDepth and if so, the fragment is in shadow:
+
+目前的比较只是检查 currentDepth 是否大于 closestDepth，如果是，则片段处于阴影当中：
+
+```glsl
+float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
+```
+
+The complete ShadowCalculation function then becomes:
+
+完整的 ShadowCalculation 函数是下面这样：
+
+```glsl
+float ShadowCalculation(vec4 fragPosLightSpace)
+{
+    // perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(shadowMap, projCoords.xy).r; 
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+    // check whether current frag pos is in shadow
+    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
+
+    return shadow;
+}  
+```
+
+Activating this shader, binding the proper textures, and activating the default projection and view matrices in the second render pass should give you a result similar to the image below:
+
+应用这个着色器，绑定适当的纹理，并在第二个渲染通道中使用观察者的投影矩阵和视图矩阵，就可以得到类似下图的效果：
+
+![Shadows](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-Shadows.png)
+
+If you did things right you should indeed see (albeit with quite a few artifacts) shadows on the floor and the cubes. You can find the source code of the demo application [here](https://github.com/tick-engineloop/LearnOpenGL/tree/master/src/5.advanced_lighting/3.1.2.shadow_mapping_base).
+
+如果操作得当，你应该可以看到地板和立方体上的阴影（尽管有不少伪影）。你可以在这里找到演示程序的[源代码](https://github.com/tick-engineloop/LearnOpenGL/tree/master/src/5.advanced_lighting/3.1.2.shadow_mapping_base)。
+
 ## Improving shadow maps
 
 We managed to get the basics of shadow mapping working, but as you can we're not there yet due to several (clearly visible) artifacts related to shadow mapping we need to fix. We'll focus on fixing these artifacts in the next sections.
