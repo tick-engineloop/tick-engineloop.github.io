@@ -246,11 +246,11 @@ Now the only unknown left is the $f_r$ symbol known as the BRDF or bidirectional
 
 The BRDF, or bidirectional reflective distribution function, is a function that takes as input the incoming (light) direction $\omega_i$, the outgoing (view) direction $\omega_o$, the surface normal $n$, and a surface parameter $a$ that represents the microsurface's roughness. The BRDF approximates how much each individual light ray $\omega_i$ contributes to the final reflected light of an opaque surface given its material properties. For instance, if the surface has a perfectly smooth surface (~like a mirror) the BRDF function would return 0.0 for all incoming light rays $\omega_i$ except the one ray that has the same (reflected) angle as the outgoing ray $\omega_o$ at which the function returns 1.0.
 
-BRDF，即双向反射分布函数，以入射（光线）方向 $\omega_i$、出射（视线）方向 $\omega_o$、表面法线 $n$ 和表示微表面粗糙度的表面参数 $a$ 作为输入。BRDF 近似表示了一个给定材质属性的不透明表面上每束入射光线 $\omega_i$ 对最终反射出来光线 $\omega_o$ 的贡献度。例如，如果表面是完全光滑的（就像一面镜子），那么只有在入射光线的入射角与出射光线 $\omega_o$ 的反射角相同时，该函数才会返回 1.0，对于剩余所有其他入射角度光线 $\omega_i$，BRDF 函数都将返回 0.0。
+BRDF，即双向反射分布函数，以入射（光线）方向 $\omega_i$、出射（视线）方向 $\omega_o$、表面法线 $n$ 和表示微表面粗糙度的表面参数 $a$ 作为输入。BRDF 近似表示了一个给定材质属性的不透明表面上每束 $\omega_i$ 方向入射光线对最终 $\omega_o$ 方向反射出来光线的贡献度。例如，如果表面是完全光滑的（就像一面镜子），那么只有在入射光线的入射角与 $\omega_o$ 方向出射光线的反射角相同时，该函数才会返回 1.0，对于剩下所有其他 $\omega_i$ 方向入射光线，BRDF 函数都将返回 0.0。
 
 A BRDF approximates the material's reflective and refractive properties based on the previously discussed microfacet theory. For a BRDF to be physically plausible it has to respect the law of energy conservation i.e. the sum of reflected light should never exceed the amount of incoming light. Technically, Blinn-Phong is considered a BRDF taking the same $\omega_i$ and $\omega_o$ as inputs. However, Blinn-Phong is not considered physically based as it doesn't adhere to the energy conservation principle. There are several physically based BRDFs out there to approximate the surface's reaction to light. However, almost all real-time PBR render pipelines use a BRDF known as the Cook-Torrance BRDF.
 
-BRDF 是根据微表面理论对材质的反射和折射属性进行的近似分析。要使 BRDF 在物理上合理，就必须遵守能量守恒定律，即反射光能量的总和绝对不能超过入射光能量的总和。从技术上讲，同样采用 $\omega_i$ 和 $\omega_o$ 作为输入的 Blinn-Phong 也被认为是一种 BRDF。但是，Blinn-Phong 并不被认为是基于物理的，因为它不遵守能量守恒原则。有几种基于物理的 BRDF 可以近似地反映表面对光线的反应。不过，几乎所有的实时 PBR 渲染管线都使用 Cook-Torrance(库克-托伦斯) BRDF。
+BRDF 是根据微表面理论对材质的反射和折射属性进行的近似分析。要使 BRDF 在物理上合理，就必须遵守能量守恒定律，即反射光能量的总和绝对不能超过入射光能量的总和。从技术上讲，采用同样 $\omega_i$ 和 $\omega_o$ 作为输入的 Blinn-Phong 也被认为是一种 BRDF。但是，Blinn-Phong 并不被认为是基于物理的，因为它不遵守能量守恒原则。有几种基于物理的 BRDF 可以近似地反映表面对光线的反应。不过，几乎所有的实时 PBR 渲染管线都使用 Cook-Torrance(库克-托伦斯) BRDF。
 
 The Cook-Torrance BRDF contains both a diffuse and specular part:
 
@@ -270,7 +270,7 @@ $$
 
 With $c$ being the albedo or surface color (think of the diffuse surface texture). The divide by pi is there to normalize the diffuse light as the earlier denoted integral that contains the BRDF is scaled by $\pi$ (we'll get to that in the [IBL](https://learnopengl.com/PBR/IBL/Diffuse-irradiance) chapters).
 
-$c$ 是反照率或表面颜色（想想漫反射表面纹理）。除以 pi 是为了将漫反射光归一化，因为前面含有 BRDF 的积分方程是受 $\pi$ 影响的（我们会在 [IBL](https://learnopengl.com/PBR/IBL/Diffuse-irradiance) 的教程中探讨这个问题的）。
+$c$ 是反照率或表面颜色（想想漫反射表面纹理）。除以 $\pi$ 是为了将漫反射光归一化，因为前面含有 BRDF 的积分方程是受 $\pi$ 影响的（我们会在 [IBL](https://learnopengl.com/PBR/IBL/Diffuse-irradiance) 的教程中探讨这个问题的）。
 
 
 > 你也许会感到好奇，这个朗伯漫反射与我们之前使用的漫反射光照有什么关系：之前计算漫反射参数，是利用表面颜色乘以表面法线与光线方向之间的点积。现在点积 $n \cdot \omega_i$ 仍然还在，只是从 BRDF 中移出去了，移到了 $L_o$ 积分的末尾。
@@ -306,13 +306,13 @@ Cook-Torrance BRDF 的镜面反射部分由分子上的三个函数和分母上�
 
 Each of these functions are an approximation of their physics equivalents and you'll find more than one version of each that aims to approximate the underlying physics in different ways; some more realistic, others more efficient. It is perfectly fine to pick whatever approximated version of these functions you want to use. Brian Karis from Epic Games did a great deal of research on the multiple types of approximations here. We're going to pick the same functions used by Epic Game's Unreal Engine 4 which are the Trowbridge-Reitz GGX for D, the Fresnel-Schlick approximation for F, and the Smith's Schlick-GGX for G.
 
-这些函数中的每一个都是其物理世界中真实情况的等价近似，而且你会发现每一个函数都有不止一种实现形式，但是不管是什么样的形式，最终目标都是去近似底层实际物理情况；有些实现方式可以使镜面反射更逼真，有些则更高效。你完全可以自由选择你想使用的这些函数的任何近似版本。在这方面，来自 Epic Games 的布莱恩-卡里斯（Brian Karis）对多种类型的近似实现方法进行了大量研究。我们将选择与 Epic Game 的虚幻引擎 4 相同的函数，即 D 使用 "Trowbridge-Reitz GGX"、F 使用 “Fresnel-Schlick 近似” 和 G 使用 "Smith's Schlick-GGX"。
+这些函数中的每一个都是其物理世界中真实情况的等价近似，而且你会发现每一个函数都有不止一种实现形式，但是不管是什么样的形式，最终目标都是去近似底层实际物理情况；有些实现方式可以使镜面反射更逼真，有些则更高效。你完全可以自由选择你想使用的这些函数的任何近似版本。在这方面，来自 Epic Games 的布莱恩-卡里斯（Brian Karis）对多种类型的近似实现方法进行了大量研究。我们将选择 Epic Game 在虚幻引擎 4 中使用的函数，即 D 使用 "Trowbridge-Reitz GGX"、F 使用 “Fresnel-Schlick 近似” 和 G 使用 "Smith's Schlick-GGX"。
 
 ### Normal distribution function
 
 The normal distribution function $D$ statistically approximates the relative surface area of microfacets exactly aligned to the (halfway) vector $h$. There are a multitude of NDFs that statistically approximate the general alignment of the microfacets given some roughness parameter and the one we'll be using is known as the Trowbridge-Reitz GGX:
 
-法线分布函数 $D$ 从统计学角度近似地表示了朝向与（半程）向量 $h$ 一致的微表面的相对表面积。举例来说，如果我们的物体表面上有35%的微表面它的朝向与 $h$ 方向完全一致，那么 NDF 的值就是 0.35。有许多类型 NDF 可以在给定一些粗糙度参数的情况下统计出微表面一般排列的近似值，我们接下来要使用的 NDF 是 Trowbridge-Reitz GGX：
+法线分布函数 $D$ 从统计学角度近似地表示了朝向与（半程）向量 $h$ 一致的微表面的相对表面积。举例来说，如果我们的物体表面上有35%的微表面其朝向与 $h$ 方向完全一致，那么 NDF 的值就是 0.35。有许多类型 NDF 可以在给定一些粗糙度参数的情况下统计出微表面一般排列的近似值，我们接下来要使用的 NDF 是 Trowbridge-Reitz GGX：
 
 $$
 NDF_{GGX TR}(n, h, \alpha) = \frac{\alpha^2}{\pi((n \cdot h)^2 (\alpha^2 - 1) + 1)^2}
@@ -320,7 +320,7 @@ $$
 
 Here $h$ is the halfway vector to measure against the surface's microfacets, with $a$ being a measure of the surface's roughness. If we take $h$ as the halfway vector between the view direction and light direction over varying roughness parameters we get the following visual result:
 
-这里的 $h$ 是用来与物体表面的微表面做比较用的半程向量，$a$ 是表面粗糙度的测量值。点[此处](https://www.desmos.com/calculator/8otf8w37ke?lang=zh-CN)可查看 Trowbridge-Reitz GGX desmos 曲线。如果将 $h$ 作为观察方向和光照方向之间的半程向量，在改变粗糙度参数的情况下，我们会得到以下直观的镜面反射结果：
+这里的 $h$ 是用来与物体表面的微表面朝向做比较用的半程向量，$a$ 是表面粗糙度的测量值。点[此处](https://www.desmos.com/calculator/8otf8w37ke?lang=zh-CN)可查看 Trowbridge-Reitz GGX desmos 曲线。如果将 $h$ 作为观察方向和光照方向之间的半程向量，在改变粗糙度参数的情况下，我们会得到以下直观的镜面反射结果：
 
 ![NDF](/assets/img/post/LearnOpenGL-PBR-Theory-NDF.png)
 
@@ -384,7 +384,7 @@ Note that the value of $\alpha$ may differ based on how your engine translates r
 
 To effectively approximate the geometry we need to take account of both the view direction (geometry obstruction) and the light direction vector (geometry shadowing). We can take both into account using Smith's method:
 
-为了有效地近似物体表面几何特性，我们需要同时考虑视线方向（几何体阻挡）和光线方向向量（几何体阴影）。我们可以使用史密斯方法将两者都考虑在内：
+为了有效地近似物体表面几何特性，我们需要同时考虑视线方向（几何体遮挡）和光线方向向量（几何体阴影）。我们可以使用史密斯方法将两者都考虑在内：
 
 $$
 G(n, v, l, k) = G_{sub}(n, v, k) G_{sub}(n, l, k) 
@@ -398,7 +398,7 @@ Using Smith's method with Schlick-GGX as $G_{sub}$ gives the following visual ap
 
 The geometry function is a multiplier between [0.0, 1.0] with 1.0 (or white) measuring no microfacet shadowing, and 0.0 (or black) complete microfacet shadowing.
 
-几何函数是介于 [0.0, 1.0] 之间的乘数，1.0（或白色）表示没有微表面阴影，0.0（或黑色）表示微表面彻底被遮挡。
+几何函数是介于 [0.0, 1.0] 之间的乘数，1.0（或白色）表示没有微表面阴影，0.0（或黑色）表示有完全的微表面阴影。
 
 In GLSL the geometry function translates to the following code:
 
@@ -448,7 +448,7 @@ The Fresnel equation is a rather complex equation, but luckily the Fresnel equat
 
 $$
 F_{Schlick}(h, v, F_0) = 
-    F_0 + (1 - F_0) ( 1 - (n \cdot v))^5 	
+    F_0 + (1 - F_0) ( 1 - (h \cdot v))^5 	
 $$
 
 $F_0$ represents the base reflectivity of the surface, which we calculate using something called the indices of refraction or IOR. As you can see on a sphere surface, the more we look towards the surface's grazing angles (with the halfway-view angle reaching 90 degrees), the stronger the Fresnel and thus the reflections: 
@@ -462,7 +462,7 @@ $F_0$ 是表面的基本反射率，这可以由折射率或 IOR 计算得出。
 
 There are a few subtleties involved with the Fresnel equation. One is that the Fresnel-Schlick approximation is only really defined for dielectric or non-metal surfaces. For conductor surfaces (metals), calculating the base reflectivity with indices of refraction doesn't properly hold and we need to use a different Fresnel equation for conductors altogether. As this is inconvenient, we further approximate by pre-computing the surface's response at normal incidence ($F_0$) at a 0 degree angle as if looking directly onto a surface. We interpolate this value based on the view angle, as per the Fresnel-Schlick approximation, such that we can use the same equation for both metals and non-metals.
 
-菲涅尔方程还存在一些细微的问题。其一，菲涅尔-施利克近似法只针对电介质或非金属表面。对于导体（金属）表面，用折射率计算基础反射率并不正确，我们需要对导体使用一种不同的菲涅尔方程。对于电介质和导体，由于使用两种不同的方程，不能统一处理的话这样很不方便，所以我们预计算出平面对于法向入射（入射角为 0 度，直接垂直看向表面）的结果（$F_0$）。按照菲涅尔-施利克近似法，根据视角对该值进行插值，这样我们就可以对金属和非金属使用相同的方程了。
+菲涅尔方程还存在一些细微的问题。其一，菲涅尔-施利克近似法只针对电介质或非金属表面。对于导体（金属）表面，用折射率计算基础反射率不太合适，我们需要对导体使用一种不同的菲涅尔方程。对于电介质和导体，如果使用两种不同的方程，不能统一处理的话这样很不方便，所以我们预计算出平面对于法向入射（入射角为 0 度，光线垂直照射表面）的结果（$F_0$）。按照菲涅尔-施利克近似法，根据视角对该值进行插值，这样我们就可以对金属和非金属使用相同的方程了。
 
 The surface's response at normal incidence, or the base reflectivity, can be found in large databases like [these](https://refractiveindex.info/) with some of the more common values listed below as taken from Naty Hoffman's course notes:
 
@@ -483,13 +483,13 @@ The surface's response at normal incidence, or the base reflectivity, can be fou
 
 What is interesting to observe here is that for all dielectric surfaces the base reflectivity never gets above 0.17 which is the exception rather than the rule, while for conductors the base reflectivity starts much higher and (mostly) varies between 0.5 and 1.0. Furthermore, for conductors (or metallic surfaces) the base reflectivity is tinted. This is why $F_0$ is presented as an RGB triplet (reflectivity at normal incidence can vary per wavelength); this is something we **only** see at metallic surfaces.
 
-值得注意的是，对于表中所有电介质表面，其基础反射率都没有超过 0.17，这是例外而非普遍情况。而对于导体，基础反射率起点更高一些，并且（大部分）在 0.5 至 1.0 之间变化。此外，导体（或金属表面）的基础反射率一般是带有色彩的。这就是为什么 $F_0$ 要用 RGB 三原色来表示的原因（法向入射时的反射率会因波长而异）。这种基础反射率带色彩的现象我们只能在金属表面观察的到。
+值得注意的是，对于表中所有电介质表面，其基础反射率都没有超过 0.17，这是特例而非普遍情况。而对于导体，基础反射率起点更高一些，并且（大部分）在 0.5 至 1.0 之间变化。此外，导体（或金属表面）的基础反射率一般是带有色彩的。这就是为什么 $F_0$ 要用 RGB 三原色来表示的原因（法向入射时的反射率会因波长而异）。这种基础反射率带色彩的现象我们只有在金属表面才能观察的到。
 
 These specific attributes of metallic surfaces compared to dielectric surfaces gave rise to something called the metallic workflow. In the metallic workflow we author surface materials with an extra parameter known as metalness that describes whether a surface is either a metallic or a non-metallic surface.
 
 与电介质表面相比，金属表面的这些特殊属性催生出了所谓的金属工作流。在金属工作流中编写表面材质时，我们会额外添加一个称为金属度的参数，用来描述表面是金属表面还是非金属表面。
 
-> 理论上，材质的金属度是二元的：要么是金属，要么不是，不能两个都是。不过，大多数渲染管线允许在 0.0 和 1.0 之间线性配置表面的金属度。这主要是因为材质纹理精度不够。例如，在有细小（非金属）灰尘/沙粒/划痕的金属表面上就很难用二元金属度来渲染。
+> 理论上，材质的金属度是二元的：要么是金属，要么不是，不能即是金属又是电介质。不过，大多数渲染管线允许在 0.0 和 1.0 之间线性配置表面的金属度。这主要是因为材质纹理精度不够。例如，在有细小（非金属）灰尘/沙粒/划痕的金属表面上就很难用二元金属度来渲染。
 {: .prompt-tip }
 
 By pre-computing $F_0$ for both dielectrics and conductors we can use the same Fresnel-Schlick approximation for both types of surfaces, but we do have to tint the base reflectivity if we have a metallic surface. We generally accomplish this as follows:
@@ -503,7 +503,7 @@ F0      = mix(F0, surfaceColor.rgb, metalness);
 
 We define a base reflectivity that is approximated for most dielectric surfaces. This is yet another approximation as $F_0$ is averaged around most common dielectrics. A base reflectivity of 0.04 holds for most dielectrics and produces physically plausible results without having to author an additional surface parameter. Then, based on how metallic a surface is, we either take the dielectric base reflectivity or take $F_0$ authored as the surface color. Because metallic surfaces absorb all refracted light they have no diffuse reflections and we can directly use the surface color texture as their base reflectivity.
 
-在上面代码中，为了可以描述大多数电介质表面，我们定义了一个大概的基础反射率。$F_0$ 取的是大多数常见电介质基础反射率的平均值，这是我们之前提到的菲涅尔-施利克近似之外又一种近似。0.04 的基础反射率适用于大多数电介质，在不必编写额外的表面参数时能产生物理上合理的结果。然后，根据表面的金属特性，我们要么采用电介质的基本反射率，要么采用 $F_0$ 来作为表面颜色。由于金属表面会吸收所有折射光，因此没有漫反射，我们可以直接使用表面颜色纹理作为其基本反射率。
+在上面代码中，为了可以描述大多数电介质表面，我们定义了一个大概的基础反射率。$F_0$ 取的是大多数常见电介质基础反射率的平均值，这是我们之前提到的菲涅尔-施利克近似之外又一种近似。0.04 的基础反射率适用于大多数电介质，在不必编写额外的表面参数时能产生物理上合理的结果。然后，根据表面的金属特性，我们要么采用电介质的基础反射率，要么采用编写的表面颜色来作为 $F_0$ 。由于金属表面会吸收所有折射光，因此没有漫反射，我们可以直接使用表面颜色纹理作为其基础反射率。
 
 In code, the Fresnel Schlick approximation translates to:
 
@@ -518,13 +518,13 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 
 With `cosTheta` being the dot product result between the surface's normal $n$ and the halfway $h$ (or view $v$) direction.
 
-其中 `cosTheta` 是表面法线 $n$ 和半程向量 $h$ 的点积（或者表面法线 $n$ 和观察向量 $v$ 点积，两者都可以）。
+其中 `cosTheta` 是半程向量 $h$ 和观察向量 $v$ 的点积（[Cesium's BrdfLutGeneratorFS](https://github.com/CesiumGS/cesium/blob/1.52/Source/Shaders/BrdfLutGeneratorFS.glsl)、[SaschaWillems's Vulkan-glTF-PBR](https://github.com/SaschaWillems/Vulkan-glTF-PBR/blob/master/data/shaders/genbrdflut.frag) 以及 [LearnOpenGL's pbr](https://github.com/tick-engineloop/LearnOpenGL/blob/master/src/6.pbr/1.1.lighting/1.1.pbr.fs) 这些工程实现中均使用的是半程向量 $h$ 和观察向量 $v$ 的点积）。
 
 ### Cook-Torrance reflectance equation
 
 With every component of the Cook-Torrance BRDF described, we can include the physically based BRDF into the now final reflectance equation:
 
-随着 Cook-Torrance BRDF 中所有元素都介绍完毕，我们现在可以将基于物理的 BRDF 纳入到最终的反射率方程当中去了：
+随着 Cook-Torrance BRDF 中所有元素介绍完毕，我们现在可以将基于物理的 BRDF 纳入到最终的反射率方程当中去了：
 
 $$
 L_o(p,\omega_o) = \int\limits_{\Omega} 
@@ -580,13 +580,13 @@ Below you'll see a list of textures you'll frequently find in a PBR pipeline tog
 
 Artists set and tweak these physically based input values on a per-texel basis and can base their texture values on the physical surface properties of real-world materials. This is one of the biggest advantages of a PBR render pipeline as these physical properties of a surface remain the same, regardless of environment or lighting setup, making life easier for artists to get physically plausible results. Surfaces authored in a PBR pipeline can easily be shared among different PBR render engines, will look correct regardless of the environment they're in, and as a result look much more natural.
 
-美术师可以在纹素级别设置和调整这些基于物理的输入值，并根据真实世界材料的物理表面属性来设置纹理值。这是 PBR 渲染管线的最大优势之一，因为无论环境或光照如何设置，表面的这些物理属性都保持不变，从而使美术师更容易获得物理上可信的效果。在 PBR 管线中制作的表面可以很容易地在不同的 PBR 渲染引擎中共享，无论它们处于何种环境中，看起来都是正确的，因此看起来也会更加自然。
+根据真实世界材料的物理表面属性，美术师可以在纹素级别设置和调整这些基于物理的纹理输入值。这是 PBR 渲染管线的最大优势之一，因为无论环境或光照如何设置，表面的这些物理属性都保持不变，从而使美术师更容易获得物理上可信的效果。在 PBR 管线中制作的表面可以很容易地在不同的 PBR 渲染引擎中共用，无论它们处于何种环境中，看起来都是正确的，因此看起来也会更加自然。
 
 ## References
 >
-> * [Understanding the Fresnel Effect](https://www.dorian-iten.com/fresnel/)
+> * [PBR Theory - LearnOpenGL](https://learnopengl.com/PBR/Theory)
 >
-> * [Schlick's approximation - wikipedia](https://en.wikipedia.org/wiki/Schlick%27s_approximation)
+> * [Understanding the Fresnel Effect](https://www.dorian-iten.com/fresnel/)
 >
 > * [Physically Based Rendering - pbr-book](https://www.pbr-book.org/4ed/contents)
 >
