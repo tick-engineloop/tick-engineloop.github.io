@@ -1,6 +1,6 @@
 ---
 title: Shadow Mapping
-description: 介绍阴影映射基础过程
+description: 阴影是光线被遮挡后在被遮挡区域出现的一种光照缺失的现象。阴影为光照场景增添了许多真实感，使观众更容易观察到物体之间的空间关系。
 date: 2024-06-18 00:00:00 +0800
 categories: [Computer Grahics, LearnOpenGL, AdvancedLighting]
 tags: [computergraphics, learnopengl, postprocess，shadow]     # TAG names should always be lowercase
@@ -398,7 +398,7 @@ With these projected coordinates we can sample the depth map as the resulting [0
 
 有了这个 [0, 1] 范围内的 projCoords，就可以对深度图进行采样。这样，我们就能获得光源视角下最近可见物体片段的深度：
 
-```
+```glsl
 float closestDepth = texture(shadowMap, projCoords.xy).r; 
 ```
 
@@ -454,25 +454,39 @@ If you did things right you should indeed see (albeit with quite a few artifacts
 
 We managed to get the basics of shadow mapping working, but as you can we're not there yet due to several (clearly visible) artifacts related to shadow mapping we need to fix. We'll focus on fixing these artifacts in the next sections.
 
+我们成功地完成了阴影贴图的基础工作，但正如你所看到的，因为存在着与阴影贴图相关的几个（清晰可见的）处理痕迹，所以现在还没有达到期望的效果。我们将在接下来的章节中重点修复这些瑕疵。
+
 ### Shadow acne
 
 It is obvious something is wrong from the previous image. A closer zoom shows us a very obvious Moiré-like pattern:
+
+从上一张图片中可以明显看出问题。近距离放大后，有非常显眼的摩尔纹：
 
 ![Acne](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-Acne.png)
 
 We can see a large part of the floor quad rendered with obvious black lines in an alternating fashion. This shadow mapping artifact is called shadow acne and can be explained by the following image:
 
+我们可以明显的在四边形地板上看到很大一部分交替呈现的黑色线条。这种阴影映射的人工处理痕迹被称为 "阴影失真"，可以用下面的图片来解释：
+
 ![Acne Diagram](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-AcneDiagram.png)
 
 Because the shadow map is limited by resolution, multiple fragments can sample the same value from the depth map when they're relatively far away from the light source. The image shows the floor where each yellow tilted panel represents a single texel of the depth map. As you can see, several fragments sample the same depth sample.
 
+因为阴影贴图有分辨率的限制，在距离光源比较远的情况下，多个片段可能从深度贴图的同一个坐标位置采样。上图中每个黄色斜坡代表深度图的一个像素。可以看到，地板上多个片段采样了相同的深度样本。
+
 While this is generally okay, it becomes an issue when the light source looks at an angle towards the surface as in that case the depth map is also rendered from an angle. Several fragments then access the same tilted depth texel while some are above and some below the floor; we get a shadow discrepancy. Because of this, some fragments are considered to be in shadow and some are not, giving the striped pattern from the image.
 
-We can solve this issue with a small little hack called a shadow bias where we simply offset the depth of the surface (or the shadow map) by a small bias amount such that the fragments are not incorrectly considered above the surface.
+虽然一般情况下是正常的，但当光源以一定角度照射表面时就会出现问题，因为在这种情况下，光源视角下的深度贴图也是从这个角度渲染的。这时，深度贴图的分辨率会小于场景实际分辨率，多个片段就会从同一个斜坡的深度纹理像素中采样，这些片段中有一些大于这一深度值，还有一些小于这一深度值。因此，一些片段被判断处于阴影中，而另一些片段则不在阴影中，这就产生了图片中的条纹图案，得到了一个不真实的阴影。
+
+We can solve this issue with a small little hack called a **shadow bias** where we simply offset the depth of the surface (or the shadow map) by a small bias amount such that the fragments are not incorrectly considered above the surface.
+
+我们可以用一个叫做**阴影偏置**的小技巧来解决这个问题，只需将表面的深度偏移一个小的偏置量（给表面片段的深度减去一个偏置，或给采样到的阴影贴图深度加上一个偏执），这样就不会错误地将片段判断在阴影之中。
 
 ![Acne Bias](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-AcneBias.png)
 
 With the bias applied, all the samples get a depth smaller than the surface's depth and thus the entire surface is correctly lit without any shadows. We can implement such a bias as follows:
+
+应用偏置后，从同一深度纹理像素中采样的那些表面片段其深度都会小于采样到的深度值，因此整个表面都会被正确照亮，不会出现任何阴影。我们可以通过以下方式实现这种偏置：
 
 ```glsl
 float bias = 0.005;
@@ -481,31 +495,45 @@ float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
 
 A shadow bias of 0.005 solves the issues of our scene by a large extent, but you can imagine the bias value is highly dependent on the angle between the light source and the surface. If the surface would have a steep angle to the light source, the shadows may still display shadow acne. A more solid approach would be to change the amount of bias based on the surface angle towards the light: something we can solve with the dot product:
 
+0.005 的阴影偏置量在很大程度上解决了我们场景中的问题，但可以想象到偏置量主要取决于光线和表面之间的角度。如果光线以非常倾斜的角度照射到表面，那么仍然可能会出现阴影失真。一种更可靠的方法是根据表面与光线的角度来改变偏置量：我们可以利用点积来解决这个问题：
+
 ```glsl
 float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005); 
 ```
 
 Here we have a maximum bias of 0.05 and a minimum of 0.005 based on the surface's normal and light direction. This way, surfaces like the floor that are almost perpendicular to the light source get a small bias, while surfaces like the cube's side-faces get a much larger bias. The following image shows the same scene but now with a shadow bias:
 
+在这里，我们根据表面的法线和光照方向，将偏置最大值设定为 0.05，最小值设定为 0.005。这样，像地板这种几乎垂直于光线的表面就会得到较小的偏置，而像立方体侧面这样的表面就会得到较大的偏置。下图显示了应用阴影偏置后的相同场景：
+
 ![With Bias](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-WithBias.png)
 
 Choosing the correct bias value(s) requires some tweaking as this will be different for each scene, but most of the time it's simply a matter of slowly incrementing the bias until all acne is removed.
+
+因为每个场景都不尽相同，所以需要进行一些调整才能选出合适的偏置值，在大多数情况下，可以缓慢增加偏置值，直到消除所有失真现象。
 
 ### Peter panning
 
 A disadvantage of using a shadow bias is that you're applying an offset to the actual depth of objects. As a result, the bias may become large enough to see a visible offset of shadows compared to the actual object locations as you can see below (with an exaggerated bias value):
 
+使用阴影偏置的一个缺点是：在实际应该要产生阴影的位置上，因为有偏置的存在，可能导致该位置点被判断为非阴影点。因此，当偏置值变得足够大时，参照物体实际位置，可以明显看到阴影发生了一定的偏移，如下图所示（使用一个夸张的偏置值）：
+
 ![Peter Panning](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-PeterPanning.png)
 
 This shadow artifact is called peter panning since objects seem slightly detached from their shadows. We can use a little trick to solve most of the peter panning issue by using front face culling when rendering the depth map. You may remember from the [face culling](https://learnopengl.com/Advanced-OpenGL/Face-Culling) chapter that OpenGL by default culls back-faces. By telling OpenGL we want to cull front faces during the shadow map stage we're switching that order around.
 
+这种阴影位置偏移现象被称为彼得平移，因为物体看起来与它们的阴影稍有分离。我们可以使用一个小技巧来解决大部分的彼得平移问题，那就是在渲染深度贴图时使用正面剔除。你可能还记得，在[面剔除](https://learnopengl.com/Advanced-OpenGL/Face-Culling)一章中，OpenGL 默认剔除的是背面。通过在生成阴影贴图的阶段告诉 OpenGL 剔除正面，我们就可以切换这一面剔除顺序。
+
 Because we only need depth values for the depth map it shouldn't matter for solid objects whether we take the depth of their front faces or their back faces. Using their back face depths doesn't give wrong results as it doesn't matter if we have shadows inside objects; we can't see there anyways.
+
+因为我们只需要深度图的深度值，所以对于实体物体来说，是取其正面的深度还是背面的深度并不重要。使用物体背面的深度并不会产生错误的结果，因为物体内部是否有阴影并不重要，反正我们也看不到。
 
 ![Without Culling](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-WithoutCulling.png)
 
 ![With Culling](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-WithCulling.png)
 
 To fix peter panning we cull all front faces during the shadow map generation. Note that you need to enable GL_CULL_FACE first.
+
+为了解决彼得平移问题，我们会在生成阴影贴图时剔除所有正面。请注意，你需要先启用 GL_CULL_FACE。
 
 ```glsl
 glCullFace(GL_FRONT);
@@ -515,19 +543,29 @@ glCullFace(GL_BACK); // don't forget to reset original culling face
 
 This effectively solves the peter panning issues, but only for solid objects that actually have an inside without openings. In our scene for example, this works perfectly fine on the cubes. However, on the floor it won't work as well as culling the front face completely removes the floor from the equation. The floor is a single plane and would thus be completely culled. If one wants to solve peter panning with this trick, care has to be taken to only cull the front faces of objects where it makes sense.
 
+这可以有效解决彼得平移问题，但只适用于拥有封闭内部的实体物体。例如，在我们的场景中，这对立方体完全有效。但是，在地板上就不行了，因为剔除正面后，地板就完全不存在了。地板是一个平面，因此会被完全删除。如果想用这一技巧解决彼得平移问题，就必须注意只在有意义的地方去使用正面剔除。
+
 Another consideration is that objects that are close to the shadow receiver (like the distant cube) may still give incorrect results. However, with normal bias values you can generally avoid peter panning.
+
+另一个要考虑的点是，靠近阴影接收器的物体（如远处的立方体）可能仍然会产生不正确的结果。不过，如果使用恰当的偏置值，一般可以避免彼得平移。
 
 ### Over sampling
 
 Another visual discrepancy which you may like or dislike is that regions outside the light's visible frustum are considered to be in shadow while they're (usually) not. This happens because projected coordinates outside the light's frustum are higher than 1.0 and will thus sample the depth texture outside its default range of [0,1]. Based on the texture's wrapping method, we will get incorrect depth results not based on the real depth values from the light source.
 
+另一个与现实情况不一致的视觉差异是，光源可见视锥体以外的区域被看作位于阴影当中，但实际上它们（通常）并不是。出现这种问题的原因是，光源视锥体之外的投影坐标大于 1.0，使用这样的坐标去采样深度纹理，会超出其默认的 [0, 1] 范围。根据纹理的环绕方式，我们会得到不正确的深度结果，而不是基于光源的真实深度值。
+
 ![Outside Frustum](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-OutsideFrustum.png)
 
 You can see in the image that there is some sort of imaginary region of light, and a large part outside this area is in shadow; this area represents the size of the depth map projected onto the floor. The reason this happens is that we earlier set the depth map's wrapping options to GL_REPEAT.
 
+从图像中可以看到，光照辐射了一个区域，而该区域外的很大一部分处于阴影中；该区域代表了投射到地板上的深度贴图的大小。出现这种情况的原因是我们之前将深度贴图的环绕方式设置为了 GL_REPEAT。
+
 What we'd rather have is that all coordinates outside the depth map's range have a depth of 1.0 which as a result means these coordinates will never be in shadow (as no object will have a depth larger than 1.0). We can do this by configuring a texture border color and set the depth map's texture wrap options to GL_CLAMP_TO_BORDER:
 
-```c
+我们更希望深度贴图范围之外的所有坐标的深度都是 1.0，这意味着这些坐标永远不会出现在阴影中（因为没有物体的深度会大于 1.0）。我们可以通过配置纹理边框颜色并将深度贴图的纹理环绕方式设置为 GL_CLAMP_TO_BORDER 来实现这一点：
+
+```c++
 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -536,6 +574,8 @@ glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 Now whenever we sample outside the depth map's [0,1] coordinate range, the texture function will always return a depth of 1.0, producing a shadow value of 0.0. The result now looks more plausible:
 
+现在，每当我们在深度图的 [0, 1] 坐标范围外采样时，纹理采样函数将始终返回 1.0 的深度，从而产生 0.0 的阴影值。现在的结果看起来更合理了：
+
 ![Clamp Edge](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-ClampEdge.png)
 
 > 在计算片段是否是阴影点时，若该片段是以光源为视角的视图体范围之外的场景片段，那么其在光源视图体内裁剪坐标是超出 [-w, w] 范围之外的（正射视图 w = 1.0），从光源视角的场景深度图采样深度值的时候，裁剪坐标转换到纹理坐标会超出 [0.0, 1.0] 范围之外，超出纹理范围之外 OpenGL 默认的行为是重复这个纹理图像进行采样，光源视图体区域外就会有一些地方显示阴影不正确的情况。其实在以光源为视角的视图体范围之外的片段应该处理为非阴影点，所以我们更希望所有超出深度图范围的坐标的采样返回值是 1.0，因此可以设置纹理边框颜色 z 分量为 1.0，并设置纹理环绕方式为超出坐标为用户指定的边缘颜色 GL_CLAMP_TO_BORDER。这一步限制的是采样深度图后返回的深度值。
@@ -543,11 +583,17 @@ Now whenever we sample outside the depth map's [0,1] coordinate range, the textu
 
 There seems to still be one part showing a dark region. Those are the coordinates outside the far plane of the light's orthographic frustum. You can see that this dark region always occurs at the far end of the light source's frustum by looking at the shadow directions.
 
+似乎仍有一部分显示为黑暗区域。这些是光源正交视锥体远平面外的坐标。通过阴影方向可以看到，这个黑暗区域总是出现在光源视锥体的远端。
+
 A light-space projected fragment coordinate is further than the light's far plane when its z coordinate is larger than 1.0. In that case the GL_CLAMP_TO_BORDER wrapping method doesn't work anymore as we compare the coordinate's z component with the depth map values; this always returns true for z larger than 1.0.
+
+当片段被投影到光源空间后，如果它的坐标的 z 分量大于 1.0，该坐标会比光源的远平面更远。在这种情况下，GL_CLAMP_TO_BORDER 环绕方式将不再起作用，因为我们要将坐标的 z 分量与深度贴图中的深度值进行比较；当 z 大于 1.0 时，返回值总是 true。
 
 The fix for this is also relatively easy as we simply force the shadow value to 0.0 whenever the projected vector's z coordinate is larger than 1.0:
 
-```c
+解决这个问题的方法也比较简单，只要投影向量的 z 坐标大于 1.0，我们就可以将阴影值强制设置为 0.0：
+
+```glsl
 float ShadowCalculation(vec4 fragPosLightSpace)
 {
     [...]
@@ -560,9 +606,13 @@ float ShadowCalculation(vec4 fragPosLightSpace)
 
 Checking the far plane and clamping the depth map to a manually specified border color solves the over-sampling of the depth map. This finally gives us the result we are looking for:
 
+检查远平面并将深度贴图限制到手动指定的边界颜色，可以解决深度图过度采样的问题。最终，我们得到了想要的结果：
+
 ![OverSampling Fixed](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-OverSamplingFixed.png)
 
 The result of all this does mean that we only have shadows where the projected fragment coordinates sit inside the depth map range so anything outside the light frustum will have no visible shadows.
+
+这样做的结果是，只有当投影片段坐标位于深度图范围内时，我们才会产生阴影，因此在光源视锥体范围之外的任何东西都不会产生可见的阴影。
 
 > 在计算片段是否是阴影点时，若该片段是以光源为视角的视图体范围之外的场景片段，那么其在光源视图体内裁剪坐标是超出 [-w, w] 范围之外的（正射视图 w = 1.0），归一化深度值也是大于 1.0 的。其实在以光源为视角的视图体范围之外的片段应该处理为非阴影点，所以我们在光源视图体内片段的裁剪坐标深度值大于 w.0 时直接认定为非阴影点。这一步限制的是片段在光源视图体内深度值。
 {: .prompt-tip }
