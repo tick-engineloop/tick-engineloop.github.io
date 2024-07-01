@@ -480,13 +480,13 @@ While this is generally okay, it becomes an issue when the light source looks at
 
 We can solve this issue with a small little hack called a **shadow bias** where we simply offset the depth of the surface (or the shadow map) by a small bias amount such that the fragments are not incorrectly considered above the surface.
 
-我们可以用一个叫做**阴影偏置**的小技巧来解决这个问题，只需将表面的深度偏移一个小的偏置量（给表面片段的深度减去一个偏置，或给采样到的阴影贴图深度加上一个偏执），这样就不会错误地将片段判断在阴影之中。
+我们可以用一个叫做**阴影偏置**的小技巧来解决这个问题，只需将表面的深度偏移一个小的偏置量（给表面片段的深度减去一个偏置，或给采样到的阴影贴图深度加上一个偏置），这样就不会错误地将片段判断在阴影之中。
 
 ![Acne Bias](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-AcneBias.png)
 
 With the bias applied, all the samples get a depth smaller than the surface's depth and thus the entire surface is correctly lit without any shadows. We can implement such a bias as follows:
 
-应用偏置后，从同一深度纹理像素中采样的那些表面片段其深度都会小于采样到的深度值，因此整个表面都会被正确照亮，不会出现任何阴影。我们可以通过以下方式实现这种偏置：
+应用偏置后，对应到同一深度纹理像素的那些表面片段其深度都会小于采样到的深度值，因此整个表面都会被正确照亮，不会出现任何阴影失真。我们可以通过以下方式实现这种偏置：
 
 ```glsl
 float bias = 0.005;
@@ -521,15 +521,17 @@ A disadvantage of using a shadow bias is that you're applying an offset to the a
 
 This shadow artifact is called peter panning since objects seem slightly detached from their shadows. We can use a little trick to solve most of the peter panning issue by using front face culling when rendering the depth map. You may remember from the [face culling](https://learnopengl.com/Advanced-OpenGL/Face-Culling) chapter that OpenGL by default culls back-faces. By telling OpenGL we want to cull front faces during the shadow map stage we're switching that order around.
 
-这种阴影位置偏移现象被称为彼得平移，因为物体看起来与它们的阴影稍有分离。我们可以使用一个小技巧来解决大部分的彼得平移问题，那就是在渲染深度贴图时使用正面剔除。你可能还记得，在[面剔除](https://learnopengl.com/Advanced-OpenGL/Face-Culling)一章中，OpenGL 默认剔除的是背面。通过在生成阴影贴图的阶段告诉 OpenGL 剔除正面，我们就可以切换这一面剔除顺序。
+这种阴影位置偏移现象被称为彼得平移，因为物体看起来与它们的阴影稍有分离。我们可以使用一个小技巧来解决大部分的彼得平移问题，那就是在渲染深度贴图时使用正面剔除。你可能还记得，在[面剔除](https://learnopengl.com/Advanced-OpenGL/Face-Culling)一章中，OpenGL 默认剔除的是背面。通过在生成阴影贴图的阶段告诉 OpenGL 剔除正面，我们就可以切换这一面剔除指令。
 
 Because we only need depth values for the depth map it shouldn't matter for solid objects whether we take the depth of their front faces or their back faces. Using their back face depths doesn't give wrong results as it doesn't matter if we have shadows inside objects; we can't see there anyways.
 
-因为我们只需要深度图的深度值，所以对于实体物体来说，是取其正面的深度还是背面的深度并不重要。使用物体背面的深度并不会产生错误的结果，因为物体内部是否有阴影并不重要，反正我们也看不到。
+因为我们只需要深度贴图的深度值，所以对于实体物体来说，是取其正面的深度还是背面的深度并不重要。使用物体背面的深度并不会产生错误的结果，因为物体内部是否有阴影并不重要，反正我们也看不到。
 
 ![Without Culling](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-WithoutCulling.png)
+_depths recorded in depth map at the light's perspective without front face culling_
 
 ![With Culling](/assets/img/post/LearnOpenGL-AdvancedLighting-Shadows-ShadowMapping-WithCulling.png)
+_depths recorded in depth map at the light's perspective with front face culling_
 
 To fix peter panning we cull all front faces during the shadow map generation. Note that you need to enable GL_CULL_FACE first.
 
@@ -545,9 +547,12 @@ This effectively solves the peter panning issues, but only for solid objects tha
 
 这可以有效解决彼得平移问题，但只适用于拥有封闭内部的实体物体。例如，在我们的场景中，这对立方体完全有效。但是，在地板上就不行了，因为剔除正面后，地板就完全不存在了。地板是一个平面，因此会被完全删除。如果想用这一技巧解决彼得平移问题，就必须注意只在有意义的地方去使用正面剔除。
 
+> 阴影偏置解决了阴影失真问题，但过大的偏置值会带来彼得平移。选择正面剔除的方案也可以解决阴影失真问题，同时还不会有阴影偏置那样的彼得平移，但就是只对拥有封闭内部的实体物体有效。
+{: .prompt-tip }
+
 Another consideration is that objects that are close to the shadow receiver (like the distant cube) may still give incorrect results. However, with normal bias values you can generally avoid peter panning.
 
-另一个要考虑的点是，靠近阴影接收器的物体（如远处的立方体）可能仍然会产生不正确的结果。不过，如果使用恰当的偏置值，一般可以避免彼得平移。
+当然，如果使用恰当的偏置值，一般可以避免彼得平移。另一个要考虑的点是，靠近阴影接收器的物体（如远处的立方体）可能仍然会产生不正确的结果。
 
 ### Over sampling
 
@@ -559,7 +564,7 @@ Another visual discrepancy which you may like or dislike is that regions outside
 
 You can see in the image that there is some sort of imaginary region of light, and a large part outside this area is in shadow; this area represents the size of the depth map projected onto the floor. The reason this happens is that we earlier set the depth map's wrapping options to GL_REPEAT.
 
-从图像中可以看到，光照辐射了一个区域，而该区域外的很大一部分处于阴影中；该区域代表了投射到地板上的深度贴图的大小。出现这种情况的原因是我们之前将深度贴图的环绕方式设置为了 GL_REPEAT。
+从图像中可以看到，光照照亮了一个区域，而该区域外的很大一部分处于阴影中；该区域代表了投射到地板上的深度贴图的大小。出现这种情况的原因是我们之前将深度贴图的环绕方式设置为了 GL_REPEAT。
 
 What we'd rather have is that all coordinates outside the depth map's range have a depth of 1.0 which as a result means these coordinates will never be in shadow (as no object will have a depth larger than 1.0). We can do this by configuring a texture border color and set the depth map's texture wrap options to GL_CLAMP_TO_BORDER:
 
@@ -587,7 +592,7 @@ There seems to still be one part showing a dark region. Those are the coordinate
 
 A light-space projected fragment coordinate is further than the light's far plane when its z coordinate is larger than 1.0. In that case the GL_CLAMP_TO_BORDER wrapping method doesn't work anymore as we compare the coordinate's z component with the depth map values; this always returns true for z larger than 1.0.
 
-当片段被投影到光源空间后，如果它的坐标的 z 分量大于 1.0，该坐标会比光源的远平面更远。在这种情况下，GL_CLAMP_TO_BORDER 环绕方式将不再起作用，因为我们要将坐标的 z 分量与深度贴图中的深度值进行比较；当 z 大于 1.0 时，返回值总是 true。
+当片段被投影到光源空间后，如果它的坐标的 z 分量大于 1.0，该坐标会比光源视锥体的远平面更远。在这种情况下，GL_CLAMP_TO_BORDER 环绕方式将不再起作用，因为我们要将坐标的 z 分量与深度贴图中的深度值进行比较；对于大于 1.0 的 z ，返回值总是 true。
 
 The fix for this is also relatively easy as we simply force the shadow value to 0.0 whenever the projected vector's z coordinate is larger than 1.0:
 
