@@ -141,3 +141,4 @@ nint atomicMin(inout nint mem, nint data)
 >
 > * [Compute Shader](https://www.khronos.org/opengl/wiki/Compute_Shader)
 >
+> * [glDispatchCompute](https://registry.khronos.org/OpenGL-Refpages/gl4/html/glDispatchCompute.xhtml)
