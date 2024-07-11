@@ -133,7 +133,7 @@ $$
 P_h(\vec{k}) = C \frac{e^{\frac{-1}{(kL)^2}}}{k^4} \lvert \vec{k} \cdot \vec{d}_{wind} \lvert ^2
 $$
 
-这里 $C$ 是一个数值常量，表示波浪整体的幅度。$k$ 是向量 $\vec{k}$ 的大小或长度。$L = V^2 / g$ 是在一个速度为 $V$ 的持续风中可能升起的最大的波，$g$ 是重力加速度。Phillips 波谱中的余弦因子 $\lvert \vec{k} \cdot \vec{d}_{wind} \lvert ^2$ 消除了垂直于风向移动的波，$\vec{k}$ 是波的方向，$\vec{d}_{wind}$ 是风的方向。
+这里 $C$ 是一个数值常量，表示波浪整体的幅度。$k$ 是向量 $\vec{k}$ 的大小或长度。$L = V^2 / g$ 是在一个速度为 $V$ 的持续风中可能升起的最大的波，$g$ 是重力加速度。Phillips 波谱中的余弦因子 $\lvert \vec{k} \cdot \vec{d}_{wind} \lvert ^2$ 消除了垂直于风向移动的波，$\vec{k}$ 是波的方向，$$\vec{d}_{wind}$$ 是风的方向。
 
 到这里我们就相继确定了 $\omega$ 和 $A$，现在再来回头看看 $h(\vec{k}, t)$。给定一个色散关系 $\omega(k)$，在 $t$ 时刻的傅里叶振幅可实现为：
 
