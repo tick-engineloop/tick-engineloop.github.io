@@ -453,7 +453,7 @@ $$
 
 $F_0$ represents the base reflectivity of the surface, which we calculate using something called the indices of refraction or IOR. As you can see on a sphere surface, the more we look towards the surface's grazing angles (with the halfway-view angle reaching 90 degrees), the stronger the Fresnel and thus the reflections: 
 
-$F_0$ 是表面的基本反射率，这可以由折射率或 IOR 计算得出。正如你在球面上所看到的，我们越看向表面的掠射角（此时视线和表面法线的夹角接近90度），菲涅尔现象越明显，因此反射也就越强：
+$F_0$ 是表面的基础反射率，这可以由折射率或 IOR 计算得出。正如你在球面上所看到的，我们越看向表面的掠射角（此时视线和表面法线的夹角接近90度），菲涅尔现象越明显，因此反射也就越强：
 
 ![Fresnel Sphere](/assets/img/post/LearnOpenGL-PBR-Theory-FresnelSphere.png)
 
@@ -494,7 +494,7 @@ These specific attributes of metallic surfaces compared to dielectric surfaces g
 
 By pre-computing $F_0$ for both dielectrics and conductors we can use the same Fresnel-Schlick approximation for both types of surfaces, but we do have to tint the base reflectivity if we have a metallic surface. We generally accomplish this as follows:
 
-通过预先计算电介质和导体的 $F_0$，我们可以对这两种类型的表面使用相同的菲涅尔-施利克近似法，但如果是金属表面，我们必须对基本反射率进行调色。一般来说，我们可以通过以下方法实现这一目的：
+通过预先计算电介质和导体的 $F_0$，我们可以对这两种类型的表面使用相同的菲涅尔-施利克近似法，但如果是金属表面，我们必须对基础反射率进行调色。一般来说，我们可以通过以下方法实现这一目的：
 
 ```glsl
 vec3 F0 = vec3(0.04);
