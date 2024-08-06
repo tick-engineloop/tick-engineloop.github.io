@@ -280,6 +280,8 @@ You can find the source code of the demo [here](https://learnopengl.com/code_vie
 
 ### Filmic
 
+Filmic tonemapping 是一种功能强大且适应性强的色调映射算法，它通过模拟电影胶片对光线的处理方式，为图像带来了更加自然和富有层次感的视觉效果，使用该算法渲染的图像在视觉上更接近电影画面。在曲线形状上，Filmic tonemapping 通常具有一个 “toe”（暗部区域）和一个 “shoulder”（亮部区域），中间则是近乎线性的部分。这种曲线形状有助于在保留暗部和高亮部细节的同时，平衡整个图像的亮度分布。相比其他色调映射算法，Filmic tonemapping 提供了更多的控制参数，如 “toe strength”（暗部强度）、“shoulder strength”（亮部强度）等，这些参数允许用户根据需要对图像的暗部和亮部进行精细调整。
+
 ```glsl
 uniform sampler2D hdrBuffer;
 
@@ -325,6 +327,8 @@ void main()
 
 ### ACES
 
+ACES(Academy Color Encoding System) 是由美国电影艺术与科学学院开发的一种色彩编码系统，已为全球广泛采用，尤其是媒体和娱乐领域。
+
 ```glsl
 uniform sampler2D hdrBuffer;
 
@@ -366,3 +370,15 @@ void main()
     FragColor = vec4(color, 1.0);
 }
 ```
+
+## More HDR
+
+The two tone mapping algorithms shown are only a few of a large collection of (more advanced) tone mapping algorithms of which each has their own strengths and weaknesses. Some tone mapping algorithms favor certain colors/intensities above others and some algorithms display both the low and high exposure colors at the same time to create more colorful and detailed images. There is also a collection of techniques known as automatic exposure adjustment or eye adaptation techniques that determine the brightness of the scene in the previous frame and (slowly) adapt the exposure parameter such that the scene gets brighter in dark areas or darker in bright areas mimicking the human eye.
+
+上述色调映射算法只是众多（更先进的）色调映射算法中的一小部分，这些算法各有优缺点。有些色调映射算法偏向特定颜色/浓度，有些算法同时显示低曝光和高曝光的颜色，以创建色彩、细节更丰富的图像。此外，还有一系列被称为自动调节曝光或眼睛适应的技术，可确定前一帧画面中场景的亮度，并（缓慢地）调整曝光参数，使场景在暗处变亮或在亮处变暗，从而模仿人眼的视觉效果。
+
+## References
+>
+> * [HDR - learnopengl](https://learnopengl.com/Advanced-Lighting/HDR)
+>
+> * [ACES - AutoDesk](https://help.autodesk.com/view/ARNOL/CHS/?guid=arnold_for_maya_rendering_am_ACES_Workflow_html)
