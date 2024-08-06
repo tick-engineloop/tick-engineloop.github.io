@@ -382,3 +382,7 @@ The two tone mapping algorithms shown are only a few of a large collection of (m
 > * [HDR - learnopengl](https://learnopengl.com/Advanced-Lighting/HDR)
 >
 > * [ACES - AutoDesk](https://help.autodesk.com/view/ARNOL/CHS/?guid=arnold_for_maya_rendering_am_ACES_Workflow_html)
+>
+> * [Tone Mapping - Bruno Opsenica](https://bruop.github.io/tonemapping/)
+> 
+> * [Tone Mapping - 64](https://64.github.io/tonemapping/)
