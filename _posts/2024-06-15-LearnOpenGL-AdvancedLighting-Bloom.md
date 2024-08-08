@@ -162,3 +162,196 @@ With these two color buffers we have an image of the scene as normal, and an ima
 With an image of the extracted bright regions we now need to blur the image. We can do this with a simple box filter as we've done in the post-processing section of the framebufers chapter, but we'd rather use a more advanced (and better-looking) blur filter called Gaussian blur.
 
 有了提取的亮光区域图像，我们现在需要对图像进行模糊处理。就像在帧缓冲章节的后期处理部分所做的那样，我们可以使用一个简单的箱式滤波器，但我们更愿意使用一种更高级（也更美观）的模糊滤波器，即高斯模糊。
+
+## Gaussian blur
+
+In the post-processing chapter's blur we took the average of all surrounding pixels of an image. While it does give us an easy blur, it doesn't give the best results. A Gaussian blur is based on the Gaussian curve which is commonly described as a bell-shaped curve giving high values close to its center that gradually wear off over distance. The Gaussian curve can be mathematically represented in different forms, but generally has the following shape:
+
+在后处理一章的模糊处理中，我们取的是图像周围所有像素的平均值。虽然这样做很容易实现模糊，但效果并不理想。高斯模糊是以高斯曲线为基础的，高斯曲线通常被描述为一条钟形曲线，其中心附近的数值较高，随着向两边距离的增加，数值逐渐减小。高斯曲线可以用不同的数学形式表示，但一般具有以下形状：
+
+![Gaussian](/assets/img/post/LearnOpenGL-AdvancedLighting-Bloom-Gaussian.png)
+
+As the Gaussian curve has a larger area close to its center, using its values as weights to blur an image give more natural results as samples close by have a higher precedence. If we for instance sample a 32x32 box around a fragment, we use progressively smaller weights the larger the distance to the fragment; this gives a better and more realistic blur which is known as a Gaussian blur.
+
+由于高斯曲线靠近中心区域的值较大，使用其值作为权重来模糊图像的效果会更加自然，因为靠近中心的样本具有更高的优先级。例如，如果我们在片段周围采样一个 32x32 的方框，与片段的距离越远，权重就越小；这样就能获得更好、更逼真的模糊效果，这就是所谓的高斯模糊。
+
+To implement a Gaussian blur filter we'd need a two-dimensional box of weights that we can obtain from a 2 dimensional Gaussian curve equation. The problem with this approach however is that it quickly becomes extremely heavy on performance. Take a blur kernel of 32 by 32 for example, this would require us to sample a texture a total of 1024 times for each fragment!
+
+要实现高斯模糊滤波器，我们需要一个二维的权重框，我们可以从二维高斯曲线方程中获得权重。但这种方法的问题在于，随着权重框增大它的性能会变得极差。以 32 x 32 的模糊核为例，对于每个片段这就要求我们总共采样 1024 次纹理！
+
+Luckily for us, the Gaussian equation has a very neat property that allows us to separate the two-dimensional equation into two smaller one-dimensional equations: one that describes the horizontal weights and the other that describes the vertical weights. We'd then first do a horizontal blur with the horizontal weights on the scene texture, and then on the resulting texture do a vertical blur. Due to this property the results are exactly the same, but this time saving us an incredible amount of performance as we'd now only have to do 32 + 32 samples compared to 1024! This is known as two-pass Gaussian blur.
+
+幸运的是，高斯方程有一个非常巧妙的特性，允许我们将二维方程分离成两个较小的一维方程：一个描述水平权重，另一个描述垂直权重。然后，我们首先在场景纹理上使用水平权重进行水平模糊，然后在得到的纹理上进行垂直模糊。利用这一特性，可以获得完全一样的结果，同时因为我们现在只需进行 32 + 32 次采样，而不是 1024 次采样，所以为我们避免了大量的性能损耗！这就是所谓的双通道高斯模糊。
+
+![Two Pass Gaussian](/assets/img/post/LearnOpenGL-AdvancedLighting-Bloom-GaussianTwoPass.png)
+
+This does mean we need to blur an image at least two times and this works best with the use of framebuffer objects. Specifically for the two-pass Gaussian blur we're going to implement ping-pong framebuffers. That is a pair of framebuffers where we render and swap, a given number of times, the other framebuffer's color buffer into the current framebuffer's color buffer with an alternating shader effect. We basically continuously switch the framebuffer to render to and the texture to draw with. This allows us to first blur the scene's texture in the first framebuffer, then blur the first framebuffer's color buffer into the second framebuffer, and then the second framebuffer's color buffer into the first, and so on.
+
+这就意味着我们需要对图像进行至少两次模糊处理，使用帧缓冲对象能很好的应对这种需求。具体来说，对于两次高斯模糊，我们将使用乒乓帧缓冲。乒乓帧缓冲是一对帧缓冲，我们在其中渲染并进行一定次数的交换，交换是将另一个帧缓冲的颜色缓冲应用效果后输出到当前帧缓冲的颜色缓冲中。基本上，我们会不断切换要渲染的帧缓冲和要绘制的纹理。这使得我们可以先在第一个帧缓冲区中模糊场景的纹理，然后将第一个帧缓冲区的颜色缓冲区模糊到第二个帧缓冲区，再将第二个帧缓冲区的颜色缓冲区模糊到第一个帧缓冲区，以此类推。
+
+Before we delve into the framebuffers let's first discuss the Gaussian blur's fragment shader:
+
+在深入研究帧缓冲区之前，我们先来讨论一下高斯模糊的片段着色器：
+
+```glsl
+#version 330 core
+out vec4 FragColor;
+  
+in vec2 TexCoords;
+
+uniform sampler2D image;
+  
+uniform bool horizontal;
+uniform float weight[5] = float[] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
+
+void main()
+{             
+    vec2 tex_offset = 1.0 / textureSize(image, 0); // gets size of single texel
+    vec3 result = texture(image, TexCoords).rgb * weight[0]; // current fragment's contribution
+    if(horizontal)
+    {
+        for(int i = 1; i < 5; ++i)
+        {
+            result += texture(image, TexCoords + vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
+            result += texture(image, TexCoords - vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
+        }
+    }
+    else
+    {
+        for(int i = 1; i < 5; ++i)
+        {
+            result += texture(image, TexCoords + vec2(0.0, tex_offset.y * i)).rgb * weight[i];
+            result += texture(image, TexCoords - vec2(0.0, tex_offset.y * i)).rgb * weight[i];
+        }
+    }
+    FragColor = vec4(result, 1.0);
+}
+```
+
+Here we take a relatively small sample of Gaussian weights that we each use to assign a specific weight to the horizontal or vertical samples around the current fragment. You can see that we split the blur filter into a horizontal and vertical section based on whatever value we set the horizontal uniform. We base the offset distance on the exact size of a texel obtained by the division of 1.0 over the size of the texture (a vec2 from textureSize).
+
+这里我们取一个相对较小的高斯权重样本，作为当前片段周围的水平或垂直样本权重。可以看到，我们根据是否设置了 uniform 类型的 horizontal 变量值，将模糊滤波器分为水平和垂直两部分。我们根据 1.0 除以纹理大小（textureSize 返回的一个 vec2）得出一个纹素的精确大小来确定偏移距离。
+
+For blurring an image we create two basic framebuffers, each with only a color buffer texture:
+
+为了模糊图像，我们创建了两个基本帧缓冲，每个帧缓冲只有一个颜色缓冲纹理：
+
+```c++
+unsigned int pingpongFBO[2];
+unsigned int pingpongBuffer[2];
+glGenFramebuffers(2, pingpongFBO);
+glGenTextures(2, pingpongBuffer);
+for (unsigned int i = 0; i < 2; i++)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
+    glBindTexture(GL_TEXTURE_2D, pingpongBuffer[i]);
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL
+    );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongBuffer[i], 0
+    );
+}
+```
+
+Then after we've obtained an HDR texture and an extracted brightness texture, we first fill one of the ping-pong framebuffers with the brightness texture and then blur the image 10 times (5 times horizontally and 5 times vertically):
+
+然后，在获得 HDR 纹理和提取的亮光纹理后，我们首先用亮光纹理填充其中一个乒乓帧缓冲，然后将图像模糊 10 次（水平方向 5 次，垂直方向 5 次）：
+
+```c++
+bool horizontal = true, first_iteration = true;
+int amount = 10;
+shaderBlur.use();
+for (unsigned int i = 0; i < amount; i++)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]); 
+    shaderBlur.setInt("horizontal", horizontal);
+    glBindTexture(
+        GL_TEXTURE_2D, first_iteration ? colorBuffers[1] : pingpongBuffers[!horizontal]
+    ); 
+    RenderQuad();
+    horizontal = !horizontal;
+    if (first_iteration)
+        first_iteration = false;
+}
+glBindFramebuffer(GL_FRAMEBUFFER, 0); 
+```
+
+Each iteration we bind one of the two framebuffers based on whether we want to blur horizontally or vertically and bind the other framebuffer's color buffer as the texture to blur. The first iteration we specifically bind the texture we'd like to blur (brightnessTexture) as both color buffers would else end up empty. By repeating this process 10 times, the brightness image ends up with a complete Gaussian blur that was repeated 5 times. This construct allows us to blur any image as often as we'd like; the more Gaussian blur iterations, the stronger the blur.
+
+每次迭代时，我们都会根据想要进行水平方向模糊还是进行垂直方向模糊绑定两个帧缓冲中的一个，并将另一个帧缓冲的颜色缓冲绑定为要去模糊的纹理。第一次迭代时，我们特地绑定了要模糊的纹理（brightnessTexture），否则两个颜色缓冲区最终都会是空的。重复此过程 10 次后，亮光图像最终将以重复 5 次的完整高斯模糊效果呈现。这种结构允许我们随心所欲地模糊任何图像，高斯模糊迭代次数越多，模糊效果越强。
+
+By blurring the extracted brightness texture 5 times, we get a properly blurred image of all bright regions of a scene.
+
+将提取的亮光纹理模糊 5 次后，我们就能得到场景中所有亮光区域的适当模糊图像。
+
+![Gaussian Blurred](/assets/img/post/LearnOpenGL-AdvancedLighting-Bloom-GaussianBlurred.png)
+
+The last step to complete the Bloom effect is to combine this blurred brightness texture with the original scene's HDR texture.
+
+完成泛光效果的最后一步是将模糊亮光纹理与原始的场景的 HDR 纹理相结合。
+
+## Blending both textures
+
+With the scene's HDR texture and a blurred brightness texture of the scene we only need to combine the two to achieve the infamous Bloom or glow effect. In the final fragment shader (largely similar to the one we used in the HDR chapter) we additively blend both textures:
+
+有了场景的 HDR 纹理和场景的模糊亮光纹理，我们只需将两者结合起来，就能实现著名的泛光或发光效果。在最终的片段着色器中（与我们在 HDR 章节中使用的着色器基本类似），我们对两种纹理进行相加混合：
+
+```glsl
+#version 330 core
+out vec4 FragColor;
+  
+in vec2 TexCoords;
+
+uniform sampler2D scene;
+uniform sampler2D bloomBlur;
+uniform float exposure;
+
+void main()
+{             
+    const float gamma = 2.2;
+    vec3 hdrColor = texture(scene, TexCoords).rgb;      
+    vec3 bloomColor = texture(bloomBlur, TexCoords).rgb;
+
+    // additive blending
+    hdrColor += bloomColor; 
+
+    // tone mapping
+    vec3 result = vec3(1.0) - exp(-hdrColor * exposure);
+
+    // also gamma correct while we're at it       
+    result = pow(result, vec3(1.0 / gamma));
+
+    FragColor = vec4(result, 1.0);
+}  
+```
+Interesting to note here is that we add the Bloom effect before we apply tone mapping. This way, the added brightness of bloom is also softly transformed to LDR range with better relative lighting as a result.
+
+值得注意的是，我们在应用色调映射之前就添加了泛光效果。这样，泛光增加的亮度也会柔和地转换到 LDR 范围，从而可以获得更好的相对光照结果。
+
+With both textures added together, all bright areas of our scene now get a proper glow effect:
+
+将这两种纹理添加到一起后，场景中所有明亮的区域都获得了适当的发光效果：
+
+![Final Bloom Effect](/assets/img/post/LearnOpenGL-AdvancedLighting-Bloom-FinalBloomEffect.png)
+
+The colored cubes now appear much more bright and give a better illusion as light emitting objects. This is a relatively simple scene so the Bloom effect isn't too impressive here, but in well lit scenes it can make a significant difference when properly configured. You can find the source code of this simple demo [here](https://learnopengl.com/code_viewer_gh.php?code=src/5.advanced_lighting/7.bloom/bloom.cpp).
+
+彩色发光立方体现在看起来更亮了，给人一种发光物体的错觉。这是一个相对简单的场景，因此泛光效果在这里并不出众，如果在光线充足的场景中，配置得当的话，效果会大不相同。你可以在[这里](https://learnopengl.com/code_viewer_gh.php?code=src/5.advanced_lighting/7.bloom/bloom.cpp)找到这个简单演示的源代码。
+
+For this chapter we used a relatively simple Gaussian blur filter where we only take 5 samples in each direction. By taking more samples along a larger radius or repeating the blur filter an extra number of times we can improve the blur effect. As the quality of the blur directly correlates to the quality of the Bloom effect, improving the blur step can make a significant improvement. Some of these improvements combine blur filters with varying sized blur kernels or use multiple Gaussian curves to selectively combine weights. The additional resources from Kalogirou and Epic Games discuss how to significantly improve the Bloom effect by improving the Gaussian blur.
+
+在本章中，我们使用了一个相对简单的高斯模糊滤波器，每个方向只采集了 5 个样本。通过沿更大半径采集更多样本或重复更多次数的模糊滤波，我们可以提升模糊的效果。由于模糊效果的质量与泛光效果的质量直接相关，因此改进模糊步骤可以显著提升泛光效果。其中一些改进是将模糊滤波器与不同大小的模糊核相结合，或使用多条高斯曲线有选择性地组合权重。来自 Kalogirou 和 Epic Games 的额外资源讨论了如何通过改进高斯模糊来显著改善泛光效果。
+
+
+## References
+>
+> * [Bloom - learnopengl](https://learnopengl.com/Advanced-Lighting/Bloom)
+>
+> * [Efficient Gaussian Blur with linear sampling - rastergrid](https://www.rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling/)
+>
+> * [Incremental Computation of the Gaussian](https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch40.html)
