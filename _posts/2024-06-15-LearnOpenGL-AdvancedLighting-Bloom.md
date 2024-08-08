@@ -354,4 +354,4 @@ For this chapter we used a relatively simple Gaussian blur filter where we only 
 >
 > * [Efficient Gaussian Blur with linear sampling - rastergrid](https://www.rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling/)
 >
-> * [Incremental Computation of the Gaussian](https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch40.html)
+> * [Incremental Computation of the Gaussian - GPU Gems 3](https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch40.html)
