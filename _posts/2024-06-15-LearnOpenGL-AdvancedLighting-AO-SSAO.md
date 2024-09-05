@@ -471,7 +471,7 @@ As a final step we normalize the occlusion contribution by the size of the kerne
 
 最后一步，我们使用核的大小对遮挡贡献进行归一化，并输出结果。请注意，我们从 1.0 中减去遮挡因子，以便我们可以直接使用遮挡因子来缩放环境光照项。
 
-```GLSL
+```glsl
 occlusion = 1.0 - (occlusion / kernelSize);
 FragColor = occlusion;
 ```
