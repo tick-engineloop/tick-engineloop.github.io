@@ -16,7 +16,7 @@ timezone: Asia/Shanghai
 
 title: EngineLoop.Tick # the main title
 
-tagline: EngineLoop.Tick's GitHub Pages. # it will display as the sub-title
+tagline: What's the point? I don't know. # it will display as the sub-title
 
 description: >- # used by seo meta and the atom feed
   A minimal, responsive and feature-rich Jekyll theme for technical writing.
