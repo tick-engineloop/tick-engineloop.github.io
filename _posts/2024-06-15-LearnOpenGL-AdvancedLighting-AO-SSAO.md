@@ -512,7 +512,7 @@ Because the tiled random vector texture gives us a consistent randomness, we can
 
 由于平铺的是随机矢量纹理瓦片，这为我们提供了一致的随机性，因此我们可以利用此属性来创建简单的模糊着色器：
 
-```GLSL
+```glsl
 #version 330 core
 out float FragColor;
   
@@ -554,7 +554,7 @@ Applying the occlusion factors to the lighting equation is incredibly easy: all 
 
 将遮挡因子应用于光照方程非常容易：我们所要做的就是将每个片段的环境光遮蔽因子乘以光照的环境分量，然后就完成了。如果我们采用上一章的 Blinn-Phong 延迟光照着色器并对其进行一些调整，我们将得到以下片段着色器：
 
-```GLSL
+```glsl
 #version 330 core
 out vec4 FragColor;
   
@@ -623,7 +623,7 @@ Some parameters you can tweak (by using uniforms for example): kernel size, radi
 
 你可以调整一些参数（例如，通过使用 uniforms 设置 shader 中的参数值）：核大小、半径、偏置、和/或噪声核的大小。你还可以将最终遮挡值提升到用户定义的幂上，以增加其强度：
 
-```GLSL
+```glsl
 occlusion = 1.0 - (occlusion / kernelSize);       
 FragColor = pow(occlusion, power);
 ```
