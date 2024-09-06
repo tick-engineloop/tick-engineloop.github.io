@@ -4,6 +4,7 @@ description: 阴影是光线被遮挡后在被遮挡区域出现的一种光照�
 date: 2024-06-18 00:00:00 +0800
 categories: [Computer Grahics, LearnOpenGL, AdvancedLighting]
 tags: [computergraphics, learnopengl, postprocess，shadow]     # TAG names should always be lowercase
+math: true
 ---
 
 ## Introduction
