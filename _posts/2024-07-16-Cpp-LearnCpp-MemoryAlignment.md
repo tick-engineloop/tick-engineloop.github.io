@@ -96,4 +96,4 @@ style c stroke:#333,stroke-width:2px
 style f fill:#0af,stroke:#333,stroke-width:2px
 ```
 
-这样一来，S2Array 的元素地址分别为 arrayPtrVal、arrayPtrVal + 12、arrayPtrVal + 24、arrayPtrVal + 36。只要 arrayPtrVal 是 4 的倍数，所有的对齐限制就都可以满足了。
+这样一来，S2Array 的元素地址分别为 arrayPtrVal、arrayPtrVal + 12、arrayPtrVal + 24、arrayPtrVal + 36。只要 arrayPtrVal 是 4 的倍数，所有的对齐限制就都可以满足了。概括来说就是，在不考虑对齐模数的情况下，结构体末尾填充量要视结构体中成员变量的最大类型而定，确保结构体大小为这个最大类型大小的整数倍，这样就能保证在结构体数组中每个元素的每个成员变量都满足对齐要求。同时，当结构体存在嵌套时，父结构体中的子结构体类型成员变量起始地址要视子结构体中成员变量的最大类型而定，确保子结构体起始地址为这个最大类型大小的整数倍。
