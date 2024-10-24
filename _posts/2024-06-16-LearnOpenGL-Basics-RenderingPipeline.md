@@ -35,7 +35,7 @@ OpenGL 渲染管线执行流程（标准版）：
       ScissorTest(Scissor Test) --> StencilTest(Stencil Test) --> DepthTest(Depth Test) --> Blending(Blending) --> LogicalOperation(Logical Operation) --> WriteMask(Write Mask)
     end
     
-    VertexSpecification(Vertex Specification) --> VertexProcessing --> VertexPost-Processing --> Rasterization --> FragmentShader --> Per-SampleOperations
+    VertexSpecification(Vertex Specification) --> VertexProcessing --> VertexPost-Processing --> Rasterization --> FragmentShader --> PerFragmentOperations(Per-Fragment Operations)
 
     style VertexShader fill:#bbf,stroke:#f66,stroke-width:2px,color:#fff,stroke-dasharray: 5 5
     style TessellationShader fill:#bbf,stroke:#f66,stroke-width:2px,color:#fff,stroke-dasharray: 5 5
