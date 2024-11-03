@@ -2,7 +2,7 @@
 title: 在 VS Code 中调试 UE
 description: 介绍如何在 ubuntu 系统环境下搭建 UE 调试环境
 date: 2024-06-15 00:00:00 +0800
-categories: [MISC, Tools]
+categories: [Computer Grahics, UE5, Debug]
 tags: [vscode, ue]     # TAG names should always be lowercase
 ---
 
