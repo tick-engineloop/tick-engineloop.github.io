@@ -191,3 +191,12 @@ Address of pA: 0x55b8bd26beb0
 pC 是指向 C 类对象的指针。pB 是通过 `static_cast<B*>` 从 pC 转换而来的指针，因为 B 是 C 的一个基类，所以 pB 指向的是 C 对象中 B 部分的起始地址，这个地址通常与 pC 是不同的。pA 是通过 `static_cast<A*>` 从 pC 转换而来的指针，因为 A 是 C 的另一个基类，所以 pA 指向的是 C 对象中 A 部分的起始地址，这个地址与 pC 可能相同，因为 A 是 C 对象的第一个基类子对象。
 
 
+## 题目5 类修饰符
+
+Public 继承：使用 public 继承时，基类的 public 和 protected 成员在派生类中分别保持 public 和 protected 访问级别，而基类的 private 成员仍然是 private，不可直接访问。
+Protected 继承：使用 protected 继承时，基类的 public 和 protected 成员在派生类中都变为 protected，而基类的 private 成员仍然是 private，不可直接访问。
+Private 继承：使用 private 继承时，基类的 public 和 protected 成员在派生类中都变为 private，而基类的 private 成员仍然是 private，不可直接访问。
+
+Public 成员修饰：访问权限：可以被任何类和函数访问。用途：当你希望类的成员可以从类外部被访问时使用。
+Protected 成员修饰：访问权限：可以被类自身及其派生类访问，但不能被其他类或函数访问。用途：当你希望成员只能被类自身和其子类访问时使用，通常用于继承和多态设计。
+Private 成员修饰：访问权限：只能被类自身访问，不能被派生类或任何其他类或函数访问。用途：当你希望成员只能被类自身访问时使用，通常用于实现数据封装和隐藏实现细节。
