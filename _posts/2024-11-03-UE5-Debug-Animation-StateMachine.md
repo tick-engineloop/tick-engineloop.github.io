@@ -10,6 +10,6 @@ tags: [ue, animation, statemachine]     # TAG names should always be lowercase
 
 ## References
 >
-> * [UE角色动画蓝图状态机状态节点调试方法](https://www.bilibili.com/video/BV1MaS2YGECo/?vd_source=0a67abb40c91f2db86ad327ada7ae9df)
+> * [UE5.4 角色动画蓝图状态机状态节点调试方法](https://www.bilibili.com/video/BV1MaS2YGECo/?vd_source=0a67abb40c91f2db86ad327ada7ae9df)
 >
 > * [深入浅出动画技术:调试篇 --- 五谷延年](https://zhuanlan.zhihu.com/p/432824943)
