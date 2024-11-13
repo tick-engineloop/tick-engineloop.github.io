@@ -12,4 +12,4 @@ tags: [ue, animation, montage]     # TAG names should always be lowercase
 
 ## References
 >
-> * [UE5.4 角色动画蓝图状态机状态节点调试方法](https://www.bilibili.com/video/BV1CED6YSEn8/?spm_id_from=333.999.0.0&vd_source=0a67abb40c91f2db86ad327ada7ae9df)
+> * [UE5.4 新建蒙太奇分段方法](https://www.bilibili.com/video/BV1CED6YSEn8/?spm_id_from=333.999.0.0&vd_source=0a67abb40c91f2db86ad327ada7ae9df)
