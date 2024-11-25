@@ -8,27 +8,151 @@ tags: [ue5]     # TAG names should always be lowercase
 
 ## Gameplay Ability System
 
-OwnerActor is the actor that logically owns this component.
-AvatarActor is what physical actor in the world we are acting on. Usually a Pawn but it could be a Tower, Building, Turret, etc, may be the same as Owner.
+```c++
+/** The core ActorComponent for interfacing with the GameplayAbilities System */
+UCLASS(ClassGroup=AbilitySystem, hidecategories=(Object,LOD,Lighting,Transform,Sockets,TextureStreaming), editinlinenew, meta=(BlueprintSpawnableComponent))
+class GAMEPLAYABILITIES_API UAbilitySystemComponent : public UGameplayTasksComponent, public IGameplayTagAssetInterface, public IAbilitySystemReplicationProxyInterface
+{
+	...
 
-// Abilities with these tags are blocked while this ability is active
-// 当这个技能（BlockAbilitiesWithTag 所属的技能）是激活状态时，带有这些标记（存储在 BlockAbilitiesWithTag 中的标记）的技能会被阻止执行
-FGameplayTagContainer BlockAbilitiesWithTag;
+	/** The actor that owns this component logically */
+	UPROPERTY(ReplicatedUsing = OnRep_OwningActor)
+	TObjectPtr<AActor> OwnerActor;
 
-// Tags to apply to activating owner while this ability is active.
-// 在这个技能（ActivationOwnedTags 所属的技能）激活时，将这些标记（存储在 ActivationOwnedTags 中的标记）应用到正在激活这个技能的所有者身上
-FGameplayTagContainer ActivationOwnedTags;
+	/** The actor that is the physical representation used for abilities. Can be NULL */
+	UPROPERTY(ReplicatedUsing = OnRep_OwningActor)
+	TObjectPtr<AActor> AvatarActor;
+	
+	...
 
-// This ability can only be activated if the activating actor/component has all of these tags
-// 只有当激活的角色/组件具有以下所有标记（存储在 ActivationRequiredTags 中的标记）时，才能激活这个技能（ActivationRequiredTags 所属的技能）
-FGameplayTagContainer ActivationRequiredTags;
+	void SetOwnerActor(AActor* NewOwnerActor);
+	AActor* GetOwnerActor() const { return OwnerActor; }
 
-// This ability is blocked if the activating actor/component has any of these tags
-// 如果激活的角色/组件具有以下这些标记（存储在 ActivationBlockedTags 中的标记）中的任何一个，这个技能（ActivationBlockedTags 所属的技能）会被阻止执行
-FGameplayTagContainer ActivationBlockedTags;
+	void SetAvatarActor_Direct(AActor* NewAvatarActor);
+	AActor* GetAvatarActor_Direct() const { return AvatarActor; }
+
+	...
+
+	/** Returns the avatar actor for this component */
+	AActor* GetAvatarActor() const;
+
+	/** Changes the avatar actor, leaves the owner actor the same */
+	void SetAvatarActor(AActor* InAvatarActor);
+	
+	...
+
+	/**
+	 *	Initialized the Abilities' ActorInfo - the structure that holds information about who we are acting on and who controls us.
+	 *      OwnerActor is the actor that logically owns this component.
+	 *		AvatarActor is what physical actor in the world we are acting on. Usually a Pawn but it could be a Tower, Building, Turret, etc, may be the same as Owner
+	 */
+	virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor);
+
+	...
+};
+```
+
+**OwnerActor** is the actor that logically owns this component.
+
+**AvatarActor** is what physical actor in the world we are acting on. Usually a Pawn but it could be a Tower, Building, Turret, etc, may be the same as Owner.
+
+```c++
+/** Abilities define custom gameplay logic that can be activated by players or external game logic */
+UCLASS(Blueprintable)
+class GAMEPLAYABILITIES_API UGameplayAbility : public UObject, public IGameplayTaskOwnerInterface
+{
+	...
+
+	// Abilities with these tags are blocked while this ability is active
+	// 当这个技能（BlockAbilitiesWithTag 所属的技能）是激活状态时，带有这些标记（存储在 BlockAbilitiesWithTag 中的标记）的技能会被阻止执行
+	FGameplayTagContainer BlockAbilitiesWithTag;
+
+	// Tags to apply to activating owner while this ability is active.
+	// 在这个技能（ActivationOwnedTags 所属的技能）激活时，将这些标记（存储在 ActivationOwnedTags 中的标记）应用到正在激活这个技能的所有者身上
+	FGameplayTagContainer ActivationOwnedTags;
+
+	// This ability can only be activated if the activating actor/component has all of these tags
+	// 只有当激活的角色/组件具有以下所有标记（存储在 ActivationRequiredTags 中的标记）时，才能激活这个技能（ActivationRequiredTags 所属的技能）
+	FGameplayTagContainer ActivationRequiredTags;
+
+	// This ability is blocked if the activating actor/component has any of these tags
+	// 如果激活的角色/组件具有以下这些标记（存储在 ActivationBlockedTags 中的标记）中的任何一个，这个技能（ActivationBlockedTags 所属的技能）会被阻止执行
+	FGameplayTagContainer ActivationBlockedTags;
+
+	...
+};
+```
+
+## Actor
+
+```c++
+/* Struct of optional parameters passed to SpawnActor function(s). */
+struct ENGINE_API FActorSpawnParameters
+{
+	FActorSpawnParameters();
+
+	/* The Actor that spawned this Actor. (Can be left as NULL). */
+	AActor* Owner;
+
+	/* The APawn that is responsible for damage done by the spawned Actor. (Can be left as NULL). */
+	/* 这个 APawn 对生成的 Actor 引发的伤害或其他游戏性事件负责，是发起者。举例来说，A 生成了一个武器 Actor，这个 Actor 在战斗中对 B 造成了伤害，那么这个武器 Actor 的 Instigator 就是 A，且 A 需是一个 APawn 类型。*/
+	APawn*	Instigator;
+
+	...
+}
+```
+
+```c++
+/**
+ * Convenience template for constructing a gameplay object
+ *
+ * @param	Outer		the outer for the new object.  If not specified, object will be created in the transient package.
+ * @param	Class		the class of object to construct
+ * @param	Name		the name for the new object.  If not specified, the object will be given a transient name via MakeUniqueObjectName
+ * @param	Flags		the object flags to apply to the new object
+ * @param	Template	the object to use for initializing the new object.  If not specified, the class's default object will be used
+ * @param	bCopyTransientsFromClassDefaults	if true, copy transient from the class defaults instead of the pass in archetype ptr (often these are the same)
+ * @param	InInstanceGraph						contains the mappings of instanced objects and components to their templates
+ * @param	ExternalPackage						Assign an external Package to the created object if non-null
+ *
+ * @return	a pointer of type T to a new object of the specified class
+ */
+template< class T >
+FUNCTION_NON_NULL_RETURN_START
+	T* NewObject(UObject* Outer, const UClass* Class, FName Name = NAME_None, EObjectFlags Flags = RF_NoFlags, UObject* Template = nullptr, bool bCopyTransientsFromClassDefaults = false, FObjectInstancingGraph* InInstanceGraph = nullptr, UPackage* ExternalPackage = nullptr)
+FUNCTION_NON_NULL_RETURN_END
+{
+	...
+
+	FStaticConstructObjectParameters Params(Class);
+	Params.Outer = Outer;
+	Params.Name = Name;
+	Params.SetFlags = Flags;
+	Params.Template = Template;
+	Params.bCopyTransientsFromClassDefaults = bCopyTransientsFromClassDefaults;
+	Params.InstanceGraph = InInstanceGraph;
+	Params.ExternalPackage = ExternalPackage;
+
+	...
+
+	return Result;
+}
+
+/** 
+ * Load an object. 
+ * @see StaticLoadObject()
+ */
+template< class T > 
+inline T* LoadObject( UObject* Outer, const TCHAR* Name, const TCHAR* Filename=nullptr, uint32 LoadFlags=LOAD_None, UPackageMap* Sandbox=nullptr, const FLinkerInstancingContext* InstancingContext=nullptr )
+{
+	return (T*)StaticLoadObject( T::StaticClass(), Outer, Name, Filename, LoadFlags, Sandbox, true, InstancingContext );
+}
+```
+**Outer**: A UObject to set as the Outer for the Object being created.
 
 ## UCLASS macro
 
+```c++
 namespace UC
 {
 	// valid keywords for the UCLASS macro
@@ -161,9 +285,11 @@ namespace UC
 		CustomThunkTemplates
 	};
 }
+```
 
 ## UINTERFACE macro 
 
+```c++
 namespace UI
 {
 	// valid keywords for the UINTERFACE macro, see the UCLASS versions, above
@@ -183,9 +309,11 @@ namespace UI
 		ConversionRoot,
 	};
 }
+```
 
 ## UFUNCTION and UDELEGATE macros
 
+```c++
 namespace UF
 {
 	// valid keywords for the UFUNCTION and UDELEGATE macros
@@ -286,9 +414,11 @@ namespace UF
 		IgnoreTypePromotion,
 	};
 }
+```
 
 ## UPROPERTY macro
 
+```c++
 namespace UP
 {
 	// valid keywords for the UPROPERTY macro
@@ -418,9 +548,11 @@ namespace UP
 		FieldNotify,
 	};
 }
+```
 
 ## USTRUCT macro
 
+```c++
 namespace US
 {
 	// valid keywords for the USTRUCT macro
@@ -445,3 +577,4 @@ namespace US
 		BlueprintInternalUseOnlyHierarchical,
 	};
 }
+```
