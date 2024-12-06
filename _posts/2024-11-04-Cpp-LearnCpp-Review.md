@@ -193,10 +193,105 @@ pC 是指向 C 类对象的指针。pB 是通过 `static_cast<B*>` 从 pC 转换
 
 ## 题目5 类修饰符
 
-Public 继承：使用 public 继承时，基类的 public 和 protected 成员在派生类中分别保持 public 和 protected 访问级别，而基类的 private 成员仍然是 private，不可直接访问。
-Protected 继承：使用 protected 继承时，基类的 public 和 protected 成员在派生类中都变为 protected，而基类的 private 成员仍然是 private，不可直接访问。
-Private 继承：使用 private 继承时，基类的 public 和 protected 成员在派生类中都变为 private，而基类的 private 成员仍然是 private，不可直接访问。
+### 继承关系
 
-Public 成员修饰：访问权限：可以被任何类和函数访问。用途：当你希望类的成员可以从类外部被访问时使用。
-Protected 成员修饰：访问权限：可以被类自身及其派生类访问，但不能被其他类或函数访问。用途：当你希望成员只能被类自身和其子类访问时使用，通常用于继承和多态设计。
-Private 成员修饰：访问权限：只能被类自身访问，不能被派生类或任何其他类或函数访问。用途：当你希望成员只能被类自身访问时使用，通常用于实现数据封装和隐藏实现细节。
+* **public 继承**：使用 public 继承时，基类的 public 和 protected 成员在派生类中分别保持 public 和 protected 访问级别，而基类的 private 成员仍然是 private，不可直接访问。
+* **protected 继承**：使用 protected 继承时，基类的 public 和 protected 成员在派生类中都变为 protected，而基类的 private 成员仍然是 private，不可直接访问。
+* **private 继承**：使用 private 继承时，基类的 public 和 protected 成员在派生类中都变为 private，而基类的 private 成员仍然是 private，不可直接访问。
+
+### 访问控制
+
+* **public 成员**：可以被任何类和函数访问。当你希望类的成员可以从类外部被访问时应使用 pbulic。
+* **protected 成员**：可以被类自身及其派生类访问，但不能被其他类或函数访问。当你希望成员只能被类自身和其子类访问时应使用 protected，通常用于继承和多态设计。
+* **private 成员**：只能被类自身访问，不能被派生类或任何其他类或函数访问。当你希望成员只能被类自身访问时应使用 private，通常用于实现数据封装和隐藏实现细节。
+
+## 题目6 重写、重载和隐藏
+
+重写（override）、重载（overload）和隐藏（overwrite）在 C++ 中是三个完全不同的概念，概念不清的话很容易混淆，导致误用或者混用。三者的区别如下：
+
+* **重写（override）**：是指派生类重新定义基类中已定义的虚函数，派生类提供特定的实现以替换基类中的实现。派生类中要重写的函数必须和基类的虚函数有相同的函数签名和返回类型。
+
+```c++
+#include <iostream>
+
+class Base {
+public:
+    virtual void display() const {
+        std::cout << "Display Base class" << std::endl;
+    }
+};
+
+class Derived : public Base {
+public:
+    void display() const override {
+        std::cout << "Display Derived class" << std::endl;
+    }
+};
+
+int main() {
+    Base* basePtr = new Derived();
+    basePtr->display();
+    delete basePtr;
+    return 0;
+}
+```
+
+* **重载（overload）**：是指在同一个作用域内定义多个同名的函数，但这些函数的参数列表必须不同（即参数的类型、数量或顺序不同）。
+
+```c++
+#include <iostream>
+
+void print(int i) {
+    std::cout << "Printing int: " << i << std::endl;
+}
+
+void print(double f) {
+    std::cout << "Printing double: " << f << std::endl;
+}
+
+void print(const char* c) {
+    std::cout << "Printing string: " << c << std::endl;
+}
+
+int main() {
+    print(10);
+    print(3.14);
+    print("Hello, World!");
+    return 0;
+}
+```
+
+* **隐藏（overwrite）**：是指基类成员函数，无论它是否为虚函数，当派生类出现同名函数时，如果派生类函数签名不同于基类函数，则基类函数会被隐藏。如果派生类函数签名与基类函数相同，则需要确定基类函数是否为虚函数，如果是虚函数，则这里的概念就是重写；否则基类函数也会被隐藏。另外，如果还想使用基类函数，可以使用 using 关键字将其引入派生类。
+
+> **函数签名（Function Signature）** <br> 在 C++ 中，函数签名是指函数的标识信息，包括函数名以及参数的类型和顺序。需要注意的是函数签名并不包括返回类型。
+{: .prompt-tip }
+
+## 题目7 C++ 面向对象编程（OOP）的三大主要特性
+
+* **继承**：允许一个类（称为子类或派生类）继承另一个类（称为基类或父类）的属性和方法。这使得派生类可以重用和扩展基类的功能。继承提高了代码的复用性和可维护性。
+* **封装**：是将数据和操作数据的方法封装在一个类中，以保护数据免受外部干扰和滥用。通过访问控制（public、protected、private），封装提供了数据隐藏和访问控制的机制。
+* **多态**：允许在不同的上下文中使用相同的接口或方法。多态性可以通过函数重载、运算符重载和虚函数来实现。最常见的形式是通过基类指针或引用调用派生类的重写方法。
+
+```c++
+class Base {
+public:
+    virtual void display() {
+        std::cout << "Display Base" << std::endl;
+    }
+};
+
+class Derived : public Base {
+public:
+    void display() override {
+        std::cout << "Display Derived" << std::endl;
+    }
+};
+
+int main() {
+    Base* basePtr = new Derived();
+    basePtr->display();
+    delete basePtr;
+    return 0;
+}
+
+```
