@@ -578,3 +578,148 @@ namespace US
 	};
 }
 ```
+
+## Input Trigger
+
+```c++
+/**
+Base class for building triggers.（用于构建触发器的基类）
+Transitions to Triggered state once the input meets or exceeds the actuation threshold.（一旦输入达到或超过启动阈值，就会转换到已触发（Triggered）状态。）
+*/
+class ENHANCEDINPUT_API UInputTrigger : public UObject
+{
+	...
+	// Point at which this trigger fires（这个触发器触发的点）
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category = "Trigger Settings")
+	float ActuationThreshold = 0.5f;
+
+	/* Decides whether this trigger ticks every frame or not.
+	 * This WILL affect performance and should only be used in specific custom triggers.
+	 */
+	UPROPERTY(Config, BlueprintReadOnly, Category = "Trigger Settings")
+	bool bShouldAlwaysTick = false;
+	...
+};
+
+/**
+Base class for building triggers that have firing conditions governed by elapsed time.（用于构建触发器的基类，触发条件受运行时间的控制。）
+This class transitions state to Ongoing once input is actuated, and will track Ongoing input time until input is released.（一旦输入被启动，该类就会将状态转换为持续（Ongoing）状态，并跟踪持续输入的时间，直到输入被释放。）
+*/
+class ENHANCEDINPUT_API UInputTriggerTimedBase : public UInputTrigger
+{
+	...
+	// How long have we been actuating this trigger?（我们启动这个触发器多长时间了？）
+	UPROPERTY(BlueprintReadWrite, Category = "Trigger Settings")
+	float HeldDuration = 0.0f;
+	...
+};
+
+/** UInputTriggerDown
+	Trigger fires when the input exceeds the actuation threshold.（当输入超过启动阈值时触发器触发）
+	Note: When no triggers are bound Down (with an actuation threshold of > 0) is the default behavior.
+	*/
+class UInputTriggerDown final : public UInputTrigger
+
+/** UInputTriggerPressed
+	Trigger fires once only when input exceeds the actuation threshold.（只有当输入超过启动阈值时，触发器触发一次）
+	Holding the input will not cause further triggers.（按住输入不会造成再次触发。）
+	*/
+class UInputTriggerPressed final : public UInputTrigger
+
+/** UInputTriggerReleased
+	Trigger returns Ongoing whilst input exceeds the actuation threshold.（当输入超过启动阈值时触发器返回持续（Ongoing）状态）
+	Trigger fires once only when input drops back below actuation threshold.（只有当输入回落到启动阈值时，触发器触发一次）
+	*/
+class UInputTriggerReleased final : public UInputTrigger
+
+/** UInputTriggerHold
+	Trigger fires once input has remained actuated for HoldTimeThreshold seconds.（在输入保持启动状态达到 HoldTimeThreshold 秒后触发器触发。）
+	Trigger may optionally fire once, or repeatedly fire.（触发器可选择触发一次或重复触发。）
+*/
+class UInputTriggerHold final : public UInputTriggerTimedBase
+{
+	...
+	// How long does the input have to be held to cause trigger?（输入需要保持多长时间才能引起触发？）
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category = "Trigger Settings", meta = (ClampMin = "0"))
+	float HoldTimeThreshold = 1.0f;
+
+	// Should this trigger fire only once, or fire every frame once the hold time threshold is met?
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category = "Trigger Settings")
+	bool bIsOneShot = false;
+	...
+};
+
+/** UInputTriggerHoldAndRelease
+	Trigger fires when input is released after having been actuated for at least HoldTimeThreshold seconds.（当输入启动至少 HoldTimeThreshold 秒后被释放时触发器触发。）
+*/
+class UInputTriggerHoldAndRelease final : public UInputTriggerTimedBase 
+{
+	...
+	// How long does the input have to be held to cause trigger?（输入需要保持多长时间才能引起触发？）
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category = "Trigger Settings", meta = (ClampMin = "0"))
+	float HoldTimeThreshold = 0.5f;
+};
+
+/** UInputTriggerTap
+	Input must be actuated then released within TapReleaseTimeThreshold seconds to trigger.（输入必须在 TapReleaseTimeThreshold 秒内启动然后释放才能触发。）
+*/
+class UInputTriggerTap final : public UInputTriggerTimedBase
+{
+	...
+	// Release within this time-frame to trigger a tap（在此时间范围内释放可触发轻拍）
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category = "Trigger Settings", meta = (ClampMin = "0"))
+	float TapReleaseTimeThreshold = 0.2f;
+};
+
+/** UInputTriggerPulse
+	Trigger that fires at an Interval, in seconds, while input is actuated. （在输入启动时，触发器每间隔某一个时间（单位秒）就会触发）
+	Note:	Completed only fires when the repeat limit is reached or when input is released immediately after being triggered.
+			Otherwise, Canceled is fired when input is released.
+	*/
+class UInputTriggerPulse final : public UInputTriggerTimedBase
+{
+	...
+	// Whether to trigger when the input first exceeds the actuation threshold or wait for the first interval?（是在输入首次超过启动阈值时就触发，还是等待满足第一个间隔时间时再触发？）
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category = "Trigger Settings")
+	bool bTriggerOnStart = true;
+
+	// How long between each trigger fire while input is held, in seconds?（按住输入键时，每次触发器触发间隔多长时间（秒）？）
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category = "Trigger Settings", meta = (ClampMin = "0"))
+	float Interval = 1.0f;
+
+	// How many times can the trigger fire while input is held? (0 = no limit)（按住输入键时，触发器可以触发多少次，0 表示没有次数限制）
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category = "Trigger Settings", meta = (ClampMin = "0"))
+	int32 TriggerLimit = 0;
+	...
+};
+
+/**
+ * UInputTriggerCombo
+ * All actions in the combo array must be completed (based on combo completion event specified - triggered, completed, etc.) to trigger the action this trigger is on.（必须完成连招数组中的所有动作（基于指定的连招完成事件 - 已触发、已完成等）才能触发这个触发器上的动作。）
+ * Actions must also be completed in the order specified by the combo actions array (starting at index 0).（动作也必须以连招动作数组中指定的顺序完成（以索引 0 开始）。）
+ * Note: This will only trigger for one frame before resetting the combo trigger's progress 
+ */
+class ENHANCEDINPUT_API UInputTriggerCombo : public UInputTrigger
+{
+	...
+	// Keeps track of what action we're currently at in the combo
+	UPROPERTY(BlueprintReadOnly, Category = "Trigger Settings")
+	int32 CurrentComboStepIndex = 0;
+	
+	// Time elapsed between last combo InputAction trigger and current time
+	UPROPERTY(BlueprintReadOnly, Category = "Trigger Settings")
+	float CurrentTimeBetweenComboSteps = 0.0f;
+	...
+	/**
+	 * List of input actions that need to be completed (according to Combo Step Completion States) to trigger this action.
+	 * Input actions must be triggered in order (starting at index 0) to count towards the triggering of the combo.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Trigger Settings", meta = (DisplayThumbnail = "false", TitleProperty = "ComboStepAction"))
+	TArray<FInputComboStepData> ComboActions;
+
+	// Actions that will cancel the combo if they are completed (according to Cancellation States)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Trigger Settings", meta = (DisplayThumbnail = "false", DisplayName = "Cancel Actions"))
+	TArray<FInputCancelAction> InputCancelActions;
+	...
+};
+```
