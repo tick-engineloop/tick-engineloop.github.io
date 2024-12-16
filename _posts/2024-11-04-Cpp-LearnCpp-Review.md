@@ -319,3 +319,203 @@ int main() {
 
 > **空类** <br> 在 C++ 编程语言中，空类（Empty Class）指的是一个不包含任何成员变量或成员函数（除了可能的编译器自动生成的成员函数，如默认构造函数、析构函数、拷贝构造函数、赋值操作符等）的类。空类的定义非常简单，它只包含类的声明而不包含任何类的实现内容。
 {: .prompt-tip }
+
+## 题目9 double free
+
+```c++
+#include <iostream>
+
+using namespace std;
+
+int main()
+{
+   int* p = new int(2);
+   
+   delete p;
+   delete p;    //  再次删除已被删除的指针
+   
+   return 0;
+}
+```
+
+在 c++ 中再次删除已被删除的指针，会在运行时出现报错：
+
+```console
+free(): double free detected in tcache 2
+Aborted (core dumped)
+```
+
+若将已删除指针设置为空指针，再删除则不会出现错误：
+
+```c++
+#include <iostream>
+
+using namespace std;
+
+int main()
+{
+   int* p = new int(2);
+   
+   delete p;
+   p = nullptr;
+   delete p;    //  再次删除已被删除的指针
+   
+   return 0;
+}
+```
+
+## 智能指针
+
+在 C++ 标准库中，智能指针是一种自动化管理动态分配内存的工具，目的是避免手动管理内存释放时发生的内存泄漏和悬挂指针问题。智能指针主要通过 RAII（资源获取即初始化）来实现，即在对象的生命周期内自动管理资源。C++11 标准库引入了以下几种主要的智能指针：
+
+### std::unique_ptr
+
+unique_ptr 是独占所有权的智能指针，确保同一时间只有一个指针管理某个对象。不能复制，但可以（使用移动语义）转移所有权。适用于需要明确所有权的场景。
+
+```c++
+#include <cassert>
+#include <cstdio>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+ 
+// helper class for runtime polymorphism demo below
+struct B
+{
+    virtual ~B() = default;
+ 
+    virtual void bar() { std::cout << "B::bar\n"; }
+};
+ 
+struct D : B
+{
+    D() { std::cout << "D::D\n"; }
+    ~D() { std::cout << "D::~D\n"; }
+ 
+    void bar() override { std::cout << "D::bar\n"; }
+};
+ 
+// a function consuming a unique_ptr can take it by value or by rvalue reference
+std::unique_ptr<D> pass_through(std::unique_ptr<D> p)
+{
+    p->bar();
+    return p;
+}
+ 
+int main()
+{
+    std::cout << "1) Unique ownership semantics demo\n";
+    {
+        // Create a (uniquely owned) resource
+        std::unique_ptr<D> p = std::make_unique<D>();
+ 
+        // Transfer ownership to `pass_through`,
+        // which in turn transfers ownership back through the return value
+        std::unique_ptr<D> q = pass_through(std::move(p));
+ 
+        // p is now in a moved-from 'empty' state, equal to nullptr
+        assert(!p);
+    }
+ 
+    std::cout << "\n" "2) Runtime polymorphism demo\n";
+    {
+        // Create a derived resource and point to it via base type
+        std::unique_ptr<B> p = std::make_unique<D>();
+ 
+        // Dynamic dispatch works as expected
+        p->bar();
+    }
+ 
+    std::cout << "\n" "3) Array form of unique_ptr demo\n";
+    {
+        std::unique_ptr<D[]> p(new D[3]);
+    } // `D::~D()` is called 3 times
+}
+```
+
+### std::shared_ptr
+
+shared_ptr 是共享所有权的智能指针，允许多个指针共享同一对象。使用引用计数来管理对象的生存周期，当最后一个 shared_ptr 被销毁时，对象也会被释放。适用于需要共享对象的场景。
+
+```c++
+#include <iostream>
+#include <memory>
+
+struct B
+{
+    virtual ~B() = default;
+ 
+    virtual void bar() { std::cout << "B::bar\n"; }
+};
+ 
+struct D : B
+{
+    D() { std::cout << "D::D\n"; }
+    ~D() { std::cout << "D::~D\n"; }
+ 
+    void bar() override { std::cout << "D::bar\n"; }
+};
+
+int main()
+{
+    std::shared_ptr<int> ptr1 = std::make_shared<int>(42); 
+    std::cout<< ptr1.use_count() << std::endl;
+    
+    std::shared_ptr<int> ptr2 = ptr1; // ptr1 和 ptr2 共享同一对象
+    std::cout<< ptr1.use_count() << std::endl;
+    std::cout<< ptr2.use_count() << std::endl;
+
+    // reset
+    std::shared_ptr<int> ptr3 = std::make_shared<int>(5); 
+    ptr3.reset();               // 释放该对象
+
+    std::shared_ptr<int> ptr4 = std::make_shared<int>(10); 
+    ptr4.reset(new int(20));    // 释放旧对象，指向新的 int 对象
+
+    std::shared_ptr<int> ptr5 = std::make_shared<int>(12);
+    std::shared_ptr<int> ptr6 = ptr5;
+    ptr5.reset();               // ptr5 不再指向对象，但 ptr6 仍然持有引用该对象，所以对象不会被释放
+
+    std::shared_ptr<B> pb = std::make_shared<D>();
+    pb->bar();
+}
+```
+
+```console
+1
+2
+2
+```
+
+### std::weak_ptr
+
+weak_ptr 是弱引用智能指针，不影响对象的引用计数。与 shared_ptr 搭配使用，用于解决循环引用问题。提供了一种非拥有关系的观察者模式。
+
+```c++
+#include <iostream>
+#include <memory>
+ 
+std::weak_ptr<int> gw;
+ 
+void observe()
+{
+    std::cout << "gw.use_count() == " << gw.use_count() << "; ";
+    // we have to make a copy of shared pointer before usage:
+    if (std::shared_ptr<int> spt = gw.lock())   // lock() 方法的主要作用是安全地访问由 weak_ptr 观测的对象，获取一个指向 weak_ptr 管理的对象的 shared_ptr，而不会增加引用计数。如果 weak_ptr 关联的对象仍然存在并且没有被释放，lock() 方法将返回一个有效的 shared_ptr；如果对象已经被释放，lock() 将返回一个空的 shared_ptr。
+        std::cout << "*spt == " << *spt << '\n';
+    else
+        std::cout << "gw is expired\n";
+}
+ 
+int main()
+{
+    {
+        auto sp = std::make_shared<int>(42);
+        gw = sp;    // 不增加引用计数
+ 
+        observe();
+    }
+ 
+    observe();
+}
+```
