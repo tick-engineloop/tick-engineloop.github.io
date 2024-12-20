@@ -320,6 +320,44 @@ int main() {
 > **空类** <br> 在 C++ 编程语言中，空类（Empty Class）指的是一个不包含任何成员变量或成员函数（除了可能的编译器自动生成的成员函数，如默认构造函数、析构函数、拷贝构造函数、赋值操作符等）的类。空类的定义非常简单，它只包含类的声明而不包含任何类的实现内容。
 {: .prompt-tip }
 
+```c++
+#include <iostream>
+
+class A {
+private:
+    int m_a;
+public:
+    virtual void func(){
+        std::cout << "A" << std::endl;
+    }
+};
+
+class B {
+private:
+    int m_b;
+};
+
+class C : public A, public B {
+private:
+    char m_c;
+public:
+    virtual void func() override {
+        std::cout << "C" << std::endl;
+    }
+};
+
+int main() {
+    std::cout << sizeof(A) << std::endl;    // 需要考虑内存对齐
+    std::cout << sizeof(B) << std::endl;
+    std::cout << sizeof(C) << std::endl;    // 需要考虑内存对齐
+}
+```
+```console
+16
+4
+24
+```
+
 ## 题目9 double free
 
 ```c++
