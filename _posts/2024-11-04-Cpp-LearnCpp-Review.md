@@ -608,4 +608,70 @@ int main()
 * **算法时间复杂度**：查找、插入和删除是 O(1)
 * **适用场景**：需要存储唯一元素并进行快速查找的场景
 
-## 设计模式
+## 题目12 构造与析构顺序
+
+构造的顺序是先构造基类，再构造派生类。析构的顺序是先析构派生类，再析构基类。当基类的析构函数是虚函数时，通过基类指针删除派生类对象会调用派生类的析构函数，确保对象完全析构。如果基类的析构函数不是虚函数，通过基类指针删除派生类对象不会调用派生类的析构函数，可能导致对象不完全析构引起资源泄漏。
+
+```c++
+#include <iostream>
+
+class A {
+public:
+    A() { std::cout << "constructor A" << std::endl; }
+    virtual ~A() { std::cout << "destructor A" << std::endl; }     // 析构函数为虚函数
+};
+
+class B {
+public:
+    B() { std::cout << "constructor B" << std::endl; }
+    ~B() { std::cout << "destructor B" << std::endl; }             // 析构函数为非虚函数
+};
+
+class C : public A, public B {
+public:
+    C() { std::cout << "constructor C" << std::endl; }
+    ~C() { std::cout << "destructor C" << std::endl; }
+};
+
+int main() {
+   C* c1 = new C;
+   delete c1;
+   std::cout << "----------------------" << std::endl;
+
+   C* c2 = new C;
+   A* a = static_cast<A*>(c2);
+   delete a;
+   std::cout << "----------------------" << std::endl;
+
+   C* c3 = new C;
+   B* b = static_cast<B*>(c3);
+   delete b;
+
+   return 0;
+}
+```
+
+输出：
+
+```console
+constructor A
+constructor B
+constructor C
+destructor C
+destructor B
+destructor A
+----------------------
+constructor A
+constructor B
+constructor C
+destructor C
+destructor B
+destructor A
+----------------------
+constructor A
+constructor B
+constructor C
+destructor B
+```
+
+## 题目13 常用设计模式
