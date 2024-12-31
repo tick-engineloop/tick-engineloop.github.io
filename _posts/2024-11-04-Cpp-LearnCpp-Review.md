@@ -296,7 +296,7 @@ public:
 
 int main() {
     Base* basePtr = new Derived();
-    basePtr->display();
+    basePtr->display();             // 输出：Display Derived
     delete basePtr;
     return 0;
 }
@@ -309,7 +309,7 @@ int main() {
 
 * **空类**：空类同样可以被实例化，为保证每个实例在内存中都有唯一的地址，C++ 规定类的内存大小至少应为 1 个字节，所以空类的大小通常被编译器设置为 1 个字节。
 
-* **虚类**：如果类包含虚函数，编译器会添加一个指向虚函数表（vtable）的指针。这个指针的大小通常是固定的，例如在32位系统上通常是 4 字节，在64位系统上通常是 8 字节。
+* **虚类**：当一个类包含虚函数时，编译器会为该类创建一个虚函数表（vtable），该表包含了类中所有虚函数的地址。每个带有虚函数的类在它的对象实例中都会包含一个指向其类的虚函数表的指针（称为vptr）。这个指针是对象内存布局的一部分，通常位于对象数据的开始位置。这个指针的大小通常是固定的，例如在32位系统上通常是 4 字节，在64位系统上通常是 8 字节。
 
 * **继承**：在继承的情况下，派生类的内存大小还会包括基类的内存大小。如果是多重继承，派生类的内存大小会包括多个基类的内存大小。如果基类是空类，则在计算派生类内存大小时不将其考虑在内。
 
@@ -327,38 +327,168 @@ class A {
 private:
     int m_a;
 public:
-    virtual void func(){
-        std::cout << "A" << std::endl;
-    }
-};
+    virtual void display() {std::cout << "display A" << std::endl;}
 
+    void func() { display(); }
+};
 class B {
-private:
-    int m_b;
+public:
+   virtual void print() {std::cout << "pirnt B" << std::endl;}
 };
-
 class C : public A, public B {
 private:
     char m_c;
 public:
-    virtual void func() override {
-        std::cout << "C" << std::endl;
-    }
+    virtual void display() override {std::cout << "display C" << std::endl;}
+    virtual void show() {std::cout << "show C" << std::endl;}
 };
 
 int main() {
-    std::cout << sizeof(A) << std::endl;    // 需要考虑内存对齐
-    std::cout << sizeof(B) << std::endl;
-    std::cout << sizeof(C) << std::endl;    // 需要考虑内存对齐
+   std::cout << sizeof(A) << std::endl;    // 需要考虑内存对齐
+   std::cout << sizeof(B) << std::endl;
+   std::cout << sizeof(C) << std::endl;    // 需要考虑内存对齐
+   return 0;
 }
 ```
 ```console
 16
-4
-24
+8
+32
 ```
 
-## 题目9 double free
+## 题目9 基类派生类构造与析构调用顺序
+
+构造的顺序是先构造基类，再构造派生类。析构的顺序是先析构派生类，再析构基类。
+
+```c++
+#include <iostream>
+
+class A {
+public:
+    A() { std::cout << "constructor A" << std::endl; }
+    virtual ~A() { std::cout << "destructor A" << std::endl; }
+};
+
+class B {
+public:
+    B() { std::cout << "constructor B" << std::endl; }
+    virtual ~B() { std::cout << "destructor B" << std::endl; }
+};
+
+class C : public A, public B {
+public:
+    C() { std::cout << "constructor C" << std::endl; }
+    ~C() { std::cout << "destructor C" << std::endl; }
+};
+
+int main() {
+   C* c1 = new C;
+   delete c1;
+
+   return 0;
+}
+```
+
+输出：
+
+```console
+constructor A
+constructor B
+constructor C
+destructor C
+destructor B
+destructor A
+```
+
+## 题目10 Virtual 析构函数
+
+构造函数是不能为虚函数的。但析构函数能够且常常必须是虚的。当基类的析构函数是虚函数时，通过基类指针删除派生类对象会调用派生类的析构函数，确保对象完全析构。如果基类的析构函数不是虚函数，通过基类指针删除派生类对象不会调用派生类的析构函数，可能导致对象不完全析构引起资源泄漏。
+
+```c++
+#include <iostream>
+
+class A {
+public:
+    virtual ~A() { std::cout << "destructor A" << std::endl; }     // 析构函数为虚函数
+};
+
+class B {
+public:
+    ~B() { std::cout << "destructor B" << std::endl; }             // 析构函数为非虚函数
+};
+
+class C : public A, public B {
+public:
+    ~C() { std::cout << "destructor C" << std::endl; }
+};
+
+int main() {
+   C* c1 = new C;
+   delete c1;
+   std::cout << "----------------------" << std::endl;
+
+   C* c2 = new C;
+   A* a = static_cast<A*>(c2);
+   delete a;
+   std::cout << "----------------------" << std::endl;
+
+   C* c3 = new C;
+   B* b = static_cast<B*>(c3);
+   delete b;
+
+   return 0;
+}
+```
+
+输出：
+
+```console
+destructor C
+destructor B
+destructor A
+----------------------
+destructor C
+destructor B
+destructor A
+----------------------
+destructor B
+```
+
+## 题目11 虚函数在构造函数中的行为
+
+虚函数在构造函数中的行为有一些特殊之处，这主要是因为对象在构造期间的状态尚不完整，使得构造函数中的虚函数调用行为与其他地方不同。当在基类的构造函数中调用虚函数时，调用的是基类版本的虚函数。在派生类的构造函数中，虚函数的行为与平时一致，调用的是派生类的虚函数实现。
+
+```c++
+#include <iostream>
+
+class A {
+public:
+    A() { display(); } 
+    void func() { display(); }
+
+    virtual void display() {std::cout << "display A" << std::endl;}
+};
+
+class B : public A {
+public:
+    virtual void display() override {std::cout << "display B" << std::endl;}
+};
+
+int main() {
+   A* a = new B;
+   a->func();
+   return 0;
+}
+```
+
+输出：
+
+```console
+display A
+display B
+```
+
+## 题目12 double free
 
 ```c++
 #include <iostream>
@@ -402,7 +532,7 @@ int main()
 }
 ```
 
-## 题目10 智能指针
+## 题目13 智能指针
 
 在 C++ 标准库中，智能指针是一种自动化管理动态分配内存的工具，目的是避免手动管理内存释放时发生的内存泄漏和悬挂指针问题。智能指针主要通过 RAII（资源获取即初始化）来实现，即在对象的生命周期内自动管理资源。C++11 标准库引入了以下几种主要的智能指针：
 
@@ -558,7 +688,7 @@ int main()
 }
 ```
 
-## 题目11 C++ 标准库容器
+## 题目14 C++ 标准库容器
 
 ### vector
 
@@ -608,70 +738,5 @@ int main()
 * **算法时间复杂度**：查找、插入和删除是 O(1)
 * **适用场景**：需要存储唯一元素并进行快速查找的场景
 
-## 题目12 构造与析构顺序
+## 题目15 常用设计模式
 
-构造的顺序是先构造基类，再构造派生类。析构的顺序是先析构派生类，再析构基类。当基类的析构函数是虚函数时，通过基类指针删除派生类对象会调用派生类的析构函数，确保对象完全析构。如果基类的析构函数不是虚函数，通过基类指针删除派生类对象不会调用派生类的析构函数，可能导致对象不完全析构引起资源泄漏。
-
-```c++
-#include <iostream>
-
-class A {
-public:
-    A() { std::cout << "constructor A" << std::endl; }
-    virtual ~A() { std::cout << "destructor A" << std::endl; }     // 析构函数为虚函数
-};
-
-class B {
-public:
-    B() { std::cout << "constructor B" << std::endl; }
-    ~B() { std::cout << "destructor B" << std::endl; }             // 析构函数为非虚函数
-};
-
-class C : public A, public B {
-public:
-    C() { std::cout << "constructor C" << std::endl; }
-    ~C() { std::cout << "destructor C" << std::endl; }
-};
-
-int main() {
-   C* c1 = new C;
-   delete c1;
-   std::cout << "----------------------" << std::endl;
-
-   C* c2 = new C;
-   A* a = static_cast<A*>(c2);
-   delete a;
-   std::cout << "----------------------" << std::endl;
-
-   C* c3 = new C;
-   B* b = static_cast<B*>(c3);
-   delete b;
-
-   return 0;
-}
-```
-
-输出：
-
-```console
-constructor A
-constructor B
-constructor C
-destructor C
-destructor B
-destructor A
-----------------------
-constructor A
-constructor B
-constructor C
-destructor C
-destructor B
-destructor A
-----------------------
-constructor A
-constructor B
-constructor C
-destructor B
-```
-
-## 题目13 常用设计模式
