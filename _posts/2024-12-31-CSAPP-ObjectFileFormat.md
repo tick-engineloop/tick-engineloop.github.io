@@ -16,9 +16,9 @@ math: true
 ## Typical ELF relocatable object file
 
 ![Typical ELF relocatable object file](/assets/img/post/CSAPP-ObjectFileFormat-ELFRelocatableObjectFile.png)
-_图-1 Typical ELF relocatable object file_
+_图-1 典型的 ELF 可重定位目标文件_
 
-图-1 展示了一个典型的 ELF 可重定位目标文件的格式。`ELF header` 以一个 16 字节的序列开始，这个序列描述了生成该文件的系统的字的大小和字节顺序。 `ELF header` 剩下的部分包含帮助链接器语法分析和解释目标文件的信息。其中包括 `ELF header` 的大小、目标文件的类型（如可重定位、可执行或者共享的）、机器类型（如 x86-64）、`section header table` 的文件偏移，以及 `section header table` 中条目的大小和数量。不同节的位置和大小是由 `section header table` 描述的，其中目标文件中每个节都有一个固定大小的条目（entry）。夹在 `ELF header` 和 `section header table` 之间的都是节。一个典型的 ELF 可重定位目标文件包含下面几个节：
+图-1展示了一个典型的 ELF 可重定位目标文件的格式。`ELF header` 以一个 16 字节的序列开始，这个序列描述了生成该文件的系统的字的大小和字节顺序。 `ELF header` 剩下的部分包含帮助链接器语法分析和解释目标文件的信息。其中包括 `ELF header` 的大小、目标文件的类型（如可重定位、可执行或者共享的）、机器类型（如 x86-64）、`section header table` 的文件偏移，以及 `section header table` 中条目的大小和数量。不同节的位置和大小是由 `section header table` 描述的，其中目标文件中每个节都有一个固定大小的条目（entry）。夹在 `ELF header` 和 `section header table` 之间的都是节。一个典型的 ELF 可重定位目标文件包含下面几个节：
 
 * **.text**: 已编译程序的机器码。
 * **.rodata**: 只读数据，比如 printf 语句中的格式化字符串和 switch 语句的跳转表。
@@ -33,17 +33,17 @@ _图-1 Typical ELF relocatable object file_
 
 ## Typical ELF executable object file
 
-图-2 展示了一个典型的 ELF 可执行目标文件的格式。可执行目标文件的格式类似于可重定位目标文件的格式。ELF 头描述文件的总体格式。它还包括程序的入口点(entry point)，也就是当程序运行时要执行的第一条指令的地址。`.text`、`.rodata` 和 `.data` 节与可重定位目标文件中的节是相似的，除了这些节已经被重定位到它们最终的运行时内存地址以外。`.init` 节定义了一个小函数，叫做 _init，程序的初始化代码会调用它。因为可执行文件是完全链接的（已被重定位），所以它不再需要 `.rel` 节。
+图-2展示了一个典型的 ELF 可执行目标文件的格式。可执行目标文件的格式类似于可重定位目标文件的格式。`ELF header` 描述文件的总体格式，它还包括程序的入口点（entry point），也就是当程序运行时要执行的第一条指令的地址。`.text`、`.rodata` 和 `.data` 这些节除了已经被重定位到它们最终的运行时内存地址这点以外，其他方面与可重定位目标文件中的节是相似的。`.init` 节定义了一个小函数，叫做 _init，程序的初始化代码会调用它。因为可执行文件是完全链接的（已被重定位），所以它不再需要 `.rel` 节。
 
 ![Typical ELF executable object file](/assets/img/post/CSAPP-ObjectFileFormat-ELFExecutableObjectFile.png)
-_图-2 Typical ELF executable object file_
+_图-2 典型的 ELF 可执行目标文件_
 
-每个 Linux 程序都有一个运行时内存映像，类似于图-3中所示。在 Linux x86-64 系统中，代码段总是从地址 `Ox400000` 处开始，后面是数据段。运行时堆在数据段之后， 通过调用 malloc 库往上增长。堆后面的区域是为共享模块保留的。用户栈总是从最大的合法用户地址($2^{48}-1$)开始，向较小内存地址增长。位于栈之上从地址 $2^{48}$ 开始的区域，是为内核(kernel)中的代码和数据保留的。
+每个 Linux 程序都有一个运行时内存映像，类似于图-3中所示。在 Linux x86-64 系统中，代码段总是从地址 `Ox400000` 处开始，后面是数据段。运行时堆在数据段之后，通过调用 malloc 库往上增长。堆后面的区域是为共享模块保留的。用户栈总是从最大的合法用户地址（$2^{48}-1$）开始，向较小内存地址增长。位于栈之上从地址 $2^{48}$ 开始的区域，是为内核(kernel)中的代码和数据保留的。
 
 ![Linux x86-64 runtime memory image](/assets/img/post/CSAPP-ObjectFileFormat-RuntimeMemoryImage.png)
-_图-3 Linux x86-64 runtime memory image_
+_图-3 Linux x86-64 运行时内存映像_
 
-为了简洁，我们把堆、数据和代码段画得彼此相邻，并且把栈顶放在了最大的合法用户地址处。实际上，由于 `.data` 段有对齐要求，所以代码段和数据段之间是有间隙的。同时，在给栈、共享库和堆段分配运行时地址的时候，链接器还会使用地址空间布局随机化。虽然每次程序运行时这些区域的地址都会改变，它们的相对位置是不变的。
+为了简洁，我们把堆、数据和代码段画得彼此相邻，并且把栈顶放在了最大的合法用户地址处。实际上，由于 `.data` 段有对齐要求，所以代码段和数据段之间是有间隙的。同时，在给栈、共享库和堆段分配运行时地址的时候，链接器还会使用地址空间布局随机化。虽然每次程序运行时这些区域的地址都会改变，但它们的相对位置是不变的。
 
 ## References
 >
