@@ -584,7 +584,7 @@ namespace US
 ```c++
 /**
 Base class for building triggers.（用于构建触发器的基类）
-Transitions to Triggered state once the input meets or exceeds the actuation threshold.（一旦输入达到或超过启动阈值，就会转换到已触发（Triggered）状态。）
+Transitions to Triggered state once the input meets or exceeds the actuation threshold.（一旦输入达到或超过驱动阈值，就会转换到已触发（Triggered）状态。）
 */
 class ENHANCEDINPUT_API UInputTrigger : public UObject
 {
@@ -603,37 +603,37 @@ class ENHANCEDINPUT_API UInputTrigger : public UObject
 
 /**
 Base class for building triggers that have firing conditions governed by elapsed time.（用于构建触发器的基类，触发条件受运行时间的控制。）
-This class transitions state to Ongoing once input is actuated, and will track Ongoing input time until input is released.（一旦输入被启动，该类就会将状态转换为持续（Ongoing）状态，并跟踪持续输入的时间，直到输入被释放。）
+This class transitions state to Ongoing once input is actuated, and will track Ongoing input time until input is released.（一旦输入被驱动，该类就会将状态转换为持续（Ongoing）状态，并跟踪持续输入的时间，直到输入被释放。）
 */
 class ENHANCEDINPUT_API UInputTriggerTimedBase : public UInputTrigger
 {
 	...
-	// How long have we been actuating this trigger?（我们启动这个触发器多长时间了？）
+	// How long have we been actuating this trigger?（我们驱动这个触发器多长时间了？）
 	UPROPERTY(BlueprintReadWrite, Category = "Trigger Settings")
 	float HeldDuration = 0.0f;
 	...
 };
 
 /** UInputTriggerDown
-	Trigger fires when the input exceeds the actuation threshold.（当输入超过启动阈值时触发器触发）
+	Trigger fires when the input exceeds the actuation threshold.（当输入超过驱动阈值时触发器触发）
 	Note: When no triggers are bound Down (with an actuation threshold of > 0) is the default behavior.
 	*/
 class UInputTriggerDown final : public UInputTrigger
 
-/** UInputTriggerPressed
-	Trigger fires once only when input exceeds the actuation threshold.（只有当输入超过启动阈值时，触发器触发一次）
+/** UInputTriggerPressed（已按下）
+	Trigger fires once only when input exceeds the actuation threshold.（只有当输入超过驱动阈值时，触发器触发一次）
 	Holding the input will not cause further triggers.（按住输入不会造成再次触发。）
 	*/
 class UInputTriggerPressed final : public UInputTrigger
 
-/** UInputTriggerReleased
-	Trigger returns Ongoing whilst input exceeds the actuation threshold.（当输入超过启动阈值时触发器返回持续（Ongoing）状态）
-	Trigger fires once only when input drops back below actuation threshold.（只有当输入回落到启动阈值时，触发器触发一次）
+/** UInputTriggerReleased（已松开）
+	Trigger returns Ongoing whilst input exceeds the actuation threshold.（当输入超过驱动阈值时触发器返回持续（Ongoing）状态）
+	Trigger fires once only when input drops back below actuation threshold.（只有当输入回落到驱动阈值时，触发器触发一次）
 	*/
 class UInputTriggerReleased final : public UInputTrigger
 
-/** UInputTriggerHold
-	Trigger fires once input has remained actuated for HoldTimeThreshold seconds.（在输入保持启动状态达到 HoldTimeThreshold 秒后触发器触发。）
+/** UInputTriggerHold（长按）
+	Trigger fires once input has remained actuated for HoldTimeThreshold seconds.（在输入保持驱动状态达到 HoldTimeThreshold 秒后触发器触发。）
 	Trigger may optionally fire once, or repeatedly fire.（触发器可选择触发一次或重复触发。）
 */
 class UInputTriggerHold final : public UInputTriggerTimedBase
@@ -649,8 +649,8 @@ class UInputTriggerHold final : public UInputTriggerTimedBase
 	...
 };
 
-/** UInputTriggerHoldAndRelease
-	Trigger fires when input is released after having been actuated for at least HoldTimeThreshold seconds.（当输入启动至少 HoldTimeThreshold 秒后被释放时触发器触发。）
+/** UInputTriggerHoldAndRelease（长按和松开）
+	Trigger fires when input is released after having been actuated for at least HoldTimeThreshold seconds.（在输入被驱动至少 HoldTimeThreshold 秒后松开时触发器触发。）
 */
 class UInputTriggerHoldAndRelease final : public UInputTriggerTimedBase 
 {
@@ -660,26 +660,26 @@ class UInputTriggerHoldAndRelease final : public UInputTriggerTimedBase
 	float HoldTimeThreshold = 0.5f;
 };
 
-/** UInputTriggerTap
-	Input must be actuated then released within TapReleaseTimeThreshold seconds to trigger.（输入必须在 TapReleaseTimeThreshold 秒内启动然后释放才能触发。）
+/** UInputTriggerTap（点按）
+	Input must be actuated then released within TapReleaseTimeThreshold seconds to trigger.（输入必须在 TapReleaseTimeThreshold 秒内被驱动然后松开才能触发。）
 */
 class UInputTriggerTap final : public UInputTriggerTimedBase
 {
 	...
-	// Release within this time-frame to trigger a tap（在此时间范围内释放可触发轻拍）
+	// Release within this time-frame to trigger a tap（在此时间范围内松开可触发轻拍）
 	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category = "Trigger Settings", meta = (ClampMin = "0"))
 	float TapReleaseTimeThreshold = 0.2f;
 };
 
-/** UInputTriggerPulse
-	Trigger that fires at an Interval, in seconds, while input is actuated. （在输入启动时，触发器每间隔某一个时间（单位秒）就会触发）
+/** UInputTriggerPulse（脉冲）
+	Trigger that fires at an Interval, in seconds, while input is actuated.（在输入被驱动时，触发器每间隔某一个时间（单位秒）就会触发）
 	Note:	Completed only fires when the repeat limit is reached or when input is released immediately after being triggered.
 			Otherwise, Canceled is fired when input is released.
 	*/
 class UInputTriggerPulse final : public UInputTriggerTimedBase
 {
 	...
-	// Whether to trigger when the input first exceeds the actuation threshold or wait for the first interval?（是在输入首次超过启动阈值时就触发，还是等待满足第一个间隔时间时再触发？）
+	// Whether to trigger when the input first exceeds the actuation threshold or wait for the first interval?（是在输入首次超过驱动阈值时就触发，还是等待满足第一个间隔时间时再触发？）
 	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category = "Trigger Settings")
 	bool bTriggerOnStart = true;
 
@@ -695,7 +695,7 @@ class UInputTriggerPulse final : public UInputTriggerTimedBase
 
 /**
  * UInputTriggerCombo
- * All actions in the combo array must be completed (based on combo completion event specified - triggered, completed, etc.) to trigger the action this trigger is on.（必须完成连招数组中的所有动作（基于指定的连招完成事件 - 已触发、已完成等）才能触发这个触发器上的动作。）
+ * All actions in the combo array must be completed (based on combo completion event specified - triggered, completed, etc.) to trigger the action this trigger is on.（必须完成组合数组中的所有动作（基于指定的组合完成事件 - 已触发、已完成等）才能触发这个触发器上的动作。）
  * Actions must also be completed in the order specified by the combo actions array (starting at index 0).（动作也必须以连招动作数组中指定的顺序完成（以索引 0 开始）。）
  * Note: This will only trigger for one frame before resetting the combo trigger's progress 
  */
@@ -721,5 +721,38 @@ class ENHANCEDINPUT_API UInputTriggerCombo : public UInputTrigger
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Trigger Settings", meta = (DisplayThumbnail = "false", DisplayName = "Cancel Actions"))
 	TArray<FInputCancelAction> InputCancelActions;
 	...
+};
+```
+
+## Trigger Event
+
+```c++
+/**
+* Trigger events are the Action's interpretation of all Trigger State transitions that occurred for the action in the last tick
+* (当一个动作在一个 tick（帧）中发生了一些触发器状态间转换时，触发器事件就是这些转换动作的解释说明。)
+*/
+UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))
+enum class ETriggerEvent : uint8
+{
+	// No significant trigger state changes occurred and there are no active device inputs（没有发生有意义的触发器状态变化，也没有活动的设备输入）
+	None		= (0x0)		UMETA(Hidden),
+	// Triggering occurred after one or more processing ticks（在一个或多个处理 tick 后发生触发）
+	Triggered	= (1 << 0),	// ETriggerState (None -> Triggered, Ongoing -> Triggered, Triggered -> Triggered)
+	
+	// An event has occurred that has begun Trigger evaluation. Note: Triggered may also occur this frame, but this event will always be fired first.（已发生的事件已开始触发器评估）
+	Started		= (1 << 1),	// ETriggerState (None -> Ongoing, None -> Triggered)
+
+	// Triggering is still being processed. For example, an action with a "Press and Hold" trigger（触发仍在处理中。例如，使用 "Press and Hold" 触发器的操作）
+	// will be "Ongoing" while the user is holding down the key but the time threshold has not been met yet. 
+	Ongoing		= (1 << 2),	// ETriggerState (Ongoing -> Ongoing)
+
+	// Triggering has been canceled. For example,  the user has let go of a key before the "Press and Hold" time threshold.（触发已取消。例如，用户在 "Press and Hold" 时间阈值之前松开了按键。）
+	// The action has started to be evaluated, but never completed. 
+	Canceled	= (1 << 3),	// ETriggerState (Ongoing -> None)
+
+	// The trigger state has transitioned from Triggered to None this frame, i.e. Triggering has finished.（在这一帧触发器状态已从 "Triggered" 转为 "None"，即触发已结束。）
+	// Note: Using this event restricts you to one set of triggers for Started/Completed events. You may prefer two actions, each with its own trigger rules.
+	// Completed will not fire if any trigger reports Ongoing on the same frame, but both should fire. e.g. Tick 2 of Hold (= Ongoing) + Pressed (= None) combo will raise Ongoing event only.
+	Completed	= (1 << 4),	// ETriggerState (Triggered -> None)
 };
 ```
