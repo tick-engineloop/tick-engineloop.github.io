@@ -141,15 +141,61 @@ $$
 h(\vec{k}, t) = A(\vec{k}) e^{i\big(\omega(k) t + \phi \big)} + A^*(\vec{-k}) e^{-i\big(\omega(k) t + \phi \big)}
 $$
 
-因为初相 $\phi$ 可有可无，无关紧要，在这里进行省略，就有：
+为了保证 FFT 的结果是实数，我们在 $h(\vec{k}, t)$ 中添加了一个共轭复数项。因为初相 $\phi$ 可有可无，无关紧要，在这里进行省略，所以：
 
 $$
 h(\vec{k}, t) = A(\vec{k}) e^{i \omega(k) t} + A^*(-\vec{k}) e^{-i \omega(k) t}
 $$
 
-为了保证 FFT 的结果是实数，我们在 $h(\vec{k}, t)$ 中添加了一个共轭复数项。
+## Accelerating Waveform Calculations with FFT
+
+假定水面大小为 $L_x$ 和 $L_z$，水面网格大小为 $N_x$ 和 $N_z$。为了简化计算，一般约定 $L_x = L_z = L$，$N_x = N_z = N$。对于 $N$ 而言，可以是 16 和 2048 之间的值，大多数情况下 128 到 512 范围内的值就足够了。如果使用 $(n, m)$ 表示网格上的点，那么对于 $\vec{k} = (k_x, k_z)$, 我们定义 $k_x = 2 \pi n / L_x = 2 \pi n / L$ 和 $k_z = 2 \pi m / L_z = 2 \pi m / L$，这里 $n$ 和 $m$ 是整数且有边界 $-N/2 = -N_x/2 \le n \lt N_x/2 = N/2$ 和 $-N/2 = -N_z/2 \le m \lt N_z/2 = N/2$。FFT 处理生成高度场在离散点 $\vec{p} = (x, z) = (n L_x / N_x, m L_z/ N_z) = (n L / N, m L/ N)$ 处的值。将 $\vec{k}$ 和 $\vec{p}$ 代入高度场函数：
+
+$$
+\begin{aligned}
+H(\vec{p}, t) 
+&= \sum_{\vec{k} } h(\vec{k},t)e^{ i (\vec{k} \cdot \vec{p})} \\
+&= \sum_{n = -N/2}^{N/2} \sum_{m = -N/2}^{N/2} h(\vec{k},t) e^{i(2 \pi \frac{n}{L} x + 2 \pi \frac{m}{L} z)} \\
+&= \sum_{n = -N/2}^{N/2} \sum_{m = -N/2}^{N/2} h(\vec{k},t) e^{i(2 \pi \frac{n}{L} x)} e^{i(2 \pi \frac{m}{L} z)} \\
+&= \sum_{n = -N/2}^{N/2} e^{i(2 \pi \frac{n}{L} x)} \sum_{m = -N/2}^{N/2} h(\vec{k},t) e^{i(2 \pi \frac{m}{L} z)} \\
+&= \sum_{n = -N/2}^{N/2} e^{2 \pi n x i / L} \sum_{m = -N/2}^{N/2} h(\vec{k},t) e^{2 \pi m z i / L}
+\end{aligned}
+$$
+
+为了便于化成 FFT 的形式，我们需要将 $\sum$ 的下界和上界之间的范围转换到 $0, 1, ... , N-1$，定义 $n'$ 和 $m'$：
+
+$$
+0 \le n' \lt N \\
+
+0 \le m' \lt N
+$$
+
+因此，$n$ 和 $m$ 可以被写成 $n'$ 和 $m'$ 的形式：
+
+$$
+n = n' - \frac{N}{2} \\
+
+m = m' - \frac{N}{2}
+$$
+
+代入高度场函数：
+
+$$
+\begin{aligned}
+H(\vec{p}, t) 
+&= \sum_{n = -N/2}^{N/2} e^{2 \pi n x i / L} \sum_{m = -N/2}^{N/2} h(\vec{k},t) e^{2 \pi m z i / L} \\
+&= \sum_{n' = 0}^{N-1} e^{2 \pi (n' - \frac{N}{2}) x i / L} \sum_{m' = 0}^{N-1} h(\vec{k},t) e^{2 \pi (m' - \frac{N}{2}) z i / L}
+\end{aligned}
+$$
+
+未完，待校对...
 
 ## References
 >
 > * [振幅、周期、相移和频率 - 数学乐](https://www.shuxuele.com/algebra/amplitude-period-frequency-phase-shift.html)
 >
+> * [Simulating Ocean Water - J. Tessendorf](https://people.computing.clemson.edu/~jtessen/reports/papers_files/coursenotes2004.pdf)
+>
+> * [复数 - OI Wiki](https://oi-wiki.org/math/complex/)
+>
+> * [共轭复数 - wikiwand](https://www.wikiwand.com/zh-cn/%E5%85%B1%E8%BD%AD%E5%A4%8D%E6%95%B0)
