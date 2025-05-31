@@ -432,3 +432,8 @@ You can find the full source code of the textured demo [here](https://learnopeng
 While not as visually impressive as some of the PBR render demos you find out there, given that we don't yet have [image based lighting](https://learnopengl.com/PBR/IBL/Diffuse-irradiance) built in, the system we have now is still a physically based renderer, and even without IBL you'll see your lighting look a lot more realistic.
 
 虽然由于尚未集成[基于图像的光照](https://tick-engineloop.github.io/posts/LearnOpenGL-PBR-IBL-DiffuseIrradiance/)，我们的系统还在视觉上没那么震撼，不如你在其他地方看到的一些 PBR 渲染示例，但我们现在拥有的仍然是一个基于物理的渲染器，即使没有 IBL，你也会看到你的光照效果比之前更加真实。
+
+## References
+>
+> * [PBR Lighting - LearnOpenGL](https://learnopengl.com/PBR/Lighting)
+>
