@@ -1,5 +1,5 @@
 ---
-title: PBR Theory
+title: PBR --- Theory
 description: PBR(Physically Based Rendering)，是一系列基于物理的渲染技术的统称，这些渲染技术都在不同程度上基于相同的更符合物理世界规律的基础理论。
 date: 2024-06-16 00:00:00 +0800
 categories: [Computer Grahics, LearnOpenGL, PBR]
@@ -119,8 +119,11 @@ This brings us to something called the render equation, an elaborate equation so
 在这里我们引入了一种被称为“渲染方程”的东西，它是某些聪明绝顶的人所构想出来的一个精妙的方程式，是目前我们模拟光线视觉效果最佳的模型。基于物理的渲染主要遵循渲染方程的一个更为特定的版本，即反射方程。要正确理解 PBR，首先必须对反射方程要有一个扎实的了解：
 
 $$
-L_o(p,\omega_o) = \int\limits_{\Omega} f_r(p,\omega_i,\omega_o) L_i(p,\omega_i) n \cdot \omega_i  d\omega_i
+L_o{\small(p,\omega_o)} = \int\limits_{\Omega} f_r{\small(p,\omega_i,\omega_o)} L_i{\small(p,\omega_i)} \big( n \cdot \omega_i \big) d\omega_i
 $$ 
+
+> 注意：$f_r{\small(p,\omega_i,\omega_o)}$ 是函数，表示 $f_r$ 是关于参数 $p$、$\omega_i$ 和 $\omega_o$ 的函数；$L_i{\small(p,\omega_i)}$ 也是函数，表示 $L_i$ 是关于参数 $p$ 和 $\omega_i$ 的函数；而 $\big( n \cdot \omega_i \big)$ 是代数表达式，是 $n$ 和 $\omega_i$ 的点积。注意认识函数和代数表达式，防止因括号造成混淆误解。积分项 $f_r{\small(p,\omega_i,\omega_o)} L_i{\small(p,\omega_i)} \big( n \cdot \omega_i \big)$ 是上述三者的数乘。
+{: .prompt-tip }
 
 The reflectance equation appears daunting at first, but as we'll dissect it you'll see it slowly starts to makes sense. To understand the equation, we have to delve into a bit of radiometry. Radiometry is the measurement of electromagnetic radiation, including visible light. There are several radiometric quantities we can use to measure light over surfaces and directions, but we will only discuss a single one that's relevant to the reflectance equation known as radiance, denoted here as $L$. Radiance is used to quantify the magnitude or strength of light coming from a single direction. It's a bit tricky to understand at first as radiance is a combination of multiple physical quantities so we'll focus on those first:
 
@@ -194,7 +197,7 @@ In fact, when it comes to radiance we generally care about all incoming light on
 事实上，在谈到辐射率时，我们通常关心的是照射到点 $p$ 上的所有入射光，即称为辐照度的所有入射辐射率的总和。有了辐射率和辐照度的知识，我们就可以回到反射方程：
 
 $$
-L_o(p,\omega_o) = \int\limits_{\Omega} f_r(p,\omega_i,\omega_o) L_i(p,\omega_i) n \cdot \omega_i  d\omega_i
+L_o{\small(p,\omega_o)} = \int\limits_{\Omega} f_r{\small(p,\omega_i,\omega_o)} L_i{\small(p,\omega_i)} \big( n \cdot \omega_i \big) d\omega_i
 $$
 
 We now know that $L$ in the render equation represents the radiance of some point $p$ and some incoming infinitely small solid angle $\omega_i$ which can be thought of as an incoming direction vector $\omega_i$. Remember that $\cos \theta$ scales the energy based on the light's incident angle to the surface, which we find in the reflectance equation as $n \cdot \omega_i$. The reflectance equation calculates the sum of reflected radiance $L_o(p, \omega_o)$ of a point $p$ in direction $\omega_o$ which is the outgoing direction to the viewer. Or to put it differently: $L_o$ measures the reflected sum of the lights' irradiance onto point $p$ as viewed from $\omega_o$.
@@ -527,9 +530,9 @@ With every component of the Cook-Torrance BRDF described, we can include the phy
 随着 Cook-Torrance BRDF 中所有元素介绍完毕，我们现在可以将基于物理的 BRDF 纳入到最终的反射率方程当中去了：
 
 $$
-L_o(p,\omega_o) = \int\limits_{\Omega} 
-    	            (k_d\frac{c}{\pi} + k_s\frac{DFG}{4(\omega_o \cdot n)(\omega_i \cdot n)})
-    	            L_i(p,\omega_i) n \cdot \omega_i  d\omega_i
+L_o{\small(p,\omega_o)} = \int\limits_{\Omega} 
+    	            \big( k_d\frac{c}{\pi} + k_s\frac{DFG}{4 \big( \omega_o \cdot n \big) \big( \omega_i \cdot n \big)} \big)
+    	            L_i{\small(p,\omega_i)} \big( n \cdot \omega_i \big) d\omega_i
 $$
 
 This equation is not fully mathematically correct however. You may remember that the Fresnel term $F$ represents the ratio of light that gets reflected on a surface. This is effectively our ratio $k_s$, meaning the specular (BRDF) part of the reflectance equation implicitly contains the reflectance ratio $k_s$. Given this, our final final reflectance equation becomes:
@@ -537,9 +540,9 @@ This equation is not fully mathematically correct however. You may remember that
 然而，这个等式在数学上并不完全正确。你可能还记得菲涅尔项 $F$ 代表表面反射光的比率。这实际上就是我们上式中的比率 $k_s$，也就是说，反射方程的镜面反射（BRDF）部分隐含了反射比率 $k_s$。有鉴于此，我们最终的反射方程就变成了：
 
 $$
-L_o(p,\omega_o) = \int\limits_{\Omega} 
-    	            (k_d\frac{c}{\pi} + \frac{DFG}{4(\omega_o \cdot n)(\omega_i \cdot n)})
-    	            L_i(p,\omega_i) n \cdot \omega_i  d\omega_i
+L_o{\small(p,\omega_o)} = \int\limits_{\Omega} 
+    	            \big( k_d\frac{c}{\pi} + \frac{DFG}{4 \big( \omega_o \cdot n \big) \big( \omega_i \cdot n \big)} \big)
+    	            L_i{\small(p,\omega_i)} \big( n \cdot \omega_i \big) d\omega_i
 $$
 
 This equation now completely describes a physically based render model that is generally recognized as what we commonly understand as physically based rendering, or PBR. Don't worry if you didn't yet completely understand how we'll need to fit all the discussed mathematics together in code. In the next chapters, we'll explore how to utilize the reflectance equation to get much more physically plausible results in our rendered lighting and all the bits and pieces should slowly start to fit together.

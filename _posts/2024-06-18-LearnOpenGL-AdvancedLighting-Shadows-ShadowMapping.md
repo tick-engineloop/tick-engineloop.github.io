@@ -1,7 +1,7 @@
 ---
 title: Shadow Mapping
 description: 阴影是光线被遮挡后在被遮挡区域出现的一种光照缺失的现象。阴影为光照场景增添了许多真实感，使观众更容易观察到物体之间的空间关系。
-date: 2024-06-18 00:00:00 +0800
+date: 2024-06-19 00:00:00 +0800
 categories: [Computer Grahics, LearnOpenGL, AdvancedLighting]
 tags: [computergraphics, learnopengl, postprocess，shadow]     # TAG names should always be lowercase
 math: true
