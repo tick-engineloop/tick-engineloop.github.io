@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BSP 交互演示 · Spatial Partition</title>
+<link rel="stylesheet" href="demo.css">
+<style>
+  canvas { cursor: crosshair; }
+  body.narrow .stats { padding: 6px 10px; font-size: 11px; }
+  body.narrow .stats div { gap: 8px; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="cv"></canvas></div>
+
+<div class="overlay panel">
+  <h4>BSP</h4>
+  <div class="row"><label>模式</label>
+    <select id="mode">
+      <option value="build">递归分割</option>
+      <option value="paint">画家算法排序</option>
+    </select>
+  </div>
+  <div class="row"><label>线段数</label><input id="nSeg" type="range" min="8" max="120" step="2" value="24"></div>
+  <div class="row"><label>分裂平面</label>
+    <select id="policy">
+      <option value="balanced">最佳平衡</option>
+      <option value="longest">取最长</option>
+      <option value="random">随机</option>
+    </select>
+  </div>
+  <div class="row"><label>最大深度</label><input id="maxd" type="range" min="1" max="8" value="5"></div>
+  <div class="row"><label>显示到第</label><input id="lvl" type="range" min="0" max="8" value="5"></div>
+  <div class="btns">
+    <button id="bReveal">▶ 逐层展开</button>
+    <button id="bNew">新场景</button>
+    <button id="bCut" class="on">碎片高亮</button>
+    <button id="bTree" class="on">树</button>
+  </div>
+</div>
+
+<div class="overlay legend" id="legend">
+  <div><i style="background:#4cc2ff"></i>分裂平面（共面线段）</div>
+  <div><i style="background:#ffb454"></i>被切开的碎片</div>
+  <div><i style="background:#59d999"></i>叶节点 = 凸区域</div>
+  <div><i style="background:#3f7bd8"></i>树 / 内部节点</div>
+  <div id="lgPaint" style="display:none"><i style="background:#e11d48"></i>视点（可拖动）</div>
+</div>
+
+<div class="overlay stats">
+  <div><span>原始线段</span><b id="sOrig">0</b></div>
+  <div><span>碎片后线段</span><b id="sSeg">0</b></div>
+  <div><span>切割次数</span><b id="sCut">0</b></div>
+  <div><span>节点数 / 深度</span><b id="sNode">0</b></div>
+  <div><span id="sL5">凸区域数</span><b id="sV5">0</b></div>
+</div>
+
+<div class="overlay hint" id="hint">单击画布添加一条线段 · 拖动「显示到第 N 层」观察递归分割</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const $ = id => document.getElementById(id);
+  const PAD = 18;
+
+  const S = { mode: 'build', policy: 'balanced', maxDepth: 5, shown: 8, showCut: true, showTree: true };
+  let W = 1, H = 1;
+  let SC = { x: 0, y: 0, s: 1 };            // 场景方块的画布矩形
+  let TR = { x: 0, y: 0, w: 0, h: 0 };      // 树的绘制区域
+  let origin = [];                          // 原始线段
+  let nodes = [], root = null, segCount = 0, cutCount = 0, depthUsed = 1, cellCount = 0;
+  let eye = { x: 0.34, y: 0.72 };
+  let order = [];                           // 画家算法：绘制顺序
+  let orderIdx = 0, playing = false, revealTimer = null;
+  let pulses = [], dragEye = false, nextId = 0;
+
+  const px = p => ({ x: SC.x + p.x * SC.s, y: SC.y + p.y * SC.s });
+  const un = (x, y) => ({ x: (x - SC.x) / SC.s, y: (y - SC.y) / SC.s });
+
+  // ------------------------------------------------------------ geometry
+  const side = (pl, p) => pl.n.x * (p.x - pl.p.x) + pl.n.y * (p.y - pl.p.y);
+  const EPS = 1e-9;
+
+  function bbox(segs) {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const s of segs) {
+      x0 = Math.min(x0, s.a.x, s.b.x); x1 = Math.max(x1, s.a.x, s.b.x);
+      y0 = Math.min(y0, s.a.y, s.b.y); y1 = Math.max(y1, s.a.y, s.b.y);
+    }
+    return [x0, y0, x1, y1];
+  }
+
+  function makeScene(n) {
+    nextId = 0;
+    const segs = [];
+    const push = (ax, ay, bx, by) => segs.push({ a: { x: ax, y: ay }, b: { x: bx, y: by }, id: nextId++, cut: false });
+    // 注意：区域边界由根节点的正方形提供（clipPoly 负责裁剪），不需要额外放四壁的线段
+
+    const clusters = [[.28, .32], [.68, .30], [.34, .70], [.76, .72], [.52, .50]];
+    for (let i = 0; i < n; i++) {
+      const c = clusters[(Math.random() * clusters.length) | 0];
+      const sp = 0.05 + Math.random() * 0.14;
+      const cx = c[0] + (Math.random() + Math.random() - 1) * sp;
+      const cy = c[1] + (Math.random() + Math.random() - 1) * sp;
+      const len = 0.06 + Math.random() * 0.16;
+      const ang = Math.random() * Math.PI;
+      const ax = Math.min(.98, Math.max(.02, cx - Math.cos(ang) * len));
+      const ay = Math.min(.98, Math.max(.02, cy - Math.sin(ang) * len));
+      const bx = Math.min(.98, Math.max(.02, cx + Math.cos(ang) * len));
+      const by = Math.min(.98, Math.max(.02, cy + Math.sin(ang) * len));
+      push(ax, ay, bx, by);
+    }
+    return segs;
+  }
+
+  // 平面与凸多边形的交线（最多两个交点）
+  function planeClipPoints(poly, pl) {
+    const pts = [];
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], b = poly[(i + 1) % poly.length];
+      const da = side(pl, a), db = side(pl, b);
+      if (Math.abs(da) < EPS) { pts.push(a); continue; }
+      if ((da > EPS && db < -EPS) || (da < -EPS && db > EPS)) {
+        const t = da / (da - db);
+        pts.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+      }
+    }
+    return pts;
+  }
+
+  function clipPoly(poly, pl, keepFront) {
+    const out = [];
+    const sgn = keepFront ? 1 : -1;
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], b = poly[(i + 1) % poly.length];
+      const da = side(pl, a) * sgn, db = side(pl, b) * sgn;
+      if (da >= -EPS) out.push(a);
+      if ((da > EPS && db < -EPS) || (da < -EPS && db > EPS)) {
+        const t = da / (da - db);
+        out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+      }
+    }
+    return out.length >= 3 ? out : null;
+  }
+
+  function chooseSplit(segs) {
+    if (S.policy === 'random') return (Math.random() * segs.length) | 0;
+    if (S.policy === 'longest') {
+      let bi = 0, bl = -1;
+      for (let i = 0; i < segs.length; i++) {
+        const l = (segs[i].b.x - segs[i].a.x) ** 2 + (segs[i].b.y - segs[i].a.y) ** 2;
+        if (l > bl) { bl = l; bi = i; }
+      }
+      return bi;
+    }
+    // 最佳平衡：两侧数量尽量接近，并惩罚需要切割的线段
+    let best = 0, bestScore = Infinity;
+    for (let i = 0; i < segs.length; i++) {
+      const s = segs[i];
+      const n = { x: -(s.b.y - s.a.y), y: s.b.x - s.a.x };
+      const L = Math.hypot(n.x, n.y) || 1;
+      const pl = { p: s.a, n: { x: n.x / L, y: n.y / L } };
+      let f = 0, b = 0, c = 0;
+      for (let k = 0; k < segs.length; k++) {
+        if (k === i) continue;
+        const da = side(pl, segs[k].a), db = side(pl, segs[k].b);
+        if (Math.abs(da) < 1e-9 && Math.abs(db) < 1e-9) continue;
+        if (da >= -EPS && db >= -EPS) f++;
+        else if (da <= EPS && db <= EPS) b++;
+        else c++;
+      }
+      const score = Math.abs(f - b) + 0.6 * c;
+      if (score < bestScore) { bestScore = score; best = i; }
+    }
+    return best;
+  }
+
+  function buildBSP(segs, depth, poly) {
+    const node = { id: nodes.length, depth, segs: null, poly, plane: null, coplanar: null, front: null, back: null, cuts: 0 };
+    nodes.push(node);
+    depthUsed = Math.max(depthUsed, depth);
+
+    if (segs.length <= 1 || depth >= S.maxDepth || !poly) { node.segs = segs; return node; }
+
+    const si = chooseSplit(segs);
+    const s = segs[si];
+    const nx = -(s.b.y - s.a.y), ny = s.b.x - s.a.x;
+    const L = Math.hypot(nx, ny) || 1;
+    const pl = { p: s.a, n: { x: nx / L, y: ny / L } };
+    node.plane = pl;
+    node.pick = s;
+
+    const front = [], back = [], coplanar = [s];
+    for (const g of segs) {
+      if (g === s) continue;
+      const da = side(pl, g.a), db = side(pl, g.b);
+      if (Math.abs(da) < 1e-9 && Math.abs(db) < 1e-9) { coplanar.push(g); continue; }
+      if (da >= -EPS && db >= -EPS) { front.push(g); continue; }
+      if (da <= EPS && db <= EPS) { back.push(g); continue; }
+      // 跨越平面 → 切开
+      const t = da / (da - db);
+      const ip = { x: g.a.x + (g.b.x - g.a.x) * t, y: g.a.y + (g.b.y - g.a.y) * t };
+      const f1 = { a: g.a, b: ip, id: nextId++, cut: true };
+      const b1 = { a: ip, b: g.b, id: nextId++, cut: true };
+      if (da > 0) { front.push(f1); back.push(b1); } else { back.push(f1); front.push(b1); }
+      node.cuts++;
+    }
+    node.coplanar = coplanar;
+    cutCount += node.cuts;
+    segCount += node.cuts;                     // 每切一刀，线段总数 +1
+
+    const fp = clipPoly(poly, pl, true);
+    const bp = clipPoly(poly, pl, false);
+    node.front = fp ? buildBSP(front, depth + 1, fp) : null;
+    node.back = bp ? buildBSP(back, depth + 1, bp) : null;
+    if (node.front) node.front.parent = node;
+    if (node.back) node.back.parent = node;
+    if (!node.front && !node.back) node.segs = [];
+    return node;
+  }
+
+  function rebuild() {
+    if (!origin.length) origin = makeScene(+$('nSeg').value);
+    nodes = []; segCount = origin.length; cutCount = 0; depthUsed = 1; cellCount = 0;
+    root = buildBSP(origin.slice(), 0, [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }]);
+    $('lvl').max = Math.max(1, depthUsed);
+    S.shown = Math.min(depthUsed, +$('lvl').value || depthUsed);
+    $('lvl').value = S.shown;
+    layoutTree();
+    painterOrder();
+    updateStats();
+  }
+
+  // ------------------------------------------------------------ tree layout
+  let treeCursor = 0, treeStep = 1, treeBW = 22, treeBH = 16;
+  function layoutTree() {
+    let leaves = 0;
+    (function cnt(n) { if (!n) return; if (!n.front && !n.back) { leaves++; return; } cnt(n.front); cnt(n.back); })(root);
+    cellCount = leaves;
+    treeCursor = 0;
+    const pad = 14;
+    treeStep = Math.max(9, (TR.w - pad * 2) / Math.max(1, leaves - 1 || 1));
+    treeBW = Math.max(7, Math.min(22, treeStep * 0.92));
+    treeBH = treeBW < 14 ? 12 : 16;
+    const rowH = Math.min(34, Math.max(16, (TR.h - 30) / Math.max(1, depthUsed)));
+    (function lay(n, depth) {
+      if (!n) return;
+      n.y = TR.y + 14 + depth * rowH;
+      if (!n.front && !n.back) { n.x = TR.x + pad + (leaves === 1 ? (TR.w - pad * 2) / 2 : treeCursor * treeStep); treeCursor++; return; }
+      lay(n.front, depth + 1);
+      lay(n.back, depth + 1);
+      const xs = [n.front, n.back].filter(Boolean).map(c => c.x);
+      n.x = xs.reduce((a, b) => a + b, 0) / xs.length;
+    })(root, 0);
+  }
+
+  // ------------------------------------------------------------ painter order
+  function painterOrder() {
+    const out = [];
+    (function rec(n) {
+      if (!n) return;
+      if (!n.plane) { out.push({ node: n }); return; }
+      const d = side(n.plane, eye);
+      const near = d > 0 ? n.front : n.back;
+      const far = d > 0 ? n.back : n.front;
+      rec(far);
+      out.push({ node: n });
+      rec(near);
+    })(root);
+    order = out;
+    orderIdx = order.length;
+  }
+
+  // ------------------------------------------------------------ drawing
+  const depthHue = d => 200 + 60 * Math.min(1, d / Math.max(2, depthUsed));
+
+  function polyPath(poly) {
+    const p0 = px(poly[0]);
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    for (let i = 1; i < poly.length; i++) { const p = px(poly[i]); ctx.lineTo(p.x, p.y); }
+    ctx.closePath();
+  }
+
+  function drawNodeCells() {
+    const painting = S.mode === 'paint';
+    const orderMap = new Map();
+    if (painting) order.forEach((o, i) => orderMap.set(o.node.id, i));
+
+    (function walk(n) {
+      if (!n || !n.poly) return;
+      const isLeaf = !n.front && !n.back;
+      const visible = n.depth <= S.shown;
+      if (isLeaf && visible) {
+        let fill;
+        if (painting) {
+          const i = orderMap.get(n.id) ?? 0;
+          const t = order.length > 1 ? i / (order.length - 1) : 0;
+          const active = i < orderIdx;
+          fill = `hsla(203, ${52 + 26 * t}%, ${15 + 33 * t}%, ${active ? 0.45 : 0.05})`;
+        } else {
+          fill = `hsla(${depthHue(n.depth)}, 62%, 60%, 0.13)`;
+        }
+        polyPath(n.poly);
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = painting
+          ? 'rgba(147,163,192,0.35)'
+          : `hsla(${depthHue(n.depth)}, 55%, 65%, ${0.10 + 0.30 * Math.min(1, n.depth / Math.max(2, depthUsed))})`;
+        ctx.stroke();
+      } else if (visible && n.poly) {
+        polyPath(n.poly);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = `hsla(${depthHue(n.depth)}, 50%, 64%, 0.10)`;
+        ctx.stroke();
+      }
+      walk(n.front); walk(n.back);
+    })(root);
+
+    // 被选中的分裂平面（裁剪到当前节点区域内）
+    (function walk(n) {
+      if (!n || n.depth > S.shown) return;
+      if (n.plane && n.poly) {
+        const pts = planeClipPoints(n.poly, n.plane);
+        const isCurrent = n.pick;
+        if (pts.length >= 2) {
+          const a = px(pts[0]), b = px(pts[1]);
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = isCurrent ? 'rgba(76,194,255,0.30)' : 'rgba(76,194,255,0.13)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+        if (n.pick) {
+          const a = px(n.pick.a), b = px(n.pick.b);
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = 'rgba(76,194,255,0.95)';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+      }
+      walk(n.front); walk(n.back);
+    })(root);
+  }
+
+  function drawSegments() {
+    (function walk(n) {
+      if (!n) return;
+      if (n.segs) {
+        for (const s of n.segs) {
+          const a = px(s.a), b = px(s.b);
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = s.cut && S.showCut ? 'rgba(255,180,84,0.95)' : 'rgba(232,238,251,0.75)';
+          ctx.lineWidth = s.cut && S.showCut ? 2.2 : 1.4;
+          ctx.stroke();
+        }
+      }
+      walk(n.front); walk(n.back);
+    })(root);
+  }
+
+  function drawTree() {
+    if (!S.showTree || TR.w < 80 || TR.h < 40) return;
+    ctx.fillStyle = 'rgba(255,255,255,0.02)';
+    ctx.fillRect(TR.x, TR.y, TR.w, TR.h);
+
+    const walk = n => {
+      if (!n) return;
+      if (n.depth > S.shown) return;
+      if (n.depth > 0 && n.parent) {
+        const p = n.parent;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y + treeBH / 2);
+        ctx.lineTo(p.x, (p.y + n.y) / 2);
+        ctx.lineTo(n.x, (p.y + n.y) / 2);
+        ctx.lineTo(n.x, n.y - treeBH / 2);
+        ctx.strokeStyle = 'rgba(147,163,192,0.4)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      const isLeaf = !n.front && !n.back;
+      const active = S.mode === 'paint'
+        ? (order[Math.min(orderIdx, order.length) - 1] && order[Math.min(orderIdx, order.length) - 1].node === n)
+        : false;
+      ctx.beginPath();
+      ctx.rect(n.x - treeBW / 2, n.y - treeBH / 2, treeBW, treeBH);
+      ctx.fillStyle = isLeaf ? 'rgba(5,150,105,0.16)' : 'rgba(37,99,235,0.16)';
+      ctx.fill();
+      ctx.strokeStyle = active ? '#59d999' : (isLeaf ? 'rgba(89,217,153,0.8)' : 'rgba(76,194,255,0.8)');
+      ctx.lineWidth = active ? 2 : 1.2;
+      ctx.stroke();
+      if (n.plane && treeBW >= 12) {
+        const ang = Math.atan2(n.plane.n.y, n.plane.n.x);
+        const r = treeBW * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(n.x - r * Math.cos(ang), n.y - r * Math.sin(ang));
+        ctx.lineTo(n.x + r * Math.cos(ang), n.y + r * Math.sin(ang));
+        ctx.strokeStyle = 'rgba(76,194,255,0.9)';
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+      }
+      walk(n.front); walk(n.back);
+    };
+    walk(root);
+
+    ctx.font = '11px sans-serif';
+    ctx.fillStyle = 'rgba(147,163,192,0.9)';
+    ctx.fillText('BSP 树：节点 = 分裂平面，叶子 = 凸区域', TR.x, TR.y - 6);
+  }
+
+  function drawPaintExtra() {
+    if (S.mode !== 'paint') return;
+    const list = order.map(o => o.node);
+    for (let i = 0; i < list.length; i++) {
+      const n = list[i];
+      if (i >= orderIdx) continue;
+      const poly = n.poly;
+      if (!poly) continue;
+      let cx = 0, cy = 0;
+      for (const p of poly) { cx += p.x; cy += p.y; }
+      cx /= poly.length; cy /= poly.length;
+      const p = px({ x: cx, y: cy });
+      const t = order.length > 1 ? i / (order.length - 1) : 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(203, ${52 + 26 * t}%, ${22 + 26 * t}%, 0.92)`;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#eaf2ff';
+      ctx.font = '10px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(i + 1, p.x, p.y + 3.5);
+      ctx.textAlign = 'left';
+    }
+    // 视点
+    const e = px(eye);
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, 9, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(225,29,72,0.25)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#e11d48';
+    ctx.fill();
+    ctx.fillStyle = 'rgba(232,238,251,0.9)';
+    ctx.font = '11px sans-serif';
+    ctx.fillText('视点', e.x + 12, e.y + 4);
+  }
+
+  function frame(now) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(255,255,255,0.015)';
+    ctx.fillRect(SC.x, SC.y, SC.s, SC.s);
+
+    drawNodeCells();
+    drawSegments();
+    drawPaintExtra();
+    drawTree();
+
+    pulses = pulses.filter(p => now - p.t0 < 600);
+    for (const p of pulses) {
+      const k = 1 - (now - p.t0) / 600;
+      polyPath(p.poly);
+      ctx.strokeStyle = `rgba(89,217,153,${0.15 + 0.7 * k})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // ------------------------------------------------------------ painter animation
+  function playOrder() {
+    playing = true;
+    orderIdx = 0;
+    const step = () => {
+      if (orderIdx >= order.length) { playing = false; return; }
+      orderIdx++;
+      updateStats();
+      setTimeout(step, Math.max(60, 600 / Math.max(1, order.length)));
+    };
+    step();
+  }
+
+  // ------------------------------------------------------------ stats
+  function updateStats() {
+    $('sOrig').textContent = origin.length;
+    $('sSeg').textContent = segCount;
+    $('sCut').textContent = cutCount;
+    $('sNode').textContent = nodes.length + ' / ' + depthUsed;
+    if (S.mode === 'paint') {
+      $('sL5').textContent = '绘制顺序（从远到近）';
+      $('sV5').textContent = orderIdx + ' / ' + order.length;
+    } else {
+      $('sL5').textContent = '凸区域数';
+      $('sV5').textContent = cellCount;
+    }
+  }
+
+  // ------------------------------------------------------------ ui
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = cv.clientWidth || 800;
+    H = cv.clientHeight || 520;
+    cv.width = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const sideBySide = S.showTree && W >= 760;
+    document.body.classList.toggle('narrow', !sideBySide);
+    if (sideBySide) {
+      const avail = W * 0.56;
+      const s = Math.min(avail - PAD * 2, H - PAD * 2);
+      SC = { x: PAD, y: (H - s) / 2, s };
+      TR = { x: SC.x + s + 26, y: 46, w: Math.max(0, W - (SC.x + s + 26) - PAD), h: Math.max(0, H - 86) };
+    } else {
+      // 窄栏：场景在上，树在下
+      const treeH = S.showTree ? Math.min(210, H * 0.34) : 0;
+      const s = Math.min(W - PAD * 2, H - treeH - PAD * 3 - 10);
+      SC = { x: (W - s) / 2, y: PAD, s };
+      const ty = SC.y + s + 30;
+      TR = { x: PAD, y: S.showTree ? ty : -9999, w: Math.max(0, W - PAD * 2), h: Math.max(0, H - ty - 120) };
+    }
+    layoutTree();
+  }
+
+  function setMode(m) {
+    S.mode = m;
+    $('lgPaint').style.display = m === 'paint' ? 'block' : 'none';
+    $('hint').textContent = m === 'paint'
+      ? '拖动红色视点，观察"从远到近"的绘制顺序如何随视点变化（树本身不变）'
+      : '单击画布添加一条线段 · 拖动「显示到第 N 层」观察递归分割';
+    if (m === 'paint') { orderIdx = 0; playOrder(); } else { orderIdx = order.length; }
+    updateStats();
+  }
+
+  $('mode').onchange = e => setMode(e.target.value);
+  $('nSeg').oninput = () => { origin = makeScene(+$('nSeg').value); rebuild(); };
+  $('policy').onchange = e => { S.policy = e.target.value; rebuild(); };
+  $('maxd').oninput = e => { S.maxDepth = +e.target.value; rebuild(); };
+  $('lvl').oninput = e => { S.shown = +e.target.value; };
+  $('bNew').onclick = () => {
+    if (revealTimer) { clearInterval(revealTimer); revealTimer = null; }
+    origin = makeScene(+$('nSeg').value);
+    rebuild();
+  };
+  $('bReveal').onclick = () => {
+    if (revealTimer) { clearInterval(revealTimer); revealTimer = null; return; }
+    S.shown = 0; $('lvl').value = 0; pulses = [];
+    revealTimer = setInterval(() => {
+      S.shown++; $('lvl').value = S.shown;
+      pulses.push(...nodes.filter(n => n.depth === S.shown && n.poly).map(n => ({ poly: n.poly, t0: performance.now() })));
+      if (S.shown >= depthUsed) { clearInterval(revealTimer); revealTimer = null; }
+    }, 420);
+  };
+  $('bCut').onclick = e => { S.showCut = !S.showCut; e.target.classList.toggle('on', S.showCut); };
+  $('bTree').onclick = e => { S.showTree = !S.showTree; e.target.classList.toggle('on', S.showTree); resize(); };
+
+  let down = null;
+  cv.addEventListener('pointerdown', e => {
+    const r = cv.getBoundingClientRect();
+    const mx = e.clientX - r.left, my = e.clientY - r.top;
+    if (S.mode === 'paint') {
+      const ep = px(eye);
+      if (Math.hypot(mx - ep.x, my - ep.y) < 26) { dragEye = true; }
+      else { eye = un(mx, my); painterOrder(); orderIdx = 0; playOrder(); }
+      return;
+    }
+    down = { x: mx, y: my };
+  });
+  cv.addEventListener('pointermove', e => {
+    const r = cv.getBoundingClientRect();
+    const mx = e.clientX - r.left, my = e.clientY - r.top;
+    if (dragEye) { eye = un(mx, my); painterOrder(); orderIdx = order.length; updateStats(); return; }
+    if (!down) return;
+    if (Math.hypot(mx - down.x, my - down.y) > 14) {
+      const a = un(down.x, down.y), b = un(mx, my);
+      origin.push({ a, b, id: nextId++ });
+      down = null;
+      rebuild();
+    }
+  });
+  cv.addEventListener('pointerup', () => { down = null; dragEye = false; });
+  cv.addEventListener('pointerleave', () => { down = null; dragEye = false; });
+
+  window.addEventListener('resize', () => { resize(); });
+
+  resize();
+  rebuild();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

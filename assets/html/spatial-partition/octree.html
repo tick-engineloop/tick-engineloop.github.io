@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Octree 交互演示 · Spatial Partition</title>
+<link rel="stylesheet" href="demo.css">
+<style>
+  canvas { cursor: grab; }
+  canvas:active { cursor: grabbing; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="cv"></canvas></div>
+
+<div class="overlay panel">
+  <h4>Octree</h4>
+  <div class="row"><label>点数</label><input id="nPts" type="range" min="100" max="4000" step="100" value="1200"></div>
+  <div class="row"><label>叶容量</label><input id="cap" type="range" min="1" max="32" value="8"></div>
+  <div class="row"><label>最大深度</label><input id="maxd" type="range" min="1" max="6" value="4"></div>
+  <div class="row"><label>显示到第</label><input id="lvl" type="range" min="0" max="6" value="3"></div>
+  <div class="row"><label>点云</label>
+    <select id="cloud">
+      <option value="uniform">均匀</option>
+      <option value="shell">球壳</option>
+      <option value="blob">团簇</option>
+    </select>
+  </div>
+  <div class="row"><label>查询盒</label><input id="qs" type="range" min="6" max="60" value="22"></div>
+  <div class="btns">
+    <button id="bQuery">随机查询盒</button>
+    <button id="bReveal">▶ 逐层展开</button>
+    <button id="bRot" class="on">自动旋转</button>
+  </div>
+</div>
+
+<div class="overlay legend">
+  <div><i style="background:#4cc2ff"></i>八叉树节点（颜色=层级）</div>
+  <div><i style="background:#ffb454"></i>与查询盒相交的节点</div>
+  <div><i style="background:#59d999"></i>被测试 / 命中点</div>
+</div>
+
+<div class="overlay stats">
+  <div><span>点数</span><b id="sPts">0</b></div>
+  <div><span>占用节点 / 最大层</span><b id="sNodes">0</b></div>
+  <div><span>相交节点 / 总节点</span><b id="sV1">0 / 0</b></div>
+  <div><span>测试点数 / 暴力</span><b id="sV2">0 / 0</b></div>
+  <div><span>命中点数</span><b id="sV3">0</b></div>
+</div>
+
+<div class="overlay hint">拖拽旋转 · 滚轮缩放</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const $ = id => document.getElementById(id);
+
+  const S = { cap: 8, maxDepth: 4, shown: 4, cloud: 'uniform', qSize: 0.22 };
+  const cam = { yaw: 0.72, pitch: 0.42, zoom: 1, autoRot: true };
+  let W = 1, H = 1;
+  let pts = [], root = null, nodes = [], occ = [], depthUsed = 1, total = 0;
+  let query = { x0: .30, y0: .34, z0: .28, x1: .62, y1: .66, z1: .60 };
+  let qHit = { nodes: new Set(), tested: 0, hits: new Set() };
+  let drag = null;
+
+  // ------------------------------------------------------------ geometry
+  const c3 = (x, y, z) => [x - .5, y - .5, z - .5];
+
+  function project(x, y, z) {
+    const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw);
+    const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+    const x0 = x - .5, y0 = y - .5, z0 = z - .5;
+    const x1 = x0 * cy - z0 * sy;
+    const z1 = x0 * sy + z0 * cy;
+    const y2 = y0 * cp - z1 * sp;
+    const z2 = y0 * sp + z1 * cp;
+    const d = 2.3 - z2;
+    const k = Math.min(W, H) * 0.46 * cam.zoom * (2.3 / d);
+    return { x: W / 2 + x1 * k, y: H / 2 - y2 * k, d: d };
+  }
+
+  const EDGES = [
+    [0,0,0,1,0,0],[0,0,1,1,0,1],[0,1,0,1,1,0],[0,1,1,1,1,1],
+    [0,0,0,0,1,0],[1,0,0,1,1,0],[0,0,1,0,1,1],[1,0,1,1,1,1],
+    [0,0,0,0,0,1],[1,0,0,1,0,1],[0,1,0,0,1,1],[1,1,0,1,1,1]
+  ];
+
+  function boxPath(b) {
+    ctx.beginPath();
+    for (const e of EDGES) {
+      const a = project(b.x0 + e[0] * (b.x1 - b.x0), b.y0 + e[1] * (b.y1 - b.y0), b.z0 + e[2] * (b.z1 - b.z0));
+      const c = project(b.x0 + e[3] * (b.x1 - b.x0), b.y0 + e[4] * (b.y1 - b.y0), b.z0 + e[5] * (b.z1 - b.z0));
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(c.x, c.y);
+    }
+    ctx.stroke();
+  }
+
+  // ---------------------------------------------------------------- build
+  function build(list, depth, x0, y0, z0, x1, y1, z1) {
+    const n = { id: nodes.length, depth, x0, y0, z0, x1, y1, z1, pts: null, children: null, count: list.length };
+    nodes.push(n);
+    depthUsed = Math.max(depthUsed, depth);
+    if (list.length <= S.cap || depth >= S.maxDepth || (x1 - x0) < 1e-5) { n.pts = list; return n; }
+    const mx = (x0 + x1) / 2, my = (y0 + y1) / 2, mz = (z0 + z1) / 2;
+    const ch = [];
+    for (let i = 0; i < 8; i++) {
+      const ox = i & 1, oy = (i >> 1) & 1, oz = (i >> 2) & 1;
+      const sub = [];
+      for (const p of list) {
+        if ((p.x >= mx) === !!ox && (p.y >= my) === !!oy && (p.z >= mz) === !!oz) sub.push(p);
+      }
+      if (!sub.length) { ch.push(null); continue; }
+      ch.push(build(sub, depth + 1,
+        ox ? mx : x0, oy ? my : y0, oz ? mz : z0,
+        ox ? x1 : mx, oy ? y1 : my, oz ? z1 : mz));
+    }
+    n.children = ch;
+    return n;
+  }
+
+  function rebuild() {
+    pts = makeCloud(+$('nPts').value, S.cloud);
+    nodes = []; depthUsed = 1;
+    root = build(pts, 0, 0, 0, 0, 1, 1, 1);
+    occ = nodes.filter(n => n.count > 0);
+    total = pts.length;
+    $('lvl').max = Math.max(1, depthUsed);
+    S.shown = Math.max(1, Math.min(depthUsed, +$('lvl').value));
+    $('lvl').value = S.shown;
+    doQuery();
+  }
+
+  function makeCloud(n, kind) {
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      let x, y, z;
+      if (kind === 'shell') {
+        const u = Math.random() * 2 - 1, t = Math.random() * Math.PI * 2;
+        const r = 0.30 + 0.05 * (Math.random() - .5) * 2;
+        const s = Math.sqrt(1 - u * u);
+        x = .5 + r * s * Math.cos(t); y = .5 + r * u; z = .5 + r * s * Math.sin(t);
+      } else if (kind === 'blob') {
+        const c = [[.32, .34, .30], [.68, .60, .66], [.40, .72, .62]][i % 3];
+        x = c[0] + (Math.random() + Math.random() + Math.random() - 1.5) * .13;
+        y = c[1] + (Math.random() + Math.random() + Math.random() - 1.5) * .13;
+        z = c[2] + (Math.random() + Math.random() + Math.random() - 1.5) * .13;
+      } else {
+        x = Math.random(); y = Math.random(); z = Math.random();
+      }
+      out.push({ x: Math.min(.995, Math.max(.005, x)), y: Math.min(.995, Math.max(.005, y)), z: Math.min(.995, Math.max(.005, z)), i });
+    }
+    return out;
+  }
+
+  // ---------------------------------------------------------------- query
+  const hit = (n, q) => !(n.x1 < q.x0 || n.x0 > q.x1 || n.y1 < q.y0 || n.y0 > q.y1 || n.z1 < q.z0 || n.z0 > q.z1);
+  const inBox = (p, q) => p.x >= q.x0 && p.x <= q.x1 && p.y >= q.y0 && p.y <= q.y1 && p.z >= q.z0 && p.z <= q.z1;
+
+  function doQuery() {
+    const r = { nodes: new Set(), tested: 0, hits: new Set() };
+    (function rec(n) {
+      if (!n || !hit(n, query)) return;
+      r.nodes.add(n.id);
+      if (n.pts) { for (const p of n.pts) { r.tested++; if (inBox(p, query)) r.hits.add(p.i); } return; }
+      for (const c of n.children) rec(c);
+    })(root);
+    qHit = r;
+    $('sPts').textContent = total;
+    $('sNodes').textContent = occ.length + ' / ' + depthUsed;
+    $('sV1').textContent = r.nodes.size + ' / ' + occ.length;
+    $('sV2').textContent = r.tested + ' / ' + total;
+    $('sV3').textContent = r.hits.size;
+  }
+
+  function randomQuery() {
+    const h = S.qSize / 2;
+    const cx = .25 + Math.random() * .5, cy = .25 + Math.random() * .5, cz = .25 + Math.random() * .5;
+    query = { x0: cx - h, y0: cy - h, z0: cz - h, x1: cx + h, y1: cy + h, z1: cz + h };
+    doQuery();
+  }
+
+  // ---------------------------------------------------------------- draw
+  let t0 = 0, reveal = null;
+
+  function draw(now) {
+    if (cam.autoRot && !drag) cam.yaw += 0.0032;
+    ctx.clearRect(0, 0, W, H);
+
+    // unit cube outline
+    ctx.strokeStyle = 'rgba(147,163,192,0.28)';
+    ctx.lineWidth = 1;
+    boxPath({ x0: 0, y0: 0, z0: 0, x1: 1, y1: 1, z1: 1 });
+
+    // nodes grouped by depth, deepest first
+    const byDepth = new Map();
+    (function walk(n) {
+      if (!n || !n.count) return;
+      if (n.depth <= S.shown) {
+        if (!byDepth.has(n.depth)) byDepth.set(n.depth, []);
+        byDepth.get(n.depth).push(n);
+      }
+      if (n.children) for (const c of n.children) walk(c);
+    })(root);
+
+    const depths = [...byDepth.keys()].sort((a, b) => b - a);
+    for (const d of depths) {
+      const list = byDepth.get(d);
+      ctx.lineWidth = d === 0 ? 1.6 : 1;
+      ctx.strokeStyle = `hsla(${200 + 40 * Math.min(1, d / Math.max(1, depthUsed))}, 70%, ${64 - 3 * d}%, ${0.30 + 0.42 * Math.min(1, d / Math.max(1, depthUsed))})`;
+      ctx.beginPath();
+      for (const n of list) {
+        for (const e of EDGES) {
+          const a = project(n.x0 + e[0] * (n.x1 - n.x0), n.y0 + e[1] * (n.y1 - n.y0), n.z0 + e[2] * (n.z1 - n.z0));
+          const b = project(n.x0 + e[3] * (n.x1 - n.x0), n.y0 + e[4] * (n.y1 - n.y0), n.z0 + e[5] * (n.z1 - n.z0));
+          ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+        }
+      }
+      ctx.stroke();
+    }
+
+    // highlighted nodes
+    if (qHit.nodes.size) {
+      ctx.strokeStyle = 'rgba(255,180,84,0.95)';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      for (const id of qHit.nodes) {
+        const n = nodes[id];
+        if (n.depth > S.shown) continue;
+        for (const e of EDGES) {
+          const a = project(n.x0 + e[0] * (n.x1 - n.x0), n.y0 + e[1] * (n.y1 - n.y0), n.z0 + e[2] * (n.z1 - n.z0));
+          const b = project(n.x0 + e[3] * (n.x1 - n.x0), n.y0 + e[4] * (n.y1 - n.y0), n.z0 + e[5] * (n.z1 - n.z0));
+          ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+        }
+      }
+      ctx.stroke();
+    }
+
+    // points
+    const proj = [];
+    for (const p of pts) {
+      const s = project(p.x, p.y, p.z);
+      proj.push({ s, i: p.i });
+    }
+    proj.sort((a, b) => b.s.d - a.s.d);
+    for (const { s, i } of proj) {
+      const isHit = qHit.hits.has(i);
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, isHit ? 2.8 : 1.6, 0, Math.PI * 2);
+      ctx.fillStyle = isHit ? '#59d999' : 'rgba(232,238,251,0.5)';
+      ctx.fill();
+    }
+
+    // query box
+    ctx.strokeStyle = 'rgba(255,180,84,0.9)';
+    ctx.lineWidth = 1.6;
+    ctx.setLineDash([5, 4]);
+    boxPath(query);
+    ctx.setLineDash([]);
+
+    // axis gizmo
+    const gx = W - 132, gy = H - 62, L = 22;
+    const o = project(.5, .5, .5);
+    const axes = [
+      [project(1, .5, .5), '#ff6b81', 'X'],
+      [project(.5, 1, .5), '#59d999', 'Y'],
+      [project(.5, .5, 1), '#4cc2ff', 'Z']
+    ];
+    for (const [a, col, name] of axes) {
+      const dx = a.x - o.x, dy = a.y - o.y;
+      const m = Math.hypot(dx, dy) || 1;
+      ctx.beginPath();
+      ctx.moveTo(gx, gy);
+      ctx.lineTo(gx + dx / m * L, gy + dy / m * L);
+      ctx.strokeStyle = col; ctx.lineWidth = 1.8; ctx.stroke();
+      ctx.fillStyle = col;
+      ctx.font = '10px sans-serif';
+      ctx.fillText(name, gx + dx / m * (L + 5) - 3, gy + dy / m * (L + 5) + 3);
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  // ---------------------------------------------------------------- ui
+  $('nPts').oninput = rebuild;
+  $('cap').oninput = e => { S.cap = +e.target.value; rebuild(); };
+  $('maxd').oninput = e => { S.maxDepth = +e.target.value; rebuild(); };
+  $('lvl').oninput = e => { S.shown = +e.target.value; };
+  $('cloud').onchange = e => { S.cloud = e.target.value; rebuild(); };
+  $('qs').oninput = e => { S.qSize = +e.target.value / 100; randomQuery(); };
+  $('bQuery').onclick = randomQuery;
+  $('bReveal').onclick = () => {
+    if (reveal) { clearInterval(reveal); reveal = null; return; }
+    S.shown = 0; $('lvl').value = 0;
+    reveal = setInterval(() => {
+      S.shown++;
+      $('lvl').value = S.shown;
+      if (S.shown >= depthUsed) { clearInterval(reveal); reveal = null; }
+    }, 420);
+  };
+  $('bRot').onclick = e => { cam.autoRot = !cam.autoRot; e.target.classList.toggle('on', cam.autoRot); };
+
+  cv.addEventListener('pointerdown', e => {
+    drag = { x: e.clientX, y: e.clientY };
+    cv.setPointerCapture(e.pointerId);
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!drag) return;
+    cam.yaw += (e.clientX - drag.x) * 0.008;
+    cam.pitch = Math.max(-1.45, Math.min(1.45, cam.pitch - (e.clientY - drag.y) * 0.008));
+    drag = { x: e.clientX, y: e.clientY };
+  });
+  cv.addEventListener('pointerup', () => { drag = null; });
+  cv.addEventListener('pointercancel', () => { drag = null; });
+  cv.addEventListener('wheel', e => {
+    e.preventDefault();
+    cam.zoom = Math.max(0.45, Math.min(3, cam.zoom * Math.exp(-e.deltaY * 0.001)));
+  }, { passive: false });
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = cv.clientWidth || 800;
+    H = cv.clientHeight || 560;
+    cv.width = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+
+  resize();
+  rebuild();
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

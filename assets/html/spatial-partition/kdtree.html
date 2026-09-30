@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kd-tree 交互演示 · Spatial Partition</title>
+<link rel="stylesheet" href="demo.css">
+</head>
+<body>
+<div id="stage"><canvas id="cv"></canvas></div>
+
+<div class="overlay panel">
+  <h4>kd-tree</h4>
+  <div class="row"><label>点数</label><input id="nPts" type="range" min="10" max="400" step="10" value="150"></div>
+  <div class="row"><label>叶容量</label><input id="leaf" type="range" min="1" max="12" value="4"></div>
+  <div class="row"><label>轴选择</label>
+    <select id="axis">
+      <option value="cycle">轮转</option>
+      <option value="longest">最长边</option>
+      <option value="variance">最大方差</option>
+    </select>
+  </div>
+  <div class="row"><label>查询</label>
+    <select id="mode">
+      <option value="nn">最近邻</option>
+      <option value="range">范围查询</option>
+    </select>
+  </div>
+  <div class="row" id="radRow" style="display:none"><label>半径</label><input id="rad" type="range" min="4" max="80" value="18"></div>
+  <div class="row"><label>显示</label></div>
+  <div class="btns">
+    <button id="bBox" class="on">节点盒</button>
+    <button id="bPlane" class="on">分割面</button>
+    <button id="bPlay">▶ 播放遍历</button>
+  </div>
+</div>
+
+<div class="overlay legend">
+  <div><i style="background:#3f7bd8"></i>节点包围盒（越深越亮）</div>
+  <div><i style="background:#ffb454"></i>分割平面</div>
+  <div><i style="background:#4cc2ff"></i>已访问节点</div>
+  <div><i style="background:#ff6b81"></i>被剪枝节点</div>
+  <div><i style="background:#59d999"></i>参与距离计算的点</div>
+</div>
+
+<div class="overlay stats">
+  <div><span>点数</span><b id="sPts">0</b></div>
+  <div><span>节点数</span><b id="sNodes">0</b></div>
+  <div><span>访问节点 / 总节点</span><b id="sVisit">0 / 0</b></div>
+  <div><span>距离计算 / 暴力</span><b id="sTest">0 / 0</b></div>
+  <div><span id="sOutL">最近距离</span><b id="sOut">-</b></div>
+</div>
+
+<div class="overlay hint">移动鼠标放置查询点 · 单击播放遍历过程</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------------------------------------------------------------- canvas
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  let W = 1, H = 1;
+  const PAD = 26;
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = cv.clientWidth || 800;
+    H = cv.clientHeight || 480;
+    cv.width = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+  }
+
+  const px = x => PAD + x * (W - 2 * PAD);
+  const py = y => PAD + y * (H - 2 * PAD);
+  const ux = s => (s - PAD) / (W - 2 * PAD);
+  const uy = s => (s - PAD) / (H - 2 * PAD);
+
+  // ---------------------------------------------------------------- state
+  const S = { leaf: 4, axis: 'cycle', mode: 'nn', radius: 0.09, showBox: true, showPlane: true };
+  let pts = [];            // {x, y, i}
+  let nodes = [];          // flat list, index == id
+  let root = null;
+  let maxDepthUsed = 1;
+  let query = { x: 0.5, y: 0.5 };
+  let anim = null;         // {ev, i, timer}
+  let st = newState();
+
+  function newState() {
+    return { visited: new Set(), pruned: new Set(), tested: new Set(), hit: new Set(), cur: -1, bestD2: Infinity };
+  }
+
+  // ---------------------------------------------------------------- build
+  function build(list, depth, x0, y0, x1, y1) {
+    const n = { id: nodes.length, depth, x0, y0, x1, y1, axis: 0, split: 0, leaf: true, pts: null, left: null, right: null };
+    nodes.push(n);
+
+    const degenerate = (x1 - x0) < 1e-9 || (y1 - y0) < 1e-9;
+    if (list.length <= S.leaf || depth >= 12 || degenerate || list.length < 2) {
+      n.pts = list;
+      maxDepthUsed = Math.max(maxDepthUsed, depth);
+      return n;
+    }
+
+    let axis;
+    if (S.axis === 'cycle') {
+      axis = depth % 2;
+    } else if (S.axis === 'longest') {
+      axis = (x1 - x0) > (y1 - y0) ? 0 : 1;
+    } else {
+      let mx = 0, my = 0, vx = 0, vy = 0;
+      for (const p of list) { mx += p.x; my += p.y; }
+      mx /= list.length; my /= list.length;
+      for (const p of list) { vx += (p.x - mx) ** 2; vy += (p.y - my) ** 2; }
+      axis = vx >= vy ? 0 : 1;
+    }
+
+    const arr = list.slice().sort((a, b) => (axis ? a.y - b.y : a.x - b.x));
+    const mid = arr.length >> 1;
+    const sp = axis ? arr[mid].y : arr[mid].x;
+
+    n.axis = axis; n.split = sp; n.leaf = false;
+    const lBox = axis === 0 ? [x0, y0, sp, y1] : [x0, y0, x1, sp];
+    const rBox = axis === 0 ? [sp, y0, x1, y1] : [x0, sp, x1, y1];
+    n.left = build(arr.slice(0, mid), depth + 1, lBox[0], lBox[1], lBox[2], lBox[3]);
+    n.right = build(arr.slice(mid), depth + 1, rBox[0], rBox[1], rBox[2], rBox[3]);
+    return n;
+  }
+
+  function rebuild(keepPoints) {
+    if (!keepPoints) pts = randomPoints(+nPts.value);
+    nodes = [];
+    maxDepthUsed = 1;
+    root = build(pts, 0, 0, 0, 1, 1);
+    refresh();
+  }
+
+  function randomPoints(n) {
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      out.push({ x: 0.03 + Math.random() * 0.94, y: 0.03 + Math.random() * 0.94, i });
+    }
+    return out;
+  }
+
+  // ---------------------------------------------------------------- queries
+  function boxDist2(n, q) {
+    const dx = q.x < n.x0 ? n.x0 - q.x : (q.x > n.x1 ? q.x - n.x1 : 0);
+    const dy = q.y < n.y0 ? n.y0 - q.y : (q.y > n.y1 ? q.y - n.y1 : 0);
+    return dx * dx + dy * dy;
+  }
+
+  function genNN(q) {
+    const ev = [];
+    let best = { d2: Infinity, p: null };
+    (function rec(n) {
+      if (boxDist2(n, q) >= best.d2) { ev.push({ t: 'prune', id: n.id, bestD2: best.d2 }); return; }
+      ev.push({ t: 'visit', id: n.id, bestD2: best.d2 });
+      if (n.pts) {
+        const ids = [], hits = [];
+        for (const p of n.pts) {
+          ids.push(p.i);
+          const d2 = (p.x - q.x) ** 2 + (p.y - q.y) ** 2;
+          if (d2 < best.d2) { best = { d2, p }; hits.push(p.i); }
+        }
+        ev.push({ t: 'test', id: n.id, ids, hit: hits, bestD2: best.d2 });
+        return;
+      }
+      const near = (n.axis === 0 ? q.x <= n.split : q.y <= n.split) ? n.left : n.right;
+      const far = near === n.left ? n.right : n.left;
+      rec(near);
+      ev.push({ t: 'back', id: n.id, bestD2: best.d2 });
+      rec(far);
+    })(root);
+    ev.push({ t: 'done', bestD2: best.d2, best });
+    return ev;
+  }
+
+  function genRange(q, r) {
+    const ev = [];
+    const r2 = r * r;
+    let found = 0;
+    (function rec(n) {
+      if (boxDist2(n, q) > r2) { ev.push({ t: 'prune', id: n.id }); return; }
+      ev.push({ t: 'visit', id: n.id });
+      if (n.pts) {
+        const ids = [], hits = [];
+        for (const p of n.pts) {
+          ids.push(p.i);
+          if ((p.x - q.x) ** 2 + (p.y - q.y) ** 2 <= r2) { hits.push(p.i); found++; }
+        }
+        ev.push({ t: 'test', id: n.id, ids, hit: hits });
+        return;
+      }
+      rec(n.left); rec(n.right);
+    })(root);
+    ev.push({ t: 'done', count: found });
+    return ev;
+  }
+
+  // ---------------------------------------------------------------- draw
+  function hue(d) { return 205 + 55 * Math.min(1, d / Math.max(2, maxDepthUsed)); }
+
+  function drawBox(n, color, dash, width, fill) {
+    const x0 = px(n.x0), y0 = py(n.y0), x1 = px(n.x1), y1 = py(n.y1);
+    if (fill) { ctx.fillStyle = fill; ctx.fillRect(x0, y0, x1 - x0, y1 - y0); }
+    ctx.setLineDash(dash || []);
+    ctx.lineWidth = width || 1;
+    ctx.strokeStyle = color;
+    ctx.strokeRect(x0 + .5, y0 + .5, x1 - x0 - 1, y1 - y0 - 1);
+    ctx.setLineDash([]);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // the unit square
+    ctx.fillStyle = 'rgba(255,255,255,0.015)';
+    ctx.fillRect(px(0), py(0), px(1) - px(0), py(1) - py(0));
+
+    // node boxes (leaves first, then internal so the plane lines stay visible)
+    if (S.showBox) {
+      for (const n of nodes) {
+        const a = 0.10 + 0.30 * Math.min(1, n.depth / Math.max(2, maxDepthUsed));
+        drawBox(n, `hsla(${hue(n.depth)}, 55%, 62%, ${a})`, [], 1,
+          n.pts ? `hsla(${hue(n.depth)}, 60%, 60%, 0.05)` : null);
+      }
+    }
+
+    // splitting planes
+    if (S.showPlane) {
+      ctx.strokeStyle = 'rgba(255,180,84,0.42)';
+      ctx.lineWidth = 1;
+      for (const n of nodes) {
+        if (n.leaf) continue;
+        ctx.beginPath();
+        if (n.axis === 0) {
+          ctx.moveTo(px(n.split), py(n.y0));
+          ctx.lineTo(px(n.split), py(n.y1));
+        } else {
+          ctx.moveTo(px(n.x0), py(n.split));
+          ctx.lineTo(px(n.x1), py(n.split));
+        }
+        ctx.stroke();
+      }
+    }
+
+    // visited / pruned overlays
+    for (const id of st.visited) {
+      const n = nodes[id];
+      if (n) drawBox(n, 'rgba(76,194,255,0.95)', [], 2);
+    }
+    for (const id of st.pruned) {
+      const n = nodes[id];
+      if (n) drawBox(n, 'rgba(255,107,129,0.85)', [4, 4], 1.5, 'rgba(255,107,129,0.07)');
+    }
+    if (st.cur >= 0 && nodes[st.cur]) drawBox(nodes[st.cur], '#ffffff', [], 2.5);
+
+    // points
+    for (const p of pts) {
+      const isTested = st.tested.has(p.i);
+      const isHit = st.hit.has(p.i);
+      ctx.beginPath();
+      ctx.arc(px(p.x), py(p.y), isHit ? 4.2 : (isTested ? 3 : 2), 0, Math.PI * 2);
+      ctx.fillStyle = isHit ? '#59d999' : (isTested ? 'rgba(89,217,153,0.66)' : 'rgba(232,238,251,0.62)');
+      ctx.fill();
+      if (isHit) { ctx.strokeStyle = 'rgba(89,217,153,.55)'; ctx.lineWidth = 1.5; ctx.stroke(); }
+    }
+
+    // query
+    const qx = px(query.x), qy = py(query.y);
+    const isRange = S.mode === 'range';
+    if (isRange) {
+      ctx.beginPath();
+      ctx.arc(qx, qy, S.radius * (W - 2 * PAD), 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(76,194,255,0.9)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(76,194,255,0.08)';
+      ctx.fill();
+    } else if (isFinite(st.bestD2)) {
+      const r = Math.sqrt(st.bestD2) * (W - 2 * PAD);
+      ctx.beginPath();
+      ctx.arc(qx, qy, r, 0, Math.PI * 2);
+      ctx.setLineDash([3, 4]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.beginPath();
+    ctx.moveTo(qx - 7, qy); ctx.lineTo(qx + 7, qy);
+    ctx.moveTo(qx, qy - 7); ctx.lineTo(qx, qy + 7);
+    ctx.strokeStyle = '#4cc2ff';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+  }
+
+  // ---------------------------------------------------------------- runtime
+  let ev = [];
+  let evIdx = 0;
+
+  function refresh(animate) {
+    st = newState();
+    ev = (S.mode === 'range') ? genRange(query, S.radius) : genNN(query);
+    evIdx = 0;
+    if (animate) {
+      play();
+    } else {
+      for (const e of ev) apply(e, st);
+      evIdx = ev.length;
+    }
+    updateStats();
+    draw();
+  }
+
+  function play() {
+    stopPlay();
+    st = newState();
+    evIdx = 0;
+    const speed = Math.max(1, Math.round(ev.length / 90));
+    anim = setInterval(() => {
+      for (let k = 0; k < speed && evIdx < ev.length; k++, evIdx++) apply(ev[evIdx], st);
+      updateStats();
+      draw();
+      if (evIdx >= ev.length) stopPlay();
+    }, 32);
+  }
+
+  function stopPlay() { if (anim) { clearInterval(anim); anim = null; } }
+
+  function apply(e, s) {
+    switch (e.t) {
+      case 'visit': s.visited.add(e.id); s.cur = e.id; break;
+      case 'prune': s.pruned.add(e.id); s.cur = e.id; break;
+      case 'test':
+        for (const id of e.ids) s.tested.add(id);
+        if (e.hit) for (const id of e.hit) s.hit.add(id);
+        s.cur = e.id;
+        break;
+      case 'back': s.cur = e.id; break;
+    }
+    if (e.bestD2 !== undefined) s.bestD2 = e.bestD2;
+  }
+
+  function updateStats() {
+    sPts.textContent = pts.length;
+    sNodes.textContent = nodes.length;
+    sVisit.textContent = st.visited.size + ' / ' + nodes.length;
+    sTest.textContent = st.tested.size + ' / ' + pts.length;
+    if (S.mode === 'range') {
+      sOutL.textContent = '命中点数 / 暴力';
+      sOut.textContent = st.hit.size + ' / ' + pts.length;
+    } else {
+      sOutL.textContent = '当前最近距离';
+      sOut.textContent = isFinite(st.bestD2) ? Math.sqrt(st.bestD2).toFixed(3) : '-';
+    }
+  }
+
+  // ---------------------------------------------------------------- ui
+  const $ = id => document.getElementById(id);
+  const nPts = $('nPts'), radEl = $('rad');
+
+  nPts.oninput = () => rebuild(false);
+  $('leaf').oninput = e => { S.leaf = +e.target.value; rebuild(true); };
+  $('axis').onchange = e => { S.axis = e.target.value; rebuild(true); };
+  $('mode').onchange = e => {
+    S.mode = e.target.value;
+    $('radRow').style.display = S.mode === 'range' ? 'flex' : 'none';
+    refresh(false);
+  };
+  radEl.oninput = e => { S.radius = +e.target.value / 400; refresh(false); };
+  $('bBox').onclick = e => { S.showBox = !S.showBox; e.target.classList.toggle('on', S.showBox); draw(); };
+  $('bPlane').onclick = e => { S.showPlane = !S.showPlane; e.target.classList.toggle('on', S.showPlane); draw(); };
+  $('bPlay').onclick = () => { if (pts.length) play(); };
+
+  cv.addEventListener('pointermove', e => {
+    const r = cv.getBoundingClientRect();
+    query.x = Math.min(1, Math.max(0, ux(e.clientX - r.left)));
+    query.y = Math.min(1, Math.max(0, uy(e.clientY - r.top)));
+    refresh(false);
+  });
+  cv.addEventListener('pointerdown', e => {
+    const r = cv.getBoundingClientRect();
+    query.x = Math.min(1, Math.max(0, ux(e.clientX - r.left)));
+    query.y = Math.min(1, Math.max(0, uy(e.clientY - r.top)));
+    refresh(true);
+    if (e.pointerType !== 'mouse') e.preventDefault();
+  });
+  cv.addEventListener('pointerleave', () => { stopPlay(); });
+
+  window.addEventListener('resize', resize);
+  resize();
+  rebuild(false);
+})();
+</script>
+</body>
+</html>
+

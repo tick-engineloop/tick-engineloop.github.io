@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quadtree 交互演示 · Spatial Partition</title>
+<link rel="stylesheet" href="demo.css">
+</head>
+<body>
+<div id="stage"><canvas id="cv"></canvas></div>
+
+<div class="overlay panel">
+  <h4>Quadtree</h4>
+  <div class="row"><label>模式</label>
+    <select id="mode">
+      <option value="insert">插入 / 分裂</option>
+      <option value="range">范围查询</option>
+      <option value="pairs">邻近对 broadphase</option>
+    </select>
+  </div>
+  <div class="row"><label>点数</label><input id="nPts" type="range" min="8" max="600" step="8" value="180"></div>
+  <div class="row"><label>桶容量</label><input id="cap" type="range" min="1" max="16" value="4"></div>
+  <div class="row"><label>最大深度</label><input id="maxd" type="range" min="2" max="9" value="6"></div>
+  <div class="row"><label>半径</label><input id="rad" type="range" min="8" max="120" value="26"></div>
+  <div class="btns">
+    <button id="bAuto">▶ 自动插入</button>
+    <button id="bClear">清空</button>
+    <button id="bNew">随机点集</button>
+  </div>
+</div>
+
+<div class="overlay legend">
+  <div><i style="background:#3f7bd8"></i>节点边界（越深越亮）</div>
+  <div><i style="background:#4cc2ff"></i>本次插入 / 查询路径</div>
+  <div><i style="background:#ff6b81"></i>被剪枝节点</div>
+  <div><i style="background:#59d999"></i>命中 / 被测试的点</div>
+</div>
+
+<div class="overlay stats">
+  <div><span>点数</span><b id="sPts">0</b></div>
+  <div><span>节点数 / 最大深度</span><b id="sNodes">0</b></div>
+  <div><span id="sL1">访问节点</span><b id="sV1">0</b></div>
+  <div><span id="sL2">距离计算 / 暴力</span><b id="sV2">0 / 0</b></div>
+</div>
+
+<div class="overlay hint" id="hint">单击画布插入一个点，观察桶溢出时如何四分</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const $ = id => document.getElementById(id);
+  const PAD = 24;
+  let W = 1, H = 1;
+
+  const S = { mode: 'insert', cap: 4, maxDepth: 6, radius: 26 / 400 };
+  let nodes = [], root = null, pts = [];
+  let query = { x: .558, y: .331 };
+  let hlPath = new Set();
+  let pruned = new Set(), visited = new Set(), tested = new Set(), hits = new Set();
+  let pulses = [];
+  let pairs = null, pairTests = 0, bruteTests = 0;
+  let autoTimer = null;
+  let depthUsed = 1;
+
+  const px = x => PAD + x * (W - 2 * PAD);
+  const py = y => PAD + y * (H - 2 * PAD);
+  const ux = s => (s - PAD) / (W - 2 * PAD);
+  const uy = s => (s - PAD) / (H - 2 * PAD);
+  const hue = d => 205 + 60 * Math.min(1, d / Math.max(2, depthUsed));
+
+  // ------------------------------------------------------------- structure
+  function newNode(depth, x0, y0, x1, y1) {
+    const n = { id: nodes.length, depth, x0, y0, x1, y1, pts: [], children: null };
+    nodes.push(n);
+    depthUsed = Math.max(depthUsed, depth);
+    return n;
+  }
+
+  function childOf(n, p) {
+    const mx = (n.x0 + n.x1) / 2, my = (n.y0 + n.y1) / 2;
+    return n.children[(p.x >= mx ? 1 : 0) + (p.y >= my ? 2 : 0)];
+  }
+
+  function pathOf(p) {
+    const out = [];
+    let n = root;
+    for (;;) {
+      out.push(n.id);
+      if (!n.children) return out;
+      n = childOf(n, p);
+    }
+  }
+
+  function descend(n, p) {
+    while (n.children) n = childOf(n, p);
+    n.pts.push(p);
+  }
+
+  function insertPoint(p) {
+    let n = root;
+    while (n.children) n = childOf(n, p);
+    n.pts.push(p);
+
+    if (n.pts.length > S.cap && n.depth < S.maxDepth) {
+      subdivide(n);
+      const overflow = n.pts;
+      n.pts = [];
+      for (const q of overflow) descend(n, q);
+      pulses.push({ x0: n.x0, y0: n.y0, x1: n.x1, y1: n.y1, t0: performance.now() });
+      for (const c of n.children) pulses.push({ x0: c.x0, y0: c.y0, x1: c.x1, y1: c.y1, t0: performance.now() });
+      hlPath = new Set(pathOf(p));
+      pulses.push({ x0: p.x - .012, y0: p.y - .012, x1: p.x + .012, y1: p.y + .012, t0: performance.now(), color: '255,180,84' });
+    } else {
+      hlPath = new Set(pathOf(p));
+    }
+    refreshQuery();
+  }
+
+  function subdivide(n) {
+    const mx = (n.x0 + n.x1) / 2, my = (n.y0 + n.y1) / 2;
+    n.children = [
+      newNode(n.depth + 1, n.x0, n.y0, mx, my),
+      newNode(n.depth + 1, mx, n.y0, n.x1, my),
+      newNode(n.depth + 1, n.x0, my, mx, n.y1),
+      newNode(n.depth + 1, mx, my, n.x1, n.y1)
+    ];
+  }
+
+  function reset(keep) {
+    nodes = []; depthUsed = 1;
+    root = newNode(0, 0, 0, 1, 1);
+    if (!keep) pts = [];
+    for (const p of pts) {
+      let n = root;
+      while (n.children) n = childOf(n, p);
+      n.pts.push(p);
+      if (n.pts.length > S.cap && n.depth < S.maxDepth) {
+        subdivide(n);
+        const ov = n.pts; n.pts = [];
+        for (const q of ov) descend(n, q);
+      }
+    }
+    hlPath = new Set(); pulses = []; pairs = null;
+    refreshQuery();
+  }
+
+  function randomize() {
+    const n = +$('nPts').value;
+    pts = [];
+    for (let i = 0; i < n; i++) pts.push({ x: .03 + Math.random() * .94, y: .03 + Math.random() * .94, i });
+    reset(true);
+  }
+
+  // ------------------------------------------------------------- queries
+  function rectQuery(n, x0, y0, x1, y1, out) {
+    if (n.x1 < x0 || n.x0 > x1 || n.y1 < y0 || n.y0 > y1) { pruned.add(n.id); return; }
+    visited.add(n.id);
+    if (!n.children) { for (const p of n.pts) out.push(p); return; }
+    for (const c of n.children) rectQuery(c, x0, y0, x1, y1, out);
+  }
+
+  function circleQuery(n, q, r2) {
+    const cx = Math.max(n.x0, Math.min(q.x, n.x1));
+    const cy = Math.max(n.y0, Math.min(q.y, n.y1));
+    const dx = cx - q.x, dy = cy - q.y;
+    if (dx * dx + dy * dy > r2) { pruned.add(n.id); return; }
+    visited.add(n.id);
+    if (!n.children) {
+      for (const p of n.pts) {
+        tested.add(p.i);
+        if ((p.x - q.x) ** 2 + (p.y - q.y) ** 2 <= r2) hits.add(p.i);
+      }
+      return;
+    }
+    for (const c of n.children) circleQuery(c, q, r2);
+  }
+
+  function computePairs(r) {
+    const r2 = r * r;
+    const out = [];
+    let tests = 0;
+    for (const p of pts) {
+      const cand = [];
+      rectQuery(root, p.x - r, p.y - r, p.x + r, p.y + r, cand);
+      for (const q of cand) {
+        if (q.i <= p.i) continue;
+        tests++;
+        if ((q.x - p.x) ** 2 + (q.y - p.y) ** 2 <= r2) out.push([p, q]);
+      }
+    }
+    pairs = out;
+    pairTests = tests;
+    bruteTests = pts.length * (pts.length - 1) / 2;
+  }
+
+  function refreshQuery() {
+    visited = new Set(); pruned = new Set(); tested = new Set(); hits = new Set();
+    const r = S.radius;
+    if (S.mode === 'range') {
+      circleQuery(root, query, r * r);
+    } else if (S.mode === 'pairs') {
+      computePairs(r);
+    }
+    updateStats();
+  }
+
+  function updateStats() {
+    $('sPts').textContent = pts.length;
+    $('sNodes').textContent = nodes.length + ' / ' + depthUsed;
+    if (S.mode === 'pairs') {
+      $('sL1').textContent = '邻近对数量';
+      $('sV1').textContent = pairs ? pairs.length : 0;
+      $('sL2').textContent = '候选测试 / 暴力';
+      $('sV2').textContent = pairTests + ' / ' + bruteTests;
+    } else if (S.mode === 'range') {
+      $('sL1').textContent = '访问节点 / 总节点';
+      $('sV1').textContent = visited.size + ' / ' + nodes.length;
+      $('sL2').textContent = '命中点 / 总点数';
+      $('sV2').textContent = hits.size + ' / ' + pts.length;
+    } else {
+      $('sL1').textContent = '访问节点 / 总节点';
+      $('sV1').textContent = hlPath.size + ' / ' + nodes.length;
+      $('sL2').textContent = '已插入点数';
+      $('sV2').textContent = pts.length + ' / ' + pts.length;
+    }
+  }
+
+  // ------------------------------------------------------------- drawing
+  function drawTree(n) {
+    const x0 = px(n.x0), y0 = py(n.y0), x1 = px(n.x1), y1 = py(n.y1);
+    if (n.pts.length) {
+      ctx.fillStyle = `hsla(${hue(n.depth)},62%,60%,0.07)`;
+      ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+    }
+    const a = 0.09 + 0.28 * Math.min(1, n.depth / Math.max(2, depthUsed));
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = `hsla(${hue(n.depth)},52%,64%,${a})`;
+    ctx.strokeRect(x0 + .5, y0 + .5, x1 - x0 - 1, y1 - y0 - 1);
+    if (n.children) for (const c of n.children) drawTree(c);
+  }
+
+  function strokeBox(x0, y0, x1, y1, color, width, dash) {
+    ctx.setLineDash(dash || []);
+    ctx.lineWidth = width;
+    ctx.strokeStyle = color;
+    ctx.strokeRect(px(x0) + .5, py(y0) + .5, px(x1) - px(x0) - 1, py(y1) - py(y0) - 1);
+    ctx.setLineDash([]);
+  }
+
+  function draw(now) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(255,255,255,0.015)';
+    ctx.fillRect(px(0), py(0), px(1) - px(0), py(1) - py(0));
+
+    drawTree(root);
+
+    for (const id of pruned) { const n = nodes[id]; strokeBox(n.x0, n.y0, n.x1, n.y1, 'rgba(255,107,129,0.6)', 1, [3, 4]); }
+    for (const id of visited) { const n = nodes[id]; strokeBox(n.x0, n.y0, n.x1, n.y1, 'rgba(76,194,255,0.55)', 1.5); }
+    for (const id of hlPath) { const n = nodes[id]; strokeBox(n.x0, n.y0, n.x1, n.y1, 'rgba(255,180,84,0.85)', 2); }
+
+    // pair links
+    if (pairs) {
+      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = 'rgba(89,217,153,0.55)';
+      ctx.beginPath();
+      for (const [a, b] of pairs) { ctx.moveTo(px(a.x), py(a.y)); ctx.lineTo(px(b.x), py(b.y)); }
+      ctx.stroke();
+      const involved = new Set();
+      for (const [a, b] of pairs) { involved.add(a.i); involved.add(b.i); }
+      for (const p of pts) {
+        const on = involved.has(p.i);
+        ctx.beginPath();
+        ctx.arc(px(p.x), py(p.y), on ? 3.4 : 2, 0, Math.PI * 2);
+        ctx.fillStyle = on ? '#59d999' : 'rgba(232,238,251,0.45)';
+        ctx.fill();
+      }
+    } else {
+      for (const p of pts) {
+        const t = tested.has(p.i), h = hits.has(p.i);
+        ctx.beginPath();
+        ctx.arc(px(p.x), py(p.y), h ? 4.2 : (t ? 3 : 2.2), 0, Math.PI * 2);
+        ctx.fillStyle = h ? '#59d999' : (t ? 'rgba(89,217,153,0.6)' : 'rgba(232,238,251,0.6)');
+        ctx.fill();
+      }
+    }
+
+    // query circle
+    if (S.mode === 'range') {
+      ctx.beginPath();
+      ctx.arc(px(query.x), py(query.y), S.radius * (W - 2 * PAD), 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(76,194,255,0.95)'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = 'rgba(76,194,255,0.07)'; ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(px(query.x) - 6, py(query.y)); ctx.lineTo(px(query.x) + 6, py(query.y));
+      ctx.moveTo(px(query.x), py(query.y) - 6); ctx.lineTo(px(query.x), py(query.y) + 6);
+      ctx.strokeStyle = '#4cc2ff'; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+
+    // pulses
+    const t = now || performance.now();
+    pulses = pulses.filter(p => t - p.t0 < 520);
+    for (const p of pulses) {
+      const k = 1 - (t - p.t0) / 520;
+      const c = p.color || '76,194,255';
+      strokeBox(p.x0, p.y0, p.x1, p.y1, `rgba(${c},${0.15 + 0.75 * k})`, 2.2);
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  // ------------------------------------------------------------- ui
+  $('mode').onchange = e => {
+    S.mode = e.target.value;
+    pairs = null;
+    hlPath = new Set();
+    $('hint').textContent = S.mode === 'insert'
+      ? '单击画布插入一个点，观察桶溢出时如何四分'
+      : (S.mode === 'range' ? '移动鼠标改变查询圆的位置' : '拖动半径滑块，观察候选测试次数相对暴力枚举的下降');
+    refreshQuery();
+  };
+  $('nPts').oninput = () => randomize();
+  $('cap').oninput = e => { S.cap = +e.target.value; reset(true); };
+  $('maxd').oninput = e => { S.maxDepth = +e.target.value; reset(true); };
+  $('rad').oninput = e => { S.radius = +e.target.value / 400; refreshQuery(); };
+  $('bClear').onclick = () => { stopAuto(); pts = []; reset(true); };
+  $('bNew').onclick = () => { stopAuto(); randomize(); };
+  $('bAuto').onclick = e => {
+    if (autoTimer) { stopAuto(); return; }
+    $('mode').value = 'insert'; S.mode = 'insert';
+    e.target.classList.add('on');
+    autoTimer = setInterval(() => {
+      if (pts.length > 900) { stopAuto(); return; }
+      const p = { x: .03 + Math.random() * .94, y: .03 + Math.random() * .94, i: pts.length };
+      pts.push(p);
+      insertPoint(p);
+    }, 160);
+  };
+  function stopAuto() {
+    if (autoTimer) clearInterval(autoTimer);
+    autoTimer = null;
+    $('bAuto').classList.remove('on');
+  }
+
+  cv.addEventListener('pointermove', e => {
+    if (S.mode !== 'range') return;
+    const r = cv.getBoundingClientRect();
+    query.x = Math.min(1, Math.max(0, ux(e.clientX - r.left)));
+    query.y = Math.min(1, Math.max(0, uy(e.clientY - r.top)));
+    refreshQuery();
+  });
+  cv.addEventListener('pointerdown', e => {
+    const r = cv.getBoundingClientRect();
+    const x = Math.min(1, Math.max(0, ux(e.clientX - r.left)));
+    const y = Math.min(1, Math.max(0, uy(e.clientY - r.top)));
+    if (S.mode === 'range') { query.x = x; query.y = y; refreshQuery(); return; }
+    if (S.mode === 'pairs') return;
+    const p = { x, y, i: pts.length };
+    pts.push(p);
+    insertPoint(p);
+  });
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = cv.clientWidth || 800;
+    H = cv.clientHeight || 480;
+    cv.width = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+
+  resize();
+  randomize();
+  refreshQuery();
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

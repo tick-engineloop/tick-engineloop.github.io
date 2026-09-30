@@ -1,0 +1,180 @@
+/* ------------------------------------------------------------------
+   Shared styling for the interactive "Spatial Partition" demos.
+   This file is loaded by the standalone demo pages that are embedded
+   into the blog post through <iframe>.
+   ------------------------------------------------------------------ */
+
+:root {
+  --bg: #0e131d;
+  --panel: rgba(21, 29, 42, 0.88);
+  --line: #2b3648;
+  --fg: #e8eefb;
+  --muted: #93a3c0;
+  --accent: #4cc2ff;
+  --accent-2: #ffb454;
+  --good: #59d999;
+  --bad: #ff6b81;
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.38);
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  font: 13px/1.5 "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC",
+        "Microsoft YaHei", sans-serif;
+}
+
+#stage { position: absolute; inset: 0; }
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.overlay { position: absolute; z-index: 2; }
+
+.panel {
+  top: 10px;
+  left: 10px;
+  width: 196px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.panel h4 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 5px 0;
+}
+
+.row > label { color: var(--muted); white-space: nowrap; }
+
+.row.col {
+  display: block;
+}
+
+.row.col > label {
+  display: block;
+  margin-bottom: 3px;
+}
+
+input[type="range"] {
+  width: 92px;
+  height: 16px;
+  accent-color: var(--accent);
+  background: transparent;
+}
+
+select, button {
+  font: inherit;
+  padding: 3px 8px;
+  color: var(--fg);
+  background: #1d2637;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+select:hover, button:hover { border-color: var(--accent); color: #fff; }
+
+button.on {
+  background: rgba(76, 194, 255, 0.18);
+  border-color: var(--accent);
+  color: #cfeaff;
+}
+
+.btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.btns button { flex: 1 1 auto; }
+
+.stats {
+  left: 10px;
+  bottom: 10px;
+  min-width: 196px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  font-variant-numeric: tabular-nums;
+}
+
+.stats div { display: flex; justify-content: space-between; gap: 14px; }
+
+.stats span { color: var(--muted); }
+
+.stats b { font-weight: 600; color: var(--accent); }
+
+.stats b.good { color: var(--good); }
+
+.stats b.bad { color: var(--bad); }
+
+.hint {
+  right: 10px;
+  bottom: 10px;
+  max-width: 46%;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--muted);
+  text-align: right;
+}
+
+.legend {
+  top: 10px;
+  right: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--muted);
+  box-shadow: var(--shadow);
+}
+
+.legend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 6px;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+@media (max-width: 560px) {
+  .panel { width: 168px; padding: 8px 10px; font-size: 12px; }
+  .panel h4 { font-size: 10px; }
+  input[type="range"] { width: 64px; }
+  .stats { min-width: 168px; font-size: 12px; }
+  .hint { display: none; }
+  .legend { display: none; }
+}

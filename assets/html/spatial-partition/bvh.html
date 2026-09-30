@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BVH 交互演示 · Spatial Partition</title>
+<link rel="stylesheet" href="demo.css">
+</head>
+<body>
+<div id="stage"><canvas id="cv"></canvas></div>
+
+<div class="overlay panel">
+  <h4>BVH</h4>
+  <div class="row"><label>图元数</label><input id="nP" type="range" min="40" max="900" step="20" value="320"></div>
+  <div class="row"><label>叶容量</label><input id="leaf" type="range" min="1" max="16" value="4"></div>
+  <div class="row"><label>分割</label>
+    <select id="split">
+      <option value="sah">SAH（表面积启发）</option>
+      <option value="median">中位数（最长轴）</option>
+    </select>
+  </div>
+  <div class="row"><label>射线角度</label><input id="ang" type="range" min="0" max="359" value="18"></div>
+  <div class="row"><label>模式</label>
+    <select id="mode">
+      <option value="near">最近命中</option>
+      <option value="any">任意命中（阴影射线）</option>
+    </select>
+  </div>
+  <div class="btns">
+    <button id="bPlay">▶ 播放遍历</button>
+    <button id="bNew">新场景</button>
+    <button id="bBox" class="on">节点盒</button>
+    <button id="bOrd">遍历序号</button>
+  </div>
+</div>
+
+<div class="overlay legend">
+  <div><i style="background:#3f7bd8"></i>包围盒（颜色=深度）</div>
+  <div><i style="background:#4cc2ff"></i>被遍历的节点</div>
+  <div><i style="background:#ff6b81"></i>被剔除的节点</div>
+  <div><i style="background:#ffb454"></i>做了求交测试的图元</div>
+  <div><i style="background:#59d999"></i>命中图元</div>
+</div>
+
+<div class="overlay stats">
+  <div><span>图元 / 节点</span><b id="sP">0 / 0</b></div>
+  <div><span>AABB 测试</span><b id="sA">0</b></div>
+  <div><span>图元求交 / 暴力</span><b id="sT">0 / 0</b></div>
+  <div><span>加速比（图元求交）</span><b id="sR">-</b></div>
+  <div><span>命中</span><b id="sH">-</b></div>
+</div>
+
+<div class="overlay hint">移动鼠标设置射线起点 · 单击播放遍历</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const $ = id => document.getElementById(id);
+  const PAD = 22;
+  let W = 1, H = 1;
+
+  const S = { leaf: 4, split: 'sah', mode: 'near', showBox: true, showOrder: false };
+  let segs = [], root = null, nodes = [], depthUsed = 1;
+  let origin = { x: .12, y: .30 }, angleDeg = 18;
+  let ev = [], evIdx = 0, timer = null, last = null;
+
+  const px = x => PAD + x * (W - 2 * PAD);
+  const py = y => PAD + y * (H - 2 * PAD);
+  const ux = s => (s - PAD) / (W - 2 * PAD);
+  const uy = s => (s - PAD) / (H - 2 * PAD);
+  const hue = d => 205 + 60 * Math.min(1, d / Math.max(2, depthUsed));
+
+  // ------------------------------------------------------------- scene
+  function makeScene(n) {
+    const clusters = [[.22, .26], [.70, .30], [.36, .70], [.80, .76], [.55, .50]];
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const c = clusters[(Math.random() * clusters.length) | 0];
+      const spread = 0.06 + Math.random() * 0.12;
+      const cx = c[0] + (Math.random() + Math.random() - 1) * spread;
+      const cy = c[1] + (Math.random() + Math.random() - 1) * spread;
+      const len = 0.015 + Math.random() * 0.045;
+      const a = Math.random() * Math.PI;
+      const a0 = { x: cx - Math.cos(a) * len, y: cy - Math.sin(a) * len };
+      const a1 = { x: cx + Math.cos(a) * len, y: cy + Math.sin(a) * len };
+      out.push(mkPrim(a0, a1));
+    }
+    return out;
+  }
+
+  function mkPrim(a, b) {
+    return {
+      a, b,
+      c: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+      bx: Math.min(a.x, b.x), by: Math.min(a.y, b.y),
+      Bx: Math.max(a.x, b.x), By: Math.max(a.y, b.y)
+    };
+  }
+
+  const area = bx => (bx[2] - bx[0]) * (bx[3] - bx[1]);
+  function primBBox(p) { return [p.bx, p.by, p.Bx, p.By]; }
+  function unionBox(list) {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const b of list) {
+      if (b[0] < x0) x0 = b[0];
+      if (b[1] < y0) y0 = b[1];
+      if (b[2] > x1) x1 = b[2];
+      if (b[3] > y1) y1 = b[3];
+    }
+    return [x0, y0, x1, y1];
+  }
+
+  // ------------------------------------------------------------- build
+  function build(list, depth) {
+    const box = unionBox(list.map(primBBox));
+    const n = { id: nodes.length, depth, box, leaf: true, prims: null, left: null, right: null, count: list.length };
+    nodes.push(n);
+    depthUsed = Math.max(depthUsed, depth);
+
+    if (list.length <= S.leaf || depth >= 24) { n.prims = list; return n; }
+
+    const cb = unionBox(list.map(p => [p.c.x, p.c.y, p.c.x, p.c.y]));
+    const parts = splitParts(list, cb, depth);
+    if (!parts) { n.prims = list; return n; }
+
+    n.leaf = false;
+    n.left = build(parts[0], depth + 1);
+    n.right = build(parts[1], depth + 1);
+    return n;
+  }
+
+  function splitParts(list, cb, depth) {
+    if (cb[2] - cb[0] < 1e-7 && cb[3] - cb[1] < 1e-7) return null;
+
+    if (S.split === 'median') {
+      const axis = (cb[2] - cb[0]) > (cb[3] - cb[1]) ? 0 : 1;
+      const sorted = list.slice().sort((p, q) => (axis ? p.c.y - q.c.y : p.c.x - q.c.x));
+      const mid = sorted.length >> 1;
+      return [sorted.slice(0, mid), sorted.slice(mid)];
+    }
+
+    // binned SAH
+    const BINS = 12;
+    let bestCost = Infinity, bestAxis = -1, bestSplit = 0;
+    for (let axis = 0; axis < 2; axis++) {
+      const lo = cb[axis], hi = cb[axis + 2];
+      if (hi - lo < 1e-7) continue;
+      const bins = [];
+      for (let i = 0; i < BINS; i++) bins.push({ n: 0, b: [Infinity, Infinity, -Infinity, -Infinity] });
+      const k = BINS * (1 - 1e-6) / (hi - lo);
+      for (const p of list) {
+        const bi = Math.min(BINS - 1, ((p.c[axis === 0 ? 'x' : 'y'] - lo) * k) | 0);
+        const bb = primBBox(p), bin = bins[bi];
+        bin.n++;
+        bin.b = [Math.min(bin.b[0], bb[0]), Math.min(bin.b[1], bb[1]),
+                 Math.max(bin.b[2], bb[2]), Math.max(bin.b[3], bb[3])];
+      }
+      const rightAcc = [];
+      let rx0 = Infinity, ry0 = Infinity, rx1 = -Infinity, ry1 = -Infinity, rn = 0;
+      for (let i = BINS - 1; i > 0; i--) {
+        const b = bins[i];
+        if (b.n) {
+          rx0 = Math.min(rx0, b.b[0]); ry0 = Math.min(ry0, b.b[1]);
+          rx1 = Math.max(rx1, b.b[2]); ry1 = Math.max(ry1, b.b[3]); rn += b.n;
+        }
+        rightAcc[i - 1] = { b: [rx0, ry0, rx1, ry1], n: rn };
+      }
+      let lx0 = Infinity, ly0 = Infinity, lx1 = -Infinity, ly1 = -Infinity, ln = 0;
+      for (let i = 0; i < BINS - 1; i++) {
+        const b = bins[i];
+        if (b.n) {
+          lx0 = Math.min(lx0, b.b[0]); ly0 = Math.min(ly0, b.b[1]);
+          lx1 = Math.max(lx1, b.b[2]); ly1 = Math.max(ly1, b.b[3]); ln += b.n;
+        }
+        const r = rightAcc[i];
+        if (!ln || !r.n) continue;
+        const cost = area([lx0, ly0, lx1, ly1]) * ln + area(r.b) * r.n;
+        if (cost < bestCost) { bestCost = cost; bestAxis = axis; bestSplit = i; }
+      }
+    }
+
+    if (bestAxis < 0) {
+      const axis = (cb[2] - cb[0]) > (cb[3] - cb[1]) ? 0 : 1;
+      const sorted = list.slice().sort((p, q) => (axis ? p.c.y - q.c.y : p.c.x - q.c.x));
+      const mid = sorted.length >> 1;
+      return [sorted.slice(0, mid), sorted.slice(mid)];
+    }
+
+    const lo = cb[bestAxis], hi = cb[bestAxis + 2];
+    const k = BINS * (1 - 1e-6) / (hi - lo);
+    const L = [], R = [];
+    for (const p of list) {
+      const bi = Math.min(BINS - 1, ((p.c[bestAxis === 0 ? 'x' : 'y'] - lo) * k) | 0);
+      (bi <= bestSplit ? L : R).push(p);
+    }
+    if (!L.length || !R.length) {
+      const axis = (cb[2] - cb[0]) > (cb[3] - cb[1]) ? 0 : 1;
+      const sorted = list.slice().sort((p, q) => (axis ? p.c.y - q.c.y : p.c.x - q.c.x));
+      const mid = sorted.length >> 1;
+      return [sorted.slice(0, mid), sorted.slice(mid)];
+    }
+    return [L, R];
+  }
+
+  // ------------------------------------------------------------- ray
+  function slabTest(b, o, d) {
+    let tmin = 0, tmax = Infinity;
+    for (let i = 0; i < 2; i++) {
+      const di = i ? d.y : d.x, oi = i ? o.y : o.x;
+      const lo = b[i], hi = b[i + 2];
+      if (Math.abs(di) < 1e-12) { if (oi < lo || oi > hi) return -1; continue; }
+      let t1 = (lo - oi) / di, t2 = (hi - oi) / di;
+      if (t1 > t2) { const t = t1; t1 = t2; t2 = t; }
+      if (t1 > tmin) tmin = t1;
+      if (t2 < tmax) tmax = t2;
+      if (tmin > tmax) return -1;
+    }
+    return tmin;
+  }
+
+  function raySeg(o, d, p) {
+    const ex = p.b.x - p.a.x, ey = p.b.y - p.a.y;
+    const det = ex * d.y - d.x * ey;
+    if (Math.abs(det) < 1e-12) return Infinity;
+    const rx = p.a.x - o.x, ry = p.a.y - o.y;
+    const t = (ex * ry - ey * rx) / det;
+    const s = (d.x * ry - d.y * rx) / det;
+    return (t > 1e-5 && s >= 0 && s <= 1) ? t : Infinity;
+  }
+
+  function runTraversal() {
+    const rad = angleDeg * Math.PI / 180;
+    const o = origin, d = { x: Math.cos(rad), y: Math.sin(rad) };
+    const evs = [];
+    let bestT = Infinity, bestPrim = -1;
+    let aabb = 0, prim = 0;
+
+    (function rec(n) {
+      const tmin = slabTest(n.box, o, d);
+      aabb++;
+      const pass = tmin >= 0 && (S.mode === 'any' ? bestPrim < 0 : tmin <= bestT);
+      evs.push({ t: 'aabb', id: n.id, pass, tmin: tmin < 0 ? null : tmin });
+
+      if (!pass) return;
+
+      if (n.leaf) {
+        for (const p of n.prims) {
+          prim++;
+          const tt = raySeg(o, d, p);
+          const hitNow = tt < bestT;
+          if (hitNow) { bestT = tt; bestPrim = p; }
+          evs.push({ t: 'prim', prim: p, hit: hitNow, bestT, bestPrim, d: tt });
+          if (S.mode === 'any' && bestPrim >= 0) return;
+        }
+        return;
+      }
+
+      // ordered traversal: visit the closer child first
+      const tl = slabTest(n.left.box, o, d);
+      const tr = slabTest(n.right.box, o, d);
+      const fl = { x: tl < 0 ? Infinity : tl, y: tr < 0 ? Infinity : tr };
+      const first = fl.x <= fl.y ? n.left : n.right;
+      const second = first === n.left ? n.right : n.left;
+      rec(first);
+      if (S.mode === 'any' && bestPrim >= 0) return;
+      rec(second);
+    })(root);
+
+    evs.push({ t: 'done', bestT, bestPrim });
+    return { evs, bestT, bestPrim, aabb, prim };
+  }
+
+  // ------------------------------------------------------------- state
+  function newState() {
+    return { visited: new Set(), rejected: new Set(), order: new Map(), tested: new Set(),
+             hitPrim: -1, hitT: Infinity, aabb: 0, prim: 0, orderN: 0, done: false };
+  }
+  let st = newState();
+
+  function apply(e, s) {
+    switch (e.t) {
+      case 'aabb':
+        s.aabb++;
+        if (e.pass) { s.visited.add(e.id); if (!s.order.has(e.id)) s.order.set(e.id, ++s.orderN); }
+        else s.rejected.add(e.id);
+        break;
+      case 'prim':
+        s.prim++;
+        s.tested.add(e.prim);
+        if (e.hit) { s.hitPrim = e.prim; s.hitT = e.d; }
+        break;
+      case 'done':
+        s.done = true;
+        break;
+    }
+  }
+
+  function refresh() {
+    const r = runTraversal();
+    ev = r.evs; evIdx = 0; last = r;
+    st = newState();
+    for (const e of ev) apply(e, st);
+    evIdx = ev.length;
+    updateStats();
+    draw();
+  }
+
+  function play() {
+    stopPlay();
+    evIdx = 0;
+    st = newState();
+    const speed = Math.max(1, Math.round(ev.length / 120));
+    timer = setInterval(() => {
+      for (let k = 0; k < speed && evIdx < ev.length; k++, evIdx++) apply(ev[evIdx], st);
+      updateStats();
+      draw();
+      if (evIdx >= ev.length) stopPlay();
+    }, 30);
+  }
+  function stopPlay() { if (timer) { clearInterval(timer); timer = null; } }
+
+  function updateStats() {
+    $('sP').textContent = segs.length + ' / ' + nodes.length;
+    $('sA').textContent = st.aabb;
+    $('sT').textContent = st.prim + ' / ' + segs.length;
+    if (st.prim > 0 && st.done) {
+      $('sR').textContent = (segs.length / st.prim).toFixed(1) + '×';
+    } else $('sR').textContent = '-';
+    $('sH').textContent = st.hitPrim >= 0 ? ('t = ' + st.hitT.toFixed(3)) : '未命中';
+  }
+
+  // ------------------------------------------------------------- draw
+  function boxRect(b) { return [px(b[0]), py(b[1]), px(b[2]) - px(b[0]), py(b[3]) - py(b[1])]; }
+
+  function strokeBox(b, color, w, dash) {
+    const r = boxRect(b);
+    ctx.setLineDash(dash || []);
+    ctx.lineWidth = w;
+    ctx.strokeStyle = color;
+    ctx.strokeRect(r[0] + .5, r[1] + .5, r[2] - 1, r[3] - 1);
+    ctx.setLineDash([]);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    if (S.showBox) {
+      for (const n of nodes) {
+        const a = 0.10 + 0.30 * Math.min(1, n.depth / Math.max(2, depthUsed));
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = `hsla(${hue(n.depth)},52%,64%,${a})`;
+        const r = boxRect(n.box);
+        ctx.strokeRect(r[0] + .5, r[1] + .5, r[2] - 1, r[3] - 1);
+        if (n.leaf) {
+          ctx.fillStyle = `hsla(${hue(n.depth)},60%,60%,0.05)`;
+          ctx.fillRect(r[0], r[1], r[2], r[3]);
+        }
+      }
+    }
+
+    for (const id of st.rejected) strokeBox(nodes[id].box, 'rgba(255,107,129,0.75)', 1.4, [3, 3]);
+    for (const id of st.visited) strokeBox(nodes[id].box, 'rgba(76,194,255,0.9)', 1.6);
+
+    // primitives
+    ctx.lineWidth = 1.4;
+    for (const p of segs) {
+      const isHit = p === st.hitPrim, isTested = st.tested.has(p);
+      ctx.beginPath();
+      ctx.moveTo(px(p.a.x), py(p.a.y));
+      ctx.lineTo(px(p.b.x), py(p.b.y));
+      ctx.strokeStyle = isHit ? '#59d999' : (isTested ? 'rgba(255,180,84,0.95)' : 'rgba(232,238,251,0.30)');
+      ctx.lineWidth = isHit ? 3 : (isTested ? 1.8 : 1.2);
+      ctx.stroke();
+    }
+
+    // ray
+    const rad = angleDeg * Math.PI / 180;
+    const d = { x: Math.cos(rad), y: Math.sin(rad) };
+    const endT = isFinite(st.hitT) ? st.hitT : 3;
+    ctx.beginPath();
+    ctx.moveTo(px(origin.x), py(origin.y));
+    ctx.lineTo(px(origin.x + d.x * endT), py(origin.y + d.y * endT));
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(px(origin.x), py(origin.y), 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#4cc2ff';
+    ctx.fill();
+
+    if (st.hitPrim >= 0) {
+      const hx = origin.x + d.x * st.hitT, hy = origin.y + d.y * st.hitT;
+      ctx.beginPath();
+      ctx.arc(px(hx), py(hy), 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#59d999';
+      ctx.fill();
+    }
+
+    // traversal order labels
+    if (S.showOrder) {
+      ctx.font = '10px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      for (const [id, k] of st.order) {
+        const b = nodes[id].box;
+        const cx = px((b[0] + b[2]) / 2), cy = py((b[1] + b[3]) / 2);
+        ctx.fillStyle = 'rgba(76,194,255,0.25)';
+        ctx.beginPath(); ctx.arc(cx, cy, 8, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#cfeaff';
+        ctx.fillText(k, cx, cy + 3.5);
+      }
+      ctx.textAlign = 'left';
+    }
+  }
+
+  // ------------------------------------------------------------- ui
+  function rebuild() {
+    segs = makeScene(+$('nP').value);
+    nodes = []; depthUsed = 1;
+    root = build(segs, 0);
+    if (!aimed) { aimed = true; aim(); }
+    stopPlay();
+    refresh();
+  }
+
+  // pick a good initial ray so that the very first frame shows a hit
+  let aimed = false;
+  function aim() {
+    origin = { x: .06, y: .30 };
+    let bestA = -1, bestPrim = Infinity;
+    for (let a = 0; a < 360; a += 5) {
+      angleDeg = a;
+      const r = runTraversal();
+      if (r.bestPrim < 0) continue;
+      if (r.prim < bestPrim) { bestPrim = r.prim; bestA = a; }
+    }
+    if (bestA >= 0) { angleDeg = bestA; $('ang').value = bestA; }
+  }
+
+  $('nP').oninput = rebuild;
+  $('leaf').oninput = e => { S.leaf = +e.target.value; rebuild(); };
+  $('split').onchange = e => { S.split = e.target.value; rebuild(); };
+  $('mode').onchange = e => { S.mode = e.target.value; refresh(); };
+  $('ang').oninput = e => { angleDeg = +e.target.value; refresh(); };
+  $('bNew').onclick = rebuild;
+  $('bPlay').onclick = play;
+  $('bBox').onclick = e => { S.showBox = !S.showBox; e.target.classList.toggle('on', S.showBox); draw(); };
+  $('bOrd').onclick = e => { S.showOrder = !S.showOrder; e.target.classList.toggle('on', S.showOrder); draw(); };
+
+  cv.addEventListener('pointermove', e => {
+    const r = cv.getBoundingClientRect();
+    origin.x = ux(e.clientX - r.left);
+    origin.y = uy(e.clientY - r.top);
+    refresh();
+  });
+  cv.addEventListener('pointerdown', e => {
+    const r = cv.getBoundingClientRect();
+    origin.x = ux(e.clientX - r.left);
+    origin.y = uy(e.clientY - r.top);
+    play();
+  });
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = cv.clientWidth || 800;
+    H = cv.clientHeight || 480;
+    cv.width = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+  }
+  window.addEventListener('resize', resize);
+
+  resize();
+  rebuild();
+})();
+</script>
+</body>
+</html>
