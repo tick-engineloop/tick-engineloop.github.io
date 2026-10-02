@@ -333,13 +333,97 @@ endif()
 
 ##### 4.5.1.1 基础表达式
 
+`if(<constant>)`
+: 如果常量为 1、ON、YES、TRUE、Y 或非零数字（包括浮点数），则为真。如果常量为 0、OFF、NO、FALSE、N、IGNORE、NOTFOUND、空字符串或以 -NOTFOUND 后缀结尾，则为假。布尔常量不区分大小写。如果参数不是这些特定常量之一，它将被视为变量或字符串（请参阅下文的 变量展开），并适用以下两种形式之一。
+
+`if(<variable>)`
+: 如果给定的变量定义为非假常量的某个值，则为真。否则为假，包括变量未定义的情况。注意，宏参数不是变量。环境变量 也不能以这种方式测试，例如 if(ENV{some_var}) 的求值结果永远为假。
+
+`if(<string>)`
+: 引号括起来的字符串总是被判定为假，除非字符串的值是真常量之一。
+
+`if()`
+: 如果未提供参数，则为假。
+
 ##### 4.5.1.2 逻辑运算符
+
+`if(NOT <condition>)`
+: 如果条件不为真，则为真。
+
+`if(<cond1> AND <cond2>)`
+: 如果两个条件都为真，则为真。
+
+`if(<cond1> OR <cond2>)`
+: 如果两个条件中任一条件被视为真，则为真。
+
+`if((condition) AND (condition OR (condition)))`
+: 圆括号内的条件首先被求值，然后剩余的条件按其他示例中的方式求值。如果存在嵌套的圆括号，最内层的圆括号会作为评估包含它们的条件的一部分进行求值。
 
 ##### 4.5.1.3 存在性检查
 
+`if(COMMAND <command-name>)`
+: 如果给定名称是可调用的命令、宏或函数，则为真。
+
+`if(TARGET <target-name>)`
+: 如果给定名称是一个已存在的逻辑目标名称，且已通过调用 add_executable()、add_library() 或 add_custom_target() 命令（在任何目录中）创建，则为真。
+
+`if(TEST <test-name>)`
+: 如果给定名称是由 add_test() 命令创建的现有测试名称，则为真。
+
+`if(DEFINED <name>|CACHE{<name>}|ENV{<name>})`
+: 如果定义了具有给定 <name> 的变量、缓存变量或环境变量，则为真。变量的值无关紧要。注意以下注意事项：
+  * 宏参数不是变量。
+  * 无法直接测试 <name> 是否为非缓存变量。如果缓存变量或非缓存变量 someName 存在，表达式 if(DEFINED someName) 将为真。相比之下，表达式 if(DEFINED CACHE{someName}) 仅在缓存变量 someName 存在时才为真。如果您需要了解非缓存变量是否存在，则必须测试这两个表达式：if(DEFINED someName AND NOT DEFINED CACHE{someName})。
+
+`if(<variable|string> IN_LIST <variable>)`
+: 如果给定的元素包含在命名的列表变量中，则为真。
+
 ##### 4.5.1.4 文件操作
 
+`if(EXISTS <path-to-file-or-directory>)`
+: 如果命名文件或目录存在且可读，则为真。行为仅对明确的完整路径定义良好（路径开头的 ~/ 不会展开为主目录，并被视为相对路径）。解析符号链接，即如果命名文件或目录是符号链接，则在符号链接的目标存在时返回真。如果给定路径为空字符串，则为假。
+
+`if(IS_READABLE <path-to-file-or-directory>)`
+: 如果命名文件或目录可读，则为真。行为仅对明确的完整路径定义良好。解析符号链接，即如果命名文件或目录是符号链接，则在符号链接的目标可读时返回真。如果给定路径为空字符串，则为假。
+
+`if(IS_WRITABLE <path-to-file-or-directory>)`
+: 如果命名文件或目录可写，则为真。行为仅对明确的完整路径定义良好。解析符号链接，即如果命名文件或目录是符号链接，则在符号链接的目标可写时返回真。如果给定路径为空字符串，则为假。
+
+`if(IS_EXECUTABLE <path-to-file-or-directory>)`
+: 如果命名文件或目录可执行，则为真。行为仅对明确的完整路径定义良好。解析符号链接，即如果命名文件或目录是符号链接，则在符号链接的目标可执行时返回真。如果给定路径为空字符串，则为假。
+
+`if(IS_DIRECTORY <path>)`
+: 如果 path 是一个目录，则为真。行为仅对完整路径定义良好。如果给定路径为空字符串，则为假。
+
+`if(IS_SYMLINK <path>)`
+: 如果给定路径是符号链接，则为真。行为仅对完整路径定义良好。
+
+`if(IS_ABSOLUTE <path>)`
+: 如果给定路径是绝对路径，则为真。注意以下特殊情况：
+  * 空 path 会评估为假。
+  * 在 Windows 主机上，任何以驱动器号加冒号（例如 C:）、正斜杠或反斜杠开头的 path 都会评估为真。
+  * 在非 Windows 主机上，任何以波浪号（~）开头的 path 都会评估为真。
+  
+`if(<file1> IS_NEWER_THAN <file2>)`
+: 如果 file1 比 file2 新，或者两个文件中的一个不存在，则为真。行为仅对完整路径定义良好。如果文件时间戳完全相同，IS_NEWER_THAN 比较将返回真，以便在平局时发生任何相关的构建操作。这包括为 file1 和 file2 传递相同文件名的情形。
+
 ##### 4.5.1.4 比较
+
+`if(<variable|string> MATCHES <regex>)`
+: 如果给定的字符串或变量的值与给定的正则表达式匹配，则为真。
+
+`if(<variable|string> LESS/GREATER/EQUAL/LESS_EQUAL/GREATER_EQUAL <variable|string>)`
+: 如果给定的字符串或变量的值被解析为实数（类似于 C 语言中的 double）且小于/大于/等于/小于等于/大于等于右侧的值，则为真。
+
+`if(<variable|string> STRLESS/STRGREATER/STREQUAL/STRLESS_EQUAL/STRGREATER_EQUAL <variable|string>)`
+: 如果给定的字符串或变量的值在字典序上小于/大于/等于/小于等于/大于等于右侧的字符串或变量，则为真。
+
+`if(<variable|string> PATH_EQUAL <variable|string>)`
+: 路径比较。在不访问文件系统的情况下，按组件逐个对两个 CMake 路径进行字典序比较。只有当两个路径的每个组件都匹配时，两个路径才会被比较为相等。多个路径分隔符会被有效地合并为单个分隔符，但请注意反斜杠不会转换为正斜杠。不执行其他 路径规范化。末尾的斜杠会被保留，因此 /a/b 和 /a/b/ 不相等。
+
+  由于能够处理多个路径分隔符，按组件比较优于基于字符串的比较。在以下示例中，表达式使用 PATH_EQUAL 时评估为真，但使用 STREQUAL 时为假。
+
+  <iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:8,endLineNumber:6,positionColumn:8,positionLineNumber:6,selectionStartColumn:8,selectionStartLineNumber:6,startColumn:8,startLineNumber:6),source:'%23+comparison+is+TRUE%0Aif+(%22/a//b/c%22+PATH_EQUAL+%22/a/b/c%22)%0A++++message(%22/a//b/c+PATH_EQUAL+/a/b/c+true%22)%0Aelse()%0A++++message(%22/a//b/c+PATH_EQUAL+/a/b/c+false%22)%0Aendif()%0A%0A%23+comparison+is+FALSE%0Aif+(%22/a//b/c%22+STREQUAL+%22/a/b/c%22)%0A++++message(%22/a//b/c+STREQUAL+/a/b/c+true%22)%0Aelse()%0A++++message(%22/a//b/c+STREQUAL+/a/b/c+false%22)%0Aendif()'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'1',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,libs:!(),options:'',overrides:!(),runtimeTools:!(),source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
 
 #### 4.5.2 循环
 
