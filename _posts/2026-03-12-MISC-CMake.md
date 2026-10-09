@@ -418,13 +418,6 @@ endif()
 `if(<variable|string> STRLESS/STRGREATER/STREQUAL/STRLESS_EQUAL/STRGREATER_EQUAL <variable|string>)`
 : 如果给定的字符串或变量的值在字典序上小于/大于/等于/小于等于/大于等于右侧的字符串或变量，则为真。
 
-`if(<variable|string> PATH_EQUAL <variable|string>)`
-: 路径比较。在不访问文件系统的情况下，按组件逐个对两个 CMake 路径进行字典序比较。只有当两个路径的每个组件都匹配时，两个路径才会被比较为相等。多个路径分隔符会被有效地合并为单个分隔符，但请注意反斜杠不会转换为正斜杠。不执行其他 路径规范化。末尾的斜杠会被保留，因此 /a/b 和 /a/b/ 不相等。
-
-  由于能够处理多个路径分隔符，按组件比较优于基于字符串的比较。在以下示例中，表达式使用 PATH_EQUAL 时评估为真，但使用 STREQUAL 时为假。
-
-  <iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:8,endLineNumber:6,positionColumn:8,positionLineNumber:6,selectionStartColumn:8,selectionStartLineNumber:6,startColumn:8,startLineNumber:6),source:'%23+comparison+is+TRUE%0Aif+(%22/a//b/c%22+PATH_EQUAL+%22/a/b/c%22)%0A++++message(%22/a//b/c+PATH_EQUAL+/a/b/c+true%22)%0Aelse()%0A++++message(%22/a//b/c+PATH_EQUAL+/a/b/c+false%22)%0Aendif()%0A%0A%23+comparison+is+FALSE%0Aif+(%22/a//b/c%22+STREQUAL+%22/a/b/c%22)%0A++++message(%22/a//b/c+STREQUAL+/a/b/c+true%22)%0Aelse()%0A++++message(%22/a//b/c+STREQUAL+/a/b/c+false%22)%0Aendif()'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'1',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,libs:!(),options:'',overrides:!(),runtimeTools:!(),source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
-
 #### 4.5.2 循环
 
 CMake 提供两种循环结构：[`while()`](https://cmake.com.cn/cmake/help/latest/command/while.html#command:while) 以及更有用的 [`foreach()`](https://cmake.com.cn/cmake/help/latest/command/foreach.html#command:foreach)。
@@ -483,6 +476,254 @@ endwhile()
 ##### 4.5.2.3 跳出控制流
 
 命令 [`break()`](https://cmake.com.cn/cmake/help/latest/command/break.html#command:break) 和 [`continue()`](https://cmake.com.cn/cmake/help/latest/command/continue.html#command:continue) 提供了跳出正常控制流的手段。break() 命令从外层的 foreach 或 while 循环中跳出。continue() 命令中止 foreach() 或 while() 循环当前迭代的剩余部分，并从下一次迭代的顶部开始。
+
+## 5. CMake 构建系统
+
+基于 CMake 的构建系统组织为一组高层级的逻辑目标。每个目标对应一个可执行文件或库，或者是一个包含自定义命令的自定义目标。目标之间的依赖关系在构建系统中进行表达，以确定构建顺序以及在发生变更时进行重新生成的规则。
+
+### 5.1 二进制目标
+
+使用 add_executable() 和 add_library() 命令定义可执行文件和库。生成的二进制文件具有目标平台适用的 PREFIX、SUFFIX 和扩展名。二进制目标之间的依赖关系使用 target_link_libraries() 命令表达。
+
+```cmake
+add_library(archive archive.cpp zip.cpp lzma.cpp)
+add_executable(zipapp zipapp.cpp)
+target_link_libraries(zipapp archive)
+```
+
+archive 被定义为 STATIC 库——一个包含由 archive.cpp、zip.cpp 和 lzma.cpp 编译生成的对象文件的归档。 zipapp 被定义为通过编译并链接 zipapp.cpp 形成的可执行文件。链接 zipapp 可执行文件时，会链接入 archive 静态库。
+
+#### 5.1.1 可执行文件
+
+可执行文件是通过链接对象文件在一起创建的二进制文件，其中一个包含程序入口点，例如 main。通过 add_executable() 命令定义一个可执行目标。
+
+```cmake
+add_executable(mytool mytool.cpp)
+```
+
+CMake 生成构建规则，将源文件编译为对象文件，并将它们链接成可执行文件。
+
+可执行文件的链接依赖项可以使用 target_link_libraries() 命令指定。链接器从编译自可执行文件自身源文件的对象文件开始，然后通过搜索链接的库来解析剩余的符号依赖项。
+
+#### 5.1.2 静态库
+
+静态库是对象文件的归档。它们由归档工具而非链接器产生。可执行文件、共享库 和 模块库 可以链接到静态库作为依赖项。链接器根据需要从静态库中选择对象文件子集以解析符号，并将它们链接到消耗它们的二进制文件中。每个链接到静态库的二进制文件都会获得一份符号副本，且静态库本身在运行时不需要。
+
+add_library() 命令在调用时使用 STATIC 库类型定义静态库目标
+
+```cmake
+add_library(archive STATIC archive.cpp zip.cpp lzma.cpp)
+```
+
+或者当 [`BUILD_SHARED_LIBS`](https://cmake.com.cn/cmake/help/latest/variable/BUILD_SHARED_LIBS.html#variable:BUILD_SHARED_LIBS) 变量为 false 时，不指定类型。
+
+```cmake
+add_library(archive archive.cpp zip.cpp lzma.cpp)
+```
+
+CMake 生成构建规则，将源文件编译为对象文件，并将其归档到静态库中。
+
+静态库的链接依赖项可以使用 target_link_libraries() 命令指定。由于静态库是归档而非链接的二进制文件，来自其链接依赖项的对象文件不会包含在库本身中（指定为直接链接依赖项的 对象库 除外）。相反，CMake 会记录静态库的链接依赖项，以便在链接消耗它们的二进制文件时进行传递性使用。
+
+#### 5.1.3 共享库
+
+共享库是通过链接对象文件在一起创建的二进制文件。可执行文件、其他共享库和 模块库 可以链接到共享库作为依赖项。链接器在消耗它们的二进制文件中记录对共享库的引用。在运行时，动态加载器在磁盘上搜索引用的共享库并加载它们的符号。
+
+add_library() 命令在调用时使用 SHARED 库类型定义共享库目标
+
+```cmake
+add_library(archive SHARED archive.cpp zip.cpp lzma.cpp)
+```
+
+或者当 [`BUILD_SHARED_LIBS`](https://cmake.com.cn/cmake/help/latest/variable/BUILD_SHARED_LIBS.html#variable:BUILD_SHARED_LIBS) 变量为 true 时，不指定类型。
+
+```cmake
+add_library(archive archive.cpp zip.cpp lzma.cpp)
+```
+
+CMake 生成构建规则，将源文件编译为对象文件，并将它们链接成共享库。
+
+共享库的链接依赖项可以使用 target_link_libraries() 命令指定。链接器从编译自共享库自身源文件的对象文件开始，然后通过搜索链接的库来解析剩余的符号依赖项。
+
+#### 5.1.4 模块库
+
+模块库是通过链接对象文件在一起创建的二进制文件。与 共享库 不同，模块库不能被其他二进制文件作为依赖项链接 —— 不要将它们列在 target_link_libraries() 命令的右侧。相反，模块库是应用程序可以在运行时按需动态加载的插件，例如通过 dlopen 加载。
+
+add_library() 命令在调用时使用 MODULE 库类型定义模块库目标。
+
+```cmake
+add_library(archivePlugin MODULE 7z.cpp)
+```
+
+CMake 生成构建规则，将源文件编译为对象文件，并将它们链接成模块库。
+
+模块库的链接依赖项可以使用 target_link_libraries() 命令指定。链接器从编译自模块库自身源文件的对象文件开始，然后通过搜索链接的库来解析剩余的符号依赖项。
+
+#### 5.1.5 对象库
+
+对象库是编译源文件产生的对象文件的集合，不进行任何归档或链接。这些对象文件可以在链接 可执行文件、共享库 和 模块库 时使用，或者在归档 静态库 时使用。
+
+add_library() 命令在调用时使用 OBJECT 库类型定义对象库目标。
+
+```cmake
+add_library(archiveObjs OBJECT archive.cpp zip.cpp lzma.cpp)
+```
+
+CMake 生成构建规则，将源文件编译为对象文件。
+
+其他目标可以使用 生成器表达式 语法 `$<TARGET_OBJECTS:name>` 将这些对象文件指定为源输入。
+
+```cmake
+add_library(archiveExtras STATIC $<TARGET_OBJECTS:archiveObjs> extras.cpp)
+
+add_executable(test_exe $<TARGET_OBJECTS:archiveObjs> test.cpp)
+```
+
+消耗这些对象的目标在链接（或归档）时，既使用它们自身的源文件，也使用命名对象库中的对象文件。
+
+或者，也可以将对象库指定为其他目标的链接依赖项。
+
+```cmake
+add_library(archiveExtras STATIC extras.cpp)
+target_link_libraries(archiveExtras PUBLIC archiveObjs)
+
+add_executable(test_exe test.cpp)
+target_link_libraries(test_exe archiveObjs)
+```
+
+消耗这些对象的目标在链接（或归档）时，既使用它们自身的源文件，也使用由 target_link_libraries() 指定为直接链接依赖项的对象库中的对象文件。
+
+### 5.2 构建规范与使用要求
+
+目标的构建遵循其自身的 构建规范，并结合从其链接依赖项传递而来的 使用要求。两者都可以使用特定于目标的 命令 来指定。
+
+#### 5.2.1 目标命令
+
+特定于目标的命令会填充 二进制目标 的 构建规范，以及 二进制目标、接口库 和 导入目标 的 使用要求。
+
+| 类型                                          | 填充构建规范属性                         | 填充使用要求属性     
+| ---                                           | ---                                    | --- 
+| [`target_compile_definitions()`](https://cmake.com.cn/cmake/help/latest/command/target_compile_definitions.html#command:target_compile_definitions) |  COMPILE_DEFINITIONS | INTERFACE_COMPILE_DEFINITIONS     
+| [`target_compile_options()`](https://cmake.com.cn/cmake/help/latest/command/target_compile_options.html#command:target_compile_options) |  COMPILE_OPTIONS | INTERFACE_COMPILE_OPTIONS      
+| [`target_compile_features()`](https://cmake.com.cn/cmake/help/latest/command/target_compile_features.html#command:target_compile_features)  | COMPILE_FEATURES | INTERFACE_COMPILE_FEATURES 
+| [`target_include_directories()`](https://cmake.com.cn/cmake/help/latest/command/target_include_directories.html#command:target_include_directories) | INCLUDE_DIRECTORIES | INTERFACE_INCLUDE_DIRECTORIES
+| [`target_sources()`](https://cmake.com.cn/cmake/help/latest/command/target_sources.html#command:target_sources)| SOURCES | INTERFACE_SOURCES
+| [`target_precompile_headers()`](https://cmake.com.cn/cmake/help/latest/command/target_precompile_headers.html#command:target_precompile_headers)| PRECOMPILE_HEADERS | INTERFACE_PRECOMPILE_HEADERS
+| [`target_link_libraries()`](https://cmake.com.cn/cmake/help/latest/command/target_link_libraries.html#command:target_link_libraries) | LINK_LIBRARIES | INTERFACE_LINK_LIBRARIES
+| [`target_link_directories()`](https://cmake.com.cn/cmake/help/latest/command/target_link_directories.html#command:target_link_directories) | LINK_DIRECTORIES | INTERFACE_LINK_DIRECTORIES
+| [`target_link_options()`](https://cmake.com.cn/cmake/help/latest/command/target_link_options.html#command:target_link_options) | LINK_OPTIONS | INTERFACE_LINK_OPTIONS
+
+调用必须指定作用域关键字，每个关键字影响其后参数的可见性。作用域包括：
+
+| 类型             | 作用                                 
+| ---             | ---                                    
+| PUBLIC	        | 同时填充 构建 属性和 使用 目标的属性。     
+| PRIVATE	        | 仅填充 构建 目标的属性。     
+| INTERFACE	      | 仅填充 使用 目标的属性。     
+
+#### 5.2.2 目标构建规范
+
+二进制目标 的构建规范由目标属性表示。对于以下每一项 编译 和 链接 属性，目标的编译和链接既受其自身值的影响，也受从链接依赖项的传递闭包中收集的、以 INTERFACE_ 为前缀的对应 使用要求 属性的影响。
+
+##### 5.2.2.1 目标编译属性
+
+这些表示编译目标的 构建规范。
+
+| 类型             | 作用                       | 说明                          
+| ---             | ---                                    
+| [`COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS)	        | 用于编译目标中源文件的编译定义列表。    | 它们以未指定的顺序通过 -D 标志或等效标志传递给编译器。
+| [`COMPILE_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_OPTIONS.html#prop_tgt:COMPILE_OPTIONS)	                    | 用于编译目标中源文件的编译选项列表。    | 它们按出现顺序作为标志传递给编译器。
+| [`COMPILE_FEATURES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_FEATURES.html#prop_tgt:COMPILE_FEATURES)	                  | 编译目标中源文件所需的 编译特性 列表。  | 通常，这些确保目标的源文件使用足够的语言标准级别进行编译。
+| [`INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES)	        | 用于编译目标中源文件的包含目录列表。    | 它们按出现顺序通过 -I 或 -isystem 标志或等效标志传递给编译器。
+| [`SOURCES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/SOURCES.html#prop_tgt:SOURCES)	                                            | 与目标关联的源文件列表。  | 包括在通过 add_executable()、add_library() 或 add_custom_target() 命令创建目标时指定的源文件。
+| [`PRECOMPILE_HEADERS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/PRECOMPILE_HEADERS.html#prop_tgt:PRECOMPILE_HEADERS)	            | 编译目标中源文件时要预编译并包含的头文件列表。
+
+##### 5.2.2.2 目标链接属性
+
+这些表示链接目标的 构建规范。如果目标是可执行文件、共享库或模块库，则
+
+| 类型             | 作用                       | 说明                          
+| ---             | ---                                    
+| [`LINK_LIBRARIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_LIBRARIES.html#prop_tgt:LINK_LIBRARIES)	        | 此项为链接该目标所需的链接库列表。    | 静态库 和 共享库 的条目通过其链接产物的路径，或使用 -l 标志或等效标志传递给链接器。对象库 的条目通过其对象文件的路径传递给链接器。
+| [`LINK_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_DIRECTORIES.html#prop_tgt:LINK_DIRECTORIES)	  | 此项为链接该目标所需的链接目录列表。    | 目录通过 -L 标志或等效标志传递给链接器。
+| [`LINK_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_OPTIONS.html#prop_tgt:LINK_OPTIONS)	              | 此项为链接该目标所需的链接选项列表。  | 选项按出现顺序作为标志传递给链接器。
+| [`LINK_DEPENDS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_DEPENDS.html#prop_tgt:LINK_DEPENDS)	              | 此项为链接该目标所依赖的文件列表。  | 
+
+
+#### 5.2.3 目标使用要求
+
+目标的 使用要求 是传播给消费者的设置，消费者通过 target_link_libraries() 链接到该目标，以便正确与其编译和链接。它们由传递性 编译 和 链接 属性表示。
+
+请注意，使用要求的设计目的并非仅为了方便让下游使用特定的 COMPILE_OPTIONS、COMPILE_DEFINITIONS 等。属性的内容必须是 要求，而不仅仅是建议。
+
+目标的使用要求可以传递性地传播给依赖者。 target_link_libraries() 命令具有 PRIVATE、INTERFACE 和 PUBLIC 关键字来控制传播。
+
+```cmake
+add_library(archive archive.cpp)
+target_compile_definitions(archive INTERFACE USING_ARCHIVE_LIB)
+
+add_library(serialization serialization.cpp)
+target_compile_definitions(serialization INTERFACE USING_SERIALIZATION_LIB)
+
+add_library(archiveExtras extras.cpp)
+target_link_libraries(archiveExtras PUBLIC archive)
+target_link_libraries(archiveExtras PRIVATE serialization)
+# archiveExtras is compiled with -DUSING_ARCHIVE_LIB
+# and -DUSING_SERIALIZATION_LIB
+
+add_executable(consumer consumer.cpp)
+# consumer is compiled with -DUSING_ARCHIVE_LIB
+target_link_libraries(consumer archiveExtras)
+```
+
+因为 archive 是 archiveExtras 的 PUBLIC 依赖项，所以它的使用要求也传播到了 consumer。
+
+因为 serialization 是 archiveExtras 的 PRIVATE 依赖项，所以它的使用要求不会传播到 consumer。
+
+通常，如果一个依赖项仅由库的实现使用，而不用于头文件，则应在 target_link_libraries() 的使用中使用 PRIVATE 关键字指定。如果一个依赖项此外还用于库的头文件中（例如用于类继承），则应将其指定为 PUBLIC 依赖项。不被库的实现使用，仅由其头文件使用的依赖项应指定为 INTERFACE 依赖项。 target_link_libraries() 命令可以使用每个关键字的多次调用进行调用。
+
+```cmake
+target_link_libraries(archiveExtras
+  PUBLIC archive
+  PRIVATE serialization
+)
+```
+
+使用要求通过读取来自依赖项的目标属性的 INTERFACE_ 变体，并将这些值追加到操作数的非 INTERFACE_ 变体中来传播。例如，读取依赖项的 INTERFACE_INCLUDE_DIRECTORIES 并将其追加到操作数的 INCLUDE_DIRECTORIES 中。在顺序相关且被维护的情况下，如果 target_link_libraries() 调用产生的顺序不允许正确编译，则使用适当的命令直接设置属性可能会更新该顺序。
+
+例如，如果目标的链接库必须按 lib1 lib2 lib3 的顺序指定，但包含目录必须按 lib3 lib1 lib2 的顺序指定。
+
+```cmake
+target_link_libraries(myExe lib1 lib2 lib3)
+target_include_directories(myExe
+  PRIVATE $<TARGET_PROPERTY:lib3,INTERFACE_INCLUDE_DIRECTORIES>)
+```
+
+##### 5.2.3.1 传递编译属性
+
+这些表示用于编译消费者的 使用要求。
+
+| 类型             | 作用                       | 说明                          
+| ---             | ---                                    
+| [`INTERFACE_COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_DEFINITIONS.html#prop_tgt:INTERFACE_COMPILE_DEFINITIONS)	                | 用于编译目标消费者中源文件的编译定义列表。    | 通常这些由目标的头文件使用。
+| [`INTERFACE_COMPILE_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_OPTIONS.html#prop_tgt:INTERFACE_COMPILE_OPTIONS)	                    | 用于编译目标消费者中源文件的编译选项列表。    | 
+| [`INTERFACE_COMPILE_FEATURES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_FEATURES.html#prop_tgt:INTERFACE_COMPILE_FEATURES)	                    | 用于编译目标消费者中源文件所需的 编译特性 列表。  | 通常，这些确保目标的头文件在消费者使用足够的语言标准级别编译时得到正确处理。
+| [`INTERFACE_INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES)	                | 用于编译目标消费者中源文件的包含目录列表。    | 通常这些是目标头文件的位置。
+| [`INTERFACE_SYSTEM_INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_SYSTEM_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)	          | 当指定为包含目录时，在编译目标消费者中的源文件时应被视为“系统”包含目录的目录列表。    | 例如通过 INCLUDE_DIRECTORIES 或 INTERFACE_INCLUDE_DIRECTORIES
+| [`INTERFACE_SOURCES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_SOURCES.html#prop_tgt:INTERFACE_SOURCES)  | 要与目标消费者关联的源文件列表。  | 
+| [`INTERFACE_PRECOMPILE_HEADERS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_PRECOMPILE_HEADERS.html#prop_tgt:INTERFACE_PRECOMPILE_HEADERS)	                  | 编译目标消费者中的源文件时要预编译并包含的头文件列表。
+
+##### 5.2.3.2 传递链接属性
+
+这些表示用于链接消费者的 使用要求。
+
+| 类型             | 作用                                       
+| ---             | ---                                    
+| [`INTERFACE_LINK_LIBRARIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_LIBRARIES.html#prop_tgt:INTERFACE_LINK_LIBRARIES)	        | 用于链接目标消费者（如果是可执行文件、共享库或模块库）的链接库列表。
+| [`INTERFACE_LINK_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_DIRECTORIES.html#prop_tgt:INTERFACE_LINK_DIRECTORIES)	  | 用于链接目标消费者（如果是可执行文件、共享库或模块库）的链接目录列表。
+| [`INTERFACE_LINK_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_OPTIONS.html#prop_tgt:INTERFACE_LINK_OPTIONS)	              | 用于链接目标消费者（如果是可执行文件、共享库或模块库）的链接选项列表。
+| [`INTERFACE_LINK_DEPENDS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_DEPENDS.html#prop_tgt:INTERFACE_LINK_DEPENDS)	              | 链接目标消费者（如果是可执行文件、共享库或模块库）所依赖的文件列表。
+
 
 ## References
 >
