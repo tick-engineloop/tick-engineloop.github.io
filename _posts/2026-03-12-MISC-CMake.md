@@ -136,7 +136,15 @@ message("First Argument\n" # This is a line comment :)
 
 ### 4.2 变量
 
-变量是 CMake 语言中存储的基本单元。它们的值始终是字符串类型。变量名称区分大小写，并且可以包含几乎任何文本，但我们建议坚持使用仅包含字母数字字符加上 `_` 和 `-` 的名称。使用 [`set()`](https://cmake.com.cn/cmake/help/latest/command/set.html#command:set) 和 [`unset()`](https://cmake.com.cn/cmake/help/latest/command/unset.html#command:unset) 命令可显式设置或取消设置变量。
+变量是 CMake 语言中存储的基本单元。它们的值始终是字符串类型。变量名称区分大小写，并且可以包含几乎任何文本，但我们建议坚持使用仅包含字母数字字符加上 `_` 和 `-` 的名称。
+
+#### 4.2.1 变量类型
+
+变量可分为普通变量、环境变量和缓存变量。
+
+##### 4.2.1.1 普通变量
+
+使用 [`set()`](https://cmake.com.cn/cmake/help/latest/command/set.html#command:set) 和 [`unset()`](https://cmake.com.cn/cmake/help/latest/command/unset.html#command:unset) 命令可显式设置或取消设置变量。
 
 使用 `set()` 命令创建一个变量，也就是一个字符串的名称。并可以使用花括号扩展来访问变量的值。
 
@@ -155,25 +163,97 @@ Hello World!
 > 提示：cmake -P 被称为“脚本模式”，它告诉 CMake 该文件不包含 project() 命令。我们不构建任何软件，而是仅将 CMake 用作命令解释器。
 {: .prompt-tip }
 
-#### 4.2.1 变量类型
+##### 4.2.1.2 环境变量 
 
-变量可分为普通变量、环境变量和缓存变量。
+使用 `cmake -E environment` 命令行工具可显示所有当前环境变量。
 
-环境变量 
-: 使用 `cmake -E environment` 命令行工具可显示所有当前环境变量。
+改变行为的环境变量
 
-缓存变量
-: 由 `-D` 标志和 [`option()`](https://cmake.com.cn/cmake/help/latest/command/option.html#command:option) 命令创建的是缓存（cache）变量。缓存变量是全局可见的变量，且具有“粘性”，一旦设置后就很难改变。如果一个缓存变量被设置了一次，它将一直保留，直到被另一个 `-D` 标志覆盖。[`set()`](https://cmake.com.cn/cmake/help/latest/command/set.html#command:set) 也可以用来操作缓存变量，但不会改变已经创建的变量。
+[`CMAKE_INCLUDE_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_INCLUDE_PATH.html)
 
-  <iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:55,endLineNumber:4,positionColumn:55,positionLineNumber:4,selectionStartColumn:55,selectionStartLineNumber:4,startColumn:55,startLineNumber:4),source:'set(StickyCacheVariable+%22I+will+not+change%22+CACHE+STRING+%22%22)%0Aset(StickyCacheVariable+%22Overwrite+StickyCache%22+CACHE+STRING+%22%22)%0A%0Amessage(%22StickyCacheVariable:+$%7BStickyCacheVariable%7D%22)'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'1',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,options:'',source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
+供 find_file() 和 find_path() 命令搜索。
 
-  由于 `-D` 标志在任何项目命令之前处理，因此它们在设置缓存变量的值时具有优先权。
+[`CMAKE_LIBRARY_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_LIBRARY_PATH.html)
 
-  <iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:55,endLineNumber:4,positionColumn:55,positionLineNumber:4,selectionStartColumn:55,selectionStartLineNumber:4,startColumn:55,startLineNumber:4),source:'set(StickyCacheVariable+%22I+will+not+change%22+CACHE+STRING+%22%22)%0Aset(StickyCacheVariable+%22Overwrite+StickyCache%22+CACHE+STRING+%22%22)%0A%0Amessage(%22StickyCacheVariable:+$%7BStickyCacheVariable%7D%22)'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'0',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'-DStickyCacheVariable%3D%22Commandline+always+wins%22',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,libs:!(),options:'',overrides:!(),runtimeTools:!(),source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
+供 find_library() 命令在其中进行搜索。
 
-  虽然缓存变量通常无法更改，但它们可以被普通变量隐藏（shadowed）。我们可以通过使用 set() 设置一个与缓存变量同名的变量，然后使用 unset() 删除该普通变量来观察这一点。
+[`CMAKE_PREFIX_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_PREFIX_PATH.html)
 
-  <iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:45,endLineNumber:6,positionColumn:45,positionLineNumber:6,selectionStartColumn:45,selectionStartLineNumber:6,startColumn:45,startLineNumber:6),source:'set(ShadowVariable+%22In+the+shadows%22+CACHE+STRING+%22%22)%0Aset(ShadowVariable+%22Hiding+the+cache+variable%22)%0Amessage(%22ShadowVariable:+$%7BShadowVariable%7D%22)%0A%0Aunset(ShadowVariable)%0Amessage(%22ShadowVariable:+$%7BShadowVariable%7D%22)'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'1',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,libs:!(),options:'',overrides:!(),runtimeTools:!(),source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
+用于指定由 find_package(), find_program(), find_library(), find_file(), 以及 find_path() 命令所搜索的安装前缀 (prefixes)。每个命令将根据其自身文档中的规定，添加相应的子目录（如 bin, lib, 或 include）。
+
+[`CMAKE_PROGRAM_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_PROGRAM_PATH.html)
+
+供 find_program() 命令搜索。
+
+这些路径类型环境变量可以被设置为单个目录，或在 UNIX 上用 : 分隔，在 Windows 上用 ; 分隔的目录列表。
+
+控制构建的环境变量
+
+[`CMAKE_BUILD_TYPE`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_BUILD_TYPE.html)
+
+CMAKE_BUILD_TYPE 环境变量指定了在创建新构建树的首次运行时，如果没有给出明确的配置，则为 CMAKE_BUILD_TYPE 变量提供的默认值。
+
+[`CMAKE_GENERATOR`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_GENERATOR.html)
+
+指定在使用 -G 未提供生成器时，CMake 所使用的默认生成器。如果提供的值不是 CMake 已知的生成器，则使用内部默认值。无论哪种情况，最终选定的生成器都将存储在 CMAKE_GENERATOR 变量中。
+
+[`CMAKE_INSTALL_PREFIX`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_INSTALL_PREFIX.html)
+
+CMAKE_INSTALL_PREFIX 环境变量用于为 CMAKE_INSTALL_PREFIX 变量指定一个自定义的默认值，以替代 CMake 自身指定的默认值。指定的值必须是一个目录的绝对路径。
+
+[`CMAKE_NO_VERBOSE`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_NO_VERBOSE.html)
+
+当设置了 VERBOSE 环境变量时，禁用来自 CMake 的详细输出。
+
+[`CMAKE_TOOLCHAIN_FILE`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_TOOLCHAIN_FILE.html)
+
+CMAKE_TOOLCHAIN_FILE 环境变量为 CMAKE_TOOLCHAIN_FILE 变量指定了一个默认值，适用于在创建新构建树的首次运行时没有提供显式配置的情况。在现有构建树的后续运行中，该值将作为 CMAKE_TOOLCHAIN_FILE 持久化在缓存中。
+
+[`DESTDIR`](https://cmake.com.cn/cmake/help/latest/envvar/DESTDIR.html)
+
+在 UNIX 系统上，可以使用 DESTDIR 机制来重定向整个安装路径。它通常被打包人员用于将软件安装到暂存目录（staging directory）中。例如，运行
+
+make DESTDIR=/package/stage install
+
+[`LDFLAGS`](https://cmake.com.cn/cmake/help/latest/envvar/LDFLAGS.html)
+
+CMake 仅在首次配置时使用它来确定默认的链接器标志，之后 LDFLAGS 的值将作为 CMAKE_EXE_LINKER_FLAGS_INIT、CMAKE_SHARED_LINKER_FLAGS_INIT 以及 CMAKE_MODULE_LINKER_FLAGS_INIT 存储在缓存中。对于任何配置运行（包括第一次），如果定义了相应的 CMAKE_<TYPE>_LINKER_FLAGS_INIT 变量，该环境变量将被忽略。
+
+[`VERBOSE`](https://cmake.com.cn/cmake/help/latest/envvar/VERBOSE.html)
+
+激活 CMake 以及您选择的构建工具的详细输出（verbose output）。
+
+针对编程语言的环境变量
+
+[`CC`](https://cmake.com.cn/cmake/help/latest/envvar/CC.html)
+
+用于编译 C 语言文件的首选可执行文件。CMake 仅在首次配置时使用它来确定 C 编译器，之后 CC 的值将作为 CMAKE_C_COMPILER 存储在缓存中。对于任何配置运行（包括首次运行），如果定义了 CMAKE_C_COMPILER 变量，则该环境变量将被忽略。
+
+[`CFLAGS`](https://cmake.com.cn/cmake/help/latest/envvar/CFLAGS.html)
+
+添加在编译 C 文件时使用的默认编译标志。CMake 使用此环境变量的值，结合其针对工具链的内置默认标志，来初始化并存储 CMAKE_C_FLAGS 缓存条目。这发生在首次为 C 语言配置构建树时。对于任何配置运行（包括第一次），如果 CMAKE_C_FLAGS 变量已经定义，则该环境变量将被忽略。
+
+[`CXX`](https://cmake.com.cn/cmake/help/latest/envvar/CXX.html)
+
+用于编译 CXX 语言文件的首选可执行文件。CMake 仅在首次配置时使用它来确定 CXX 编译器，之后 CXX 的值将作为 CMAKE_CXX_COMPILER 存储在缓存中。对于任何配置运行（包括第一次），如果定义了 CMAKE_CXX_COMPILER 变量，则将忽略该环境变量。
+
+[`CXXFLAGS`](https://cmake.com.cn/cmake/help/latest/envvar/CXXFLAGS.html)
+
+添加在编译 CXX (C++) 文件时使用的默认编译标志。CMake 使用该环境变量的值，结合其针对工具链的内置默认标志，来初始化并存储 CMAKE_CXX_FLAGS 缓存项。这发生在首次为 CXX 语言配置构建树时。对于任何配置运行（包括首次运行），如果 CMAKE_CXX_FLAGS 变量已经定义，则该环境变量将被忽略。
+
+##### 4.2.1.3 缓存变量
+
+由 `-D` 标志和 [`option()`](https://cmake.com.cn/cmake/help/latest/command/option.html#command:option) 命令创建的是缓存（cache）变量。缓存变量是全局可见的变量，且具有“粘性”，一旦设置后就很难改变。如果一个缓存变量被设置了一次，它将一直保留，直到被另一个 `-D` 标志覆盖。[`set()`](https://cmake.com.cn/cmake/help/latest/command/set.html#command:set) 也可以用来操作缓存变量，但不会改变已经创建的变量。
+
+<iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:55,endLineNumber:4,positionColumn:55,positionLineNumber:4,selectionStartColumn:55,selectionStartLineNumber:4,startColumn:55,startLineNumber:4),source:'set(StickyCacheVariable+%22I+will+not+change%22+CACHE+STRING+%22%22)%0Aset(StickyCacheVariable+%22Overwrite+StickyCache%22+CACHE+STRING+%22%22)%0A%0Amessage(%22StickyCacheVariable:+$%7BStickyCacheVariable%7D%22)'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'1',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,options:'',source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
+
+由于 `-D` 标志在任何项目命令之前处理，因此它们在设置缓存变量的值时具有优先权。
+
+<iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:55,endLineNumber:4,positionColumn:55,positionLineNumber:4,selectionStartColumn:55,selectionStartLineNumber:4,startColumn:55,startLineNumber:4),source:'set(StickyCacheVariable+%22I+will+not+change%22+CACHE+STRING+%22%22)%0Aset(StickyCacheVariable+%22Overwrite+StickyCache%22+CACHE+STRING+%22%22)%0A%0Amessage(%22StickyCacheVariable:+$%7BStickyCacheVariable%7D%22)'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'0',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'-DStickyCacheVariable%3D%22Commandline+always+wins%22',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,libs:!(),options:'',overrides:!(),runtimeTools:!(),source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
+
+虽然缓存变量通常无法更改，但它们可以被普通变量隐藏（shadowed）。我们可以通过使用 set() 设置一个与缓存变量同名的变量，然后使用 unset() 删除该普通变量来观察这一点。
+
+<iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:45,endLineNumber:6,positionColumn:45,positionLineNumber:6,selectionStartColumn:45,selectionStartLineNumber:6,startColumn:45,startLineNumber:6),source:'set(ShadowVariable+%22In+the+shadows%22+CACHE+STRING+%22%22)%0Aset(ShadowVariable+%22Hiding+the+cache+variable%22)%0Amessage(%22ShadowVariable:+$%7BShadowVariable%7D%22)%0A%0Aunset(ShadowVariable)%0Amessage(%22ShadowVariable:+$%7BShadowVariable%7D%22)'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'1',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,libs:!(),options:'',overrides:!(),runtimeTools:!(),source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
 
 #### 4.2.2 变量引用
 
