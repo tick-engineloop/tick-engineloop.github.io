@@ -177,10 +177,6 @@ Hello World!
 
 供 find_library() 命令在其中进行搜索。
 
-[`CMAKE_PREFIX_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_PREFIX_PATH.html)
-
-用于指定由 find_package(), find_program(), find_library(), find_file(), 以及 find_path() 命令所搜索的安装前缀 (prefixes)。每个命令将根据其自身文档中的规定，添加相应的子目录（如 bin, lib, 或 include）。
-
 [`CMAKE_PROGRAM_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_PROGRAM_PATH.html)
 
 供 find_program() 命令搜索。
