@@ -1,0 +1,122 @@
+---
+---
+
+@import 'main
+{%- if jekyll.environment == 'production' -%}
+  .bundle
+{%- endif -%}
+';
+
+/* append your custom style below */
+
+/* Markdown tables: shrink to content width and center horizontally. */
+div.content .table-wrapper > table {
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/*
+ * Cells never wrap by default, so line breaks are fully under your control:
+ * insert <br> where a break is wanted.
+ * Opt into automatic wrapping per table by adding {:.table-wrap}
+ * on the line right after the table (kramdown block IAL).
+ */
+div.content .table-wrapper > table.table-wrap thead th,
+div.content .table-wrapper > table.table-wrap tbody tr td {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+/* ---------- Closed (boxed) table ---------- */
+
+/* Table-only palette, mirroring the theme's light/dark switch. */
+html {
+  @media (prefers-color-scheme: light) {
+    &:not([data-mode]),
+    &[data-mode='light'] {
+      --tbl-line-color: #e6e6e6;
+      --tbl-head-bg: #f7f7f7;
+      --tbl-stripe-bg: #fafafa;
+    }
+
+    &[data-mode='dark'] {
+      --tbl-line-color: #38393c;
+      --tbl-head-bg: #2a2a2d;
+      --tbl-stripe-bg: #232326;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    &:not([data-mode]),
+    &[data-mode='dark'] {
+      --tbl-line-color: #38393c;
+      --tbl-head-bg: #2a2a2d;
+      --tbl-stripe-bg: #232326;
+    }
+
+    &[data-mode='light'] {
+      --tbl-line-color: #e6e6e6;
+      --tbl-head-bg: #f7f7f7;
+      --tbl-stripe-bg: #fafafa;
+    }
+  }
+}
+
+div.content .table-wrapper > table {
+  border: 1px solid var(--tbl-line-color);
+  border-radius: 0.5rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  background-color: var(--main-bg);
+}
+
+div.content .table-wrapper > table thead {
+  border-bottom: 0;
+}
+
+div.content .table-wrapper > table thead th,
+div.content .table-wrapper > table tbody tr td {
+  padding: 0.55rem 1rem;
+  border-right: 1px solid var(--tbl-line-color);
+}
+
+div.content .table-wrapper > table thead th {
+  background-color: var(--tbl-head-bg);
+  font-weight: 600;
+  text-align: center;
+  border-bottom: 1px solid var(--tbl-line-color);
+}
+
+div.content .table-wrapper > table tbody tr {
+  border-bottom: 0;
+  background-color: transparent;
+}
+
+div.content .table-wrapper > table tbody tr:nth-child(even) td {
+  background-color: var(--tbl-stripe-bg);
+}
+
+div.content .table-wrapper > table thead th:last-child,
+div.content .table-wrapper > table tbody tr td:last-child {
+  border-right: 0;
+}
+
+/* Round the corner cells so their backgrounds follow the table's border. */
+div.content .table-wrapper > table thead th:first-child {
+  border-top-left-radius: 0.5rem;
+}
+
+div.content .table-wrapper > table thead th:last-child {
+  border-top-right-radius: 0.5rem;
+}
+
+div.content .table-wrapper > table tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 0.5rem;
+}
+
+div.content .table-wrapper > table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 0.5rem;
+}
