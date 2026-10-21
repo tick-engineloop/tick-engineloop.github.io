@@ -81,12 +81,12 @@ cmake --build dir
 指定构建配置
 : 构建配置允许以调试、优化等不同的方式构建项目。默认情况下，CMake 支持 Debug、Release、MinSizeRel 和 RelWithDebInfo 配置。Debug 是启用基本的调试标志。Release 是启用基本的优化标志。MinSizeRel 具有生成最小目标代码的标志，但不一定是速度最快的代码。RelWithDebInfo 构建具有调试信息的优化版本。
 
-| 构建类型           | 编译选项             | 适用场景
-| ---               | ---                 | ---
-| Debug             | -g                  | 开发调试阶段，需要断点和变量查看
-| Release           | -O2 -DNDEBUG        | 生产发布，追求运行速度
-| RelWithDebInfo    | -O2 -g              | 需要性能分析或调试优化的发布版本
-| MinSizeRel        | -Os                 | 嵌入式或对体积敏感的场景
+  | 构建类型           | 编译选项             | 适用场景
+  | ---               | ---                 | ---
+  | Debug             | -g                  | 开发调试阶段，需要断点和变量查看
+  | Release           | -O2 -DNDEBUG        | 生产发布，追求运行速度
+  | RelWithDebInfo    | -O2 -g              | 需要性能分析或调试优化的发布版本
+  | MinSizeRel        | -Os                 | 嵌入式或对体积敏感的场景
 
 对于基于 Makefile 的生成器，在运行 CMake 时只能激活一个配置，并使用 CMAKE_BUILD_TYPE 变量指定。如果变量为空，则不会向构建添加任何标志。如果变量设置为配置的名称，则相应的变量和规则（例如 CMAKE_CXX_FLAGS_<ConfigName>）将添加到编译行。要构建调试和发布树，用户应使用 CMake 的源外构建功能创建多个构建目录，并将 CMAKE_BUILD_TYPE 设置为每个构建所需的选项。例如：
 
@@ -163,83 +163,143 @@ Hello World!
 > 提示：cmake -P 被称为“脚本模式”，它告诉 CMake 该文件不包含 project() 命令。我们不构建任何软件，而是仅将 CMake 用作命令解释器。
 {: .prompt-tip }
 
+CMake 内置了五种类别的变量，分别是提供信息、改变行为、描述系统、控制构建和用于语言的变量。
+
+| 提供信息的内置变量                          | 作用                                   
+| ---                                       | ---                               
+| [`PROJECT_NAME`](https://cmake.com.cn/cmake/help/latest/variable/PROJECT_NAME.html)                             | 当前目录作用域或其上层目录中，<br>最近一次调用 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令时所给出的名称
+| [`PROJECT_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/PROJECT_VERSION.html)                       | 当前目录作用域或其上层目录中，<br>最近一次调用 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令时所提供的版本号
+| [`PROJECT_DESCRIPTION`](https://cmake.com.cn/cmake/help/latest/variable/PROJECT_VERSION.html)                   | 当前目录作用域或其上层目录中，<br>最近一次调用 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令时所提供的描述
+| [`PROJECT_SOURCE_DIR`](https://cmake.com.cn/cmake/help/latest/variable/PROJECT_SOURCE_DIR.html)                 | 当前目录作用域或其上层目录中，<br>最近一次调用 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令时的源目录
+| [`PROJECT_BINARY_DIR`](https://cmake.com.cn/cmake/help/latest/variable/PROJECT_BINARY_DIR.html)                 | 当前目录作用域或其上层目录中，<br>最近一次调用 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令时的二进制目录
+| [`CMAKE_PROJECT_NAME`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PROJECT_NAME.html)                 | 顶层 `CMakeLists.txt` 文件中通过 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令指定的项目名称
+| [`CMAKE_PROJECT_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PROJECT_VERSION.html)           | 顶层 `CMakeLists.txt` 文件中通过 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令指定的项目版本
+| [`CMAKE_PROJECT_DESCRIPTION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PROJECT_DESCRIPTION.html)   | 顶层 `CMakeLists.txt` 文件中通过 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令指定的项目描述
+| [`CMAKE_SOURCE_DIR`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SOURCE_DIR.html)                     | 源码树顶层目录的完整路径
+| [`CMAKE_BINARY_DIR`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_BINARY_DIR.html)                                                                                                             | 构建树顶层目录的完整路径
+| [`CMAKE_CURRENT_SOURCE_DIR`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_CURRENT_SOURCE_DIR.html)     | 当前正在处理的源目录的完整路径
+| [`CMAKE_CURRENT_BINARY_DIR`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_CURRENT_BINARY_DIR.html)     | 当前正在处理的二进制目录的完整路径
+| [`CMAKE_CURRENT_LIST_DIR`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_CURRENT_LIST_DIR.html)         | 当 CMake 处理项目中的列表文件时，<br>该变量为正在处理的列表文件所在的完整目录
+| [`CMAKE_CURRENT_LIST_FILE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_CURRENT_LIST_FILE.html)       | 当 CMake 处理项目中的列表文件时，<br>该变量为当前正在处理的列表文件，包含完整路径
+| [`CMAKE_GENERATOR`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_GENERATOR.html)                       | 当前使用的构建生成器
+| [`CMAKE_CROSSCOMPILING`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_CROSSCOMPILING.html)             | 指示是否处于交叉编译模式，布尔值
+| [`CMAKE_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_VERSION.html)                                                                                                             | CMake 版本字符串
+| [`CMAKE_MAJOR_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_MAJOR_VERSION.html)               | [`CMAKE_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_VERSION.html#variable:CMAKE_VERSION) 变量的版本号第一个组成部分
+| [`CMAKE_MINOR_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_MINOR_VERSION.html)               | [`CMAKE_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_VERSION.html#variable:CMAKE_VERSION) 变量的版本号第二个组成部分
+| [`CMAKE_COMMAND`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_COMMAND.html)                           | [`cmake`](https://cmake.com.cn/cmake/help/latest/manual/cmake.1.html#manual:cmake(1)) 可执行程序完整路径
+| [`CMAKE_EXECUTABLE_SUFFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_EXECUTABLE_SUFFIX.html)          | 添加修改可执行文件后缀
+| [`CMAKE_STATIC_LIBRARY_PREFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_STATIC_LIBRARY_PREFIX.html)  | 静态库前缀
+| [`CMAKE_STATIC_LIBRARY_SUFFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_STATIC_LIBRARY_SUFFIX.html)  | 静态库后缀
+| [`CMAKE_SHARED_LIBRARY_PREFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SHARED_LIBRARY_PREFIX.html)  | 动态库前缀
+| [`CMAKE_SHARED_LIBRARY_SUFFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SHARED_LIBRARY_SUFFIX.html)  | 动态库后缀
+| [`CMAKE_MINIMUM_REQUIRED_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_MINIMUM_REQUIRED_VERSION.html)  | CMake 被要求的最低版本
+| [`CMAKE_PARENT_LIST_FILE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PARENT_LIST_FILE.html)                  | 包含当前 CMake 文件的那个文件的完整路径
+| [`CMAKE_TOOLCHAIN_FILE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_TOOLCHAIN_FILE.html)                      | 工具链文件路径
+
+
+| 改变行为的内置变量                          | 作用                                   
+| ---                                       | ---    
+| [`BUILD_SHARED_LIBS`](https://cmake.com.cn/cmake/help/latest/variable/BUILD_SHARED_LIBS.html)        | 在调用 [`add_library()`](https://cmake.com.cn/cmake/help/latest/command/add_library.html#command:add_library) 时若未明确指定库类型，<br>则默认使用 SHARED（动态）库而非 STATIC（静态）库
+| [`CMAKE_BUILD_TYPE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html)          | 指定构建类型，典型值包括 `Debug`, `Release`, `RelWithDebInfo` 和 `MinSizeRel`
+| [`CMAKE_INSTALL_PREFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_INSTALL_PREFIX.html)  | 指定安装目录
+| [`CMAKE_INCLUDE_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_INCLUDE_PATH.html)      | 指定 [`find_file()`](https://cmake.com.cn/cmake/help/latest/command/find_file.html#command:find_file) 和 [`find_path()`](https://cmake.com.cn/cmake/help/latest/command/find_path.html#command:find_path) 命令的搜索路径列表
+| [`CMAKE_LIBRARY_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LIBRARY_PATH.html)      | 指定 [`find_library()`](https://cmake.com.cn/cmake/help/latest/command/find_library.html#command:find_library) 命令的搜索路径目录列表
+| [`CMAKE_PREFIX_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PREFIX_PATH.html)        | 指定 [`find_package()`](https://cmake.com.cn/cmake/help/latest/command/find_package.html#command:find_package)、[`find_library()`](https://cmake.com.cn/cmake/help/latest/command/find_library.html#command:find_library) 等的搜索前缀列表
+| [`CMAKE_PROGRAM_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PROGRAM_PATH.html)      | 指定 [`find_program()`](https://cmake.com.cn/cmake/help/latest/command/find_program.html#command:find_program) 命令的搜索路径目录列表
+| [`CMAKE_MODULE_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_MODULE_PATH.html)        | 指定由 [`include()`](https://cmake.com.cn/cmake/help/latest/command/include.html#command:include) 或 [`find_package()`](https://cmake.com.cn/cmake/help/latest/command/find_package.html#command:find_package) 命令加载 CMake 模块的搜索路径
+| [`CMAKE_SYSROOT`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSROOT.html) | 指定编译器的 --sysroot 标志的根目录路径
+| [`CMAKE_FIND_ROOT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH.html)  | 指定备选的根目录查找路径列表
+| [`CMAKE_FIND_`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_INCLUDE.html)<br>[`ROOT_PATH_MODE_INCLUDE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_INCLUDE.html) | 控制查找文件和目录时，<br>是否搜索 [`CMAKE_FIND_ROOT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH.html) 和 [`CMAKE_SYSROOT`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSROOT.html) 中定义的路径
+| [`CMAKE_FIND_`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_LIBRARY.html)<br>[`ROOT_PATH_MODE_LIBRARY`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_LIBRARY.html) | 控制查找库时，<br>是否搜索 [`CMAKE_FIND_ROOT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH.html) 和 [`CMAKE_SYSROOT`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSROOT.html) 中定义的路径
+| [`CMAKE_FIND_`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_PACKAGE.html)<br>[`ROOT_PATH_MODE_PACKAGE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_PACKAGE.html) | 控制查找包时，<br>是否搜索 [`CMAKE_FIND_ROOT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH.html) 和 [`CMAKE_SYSROOT`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSROOT.html) 中定义的路径
+| [`CMAKE_FIND_`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_PROGRAM.html)<br>[`ROOT_PATH_MODE_PROGRAM`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_PROGRAM.html) | 控制查找程序时，<br>是否搜索 [`CMAKE_FIND_ROOT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH.html) 和 [`CMAKE_SYSROOT`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSROOT.html) 中定义的路径
+| [`CMAKE_FIND_`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH.html)<br>[`USE_SYSTEM_ENVIRONMENT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH.html) | 默认为 TRUE，决定是否搜索由标准系统环境变量提供的路径
+
+| 描述系统的内置变量                          | 作用                                   
+| ---                                       | ---    
+| [`CMAKE_SYSTEM_NAME`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSTEM_NAME.html)                     | 目标操作系统名称：`Linux/Windows/Android`
+| [`CMAKE_SYSTEM_PROCESSOR`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSTEM_PROCESSOR.html)           | 目标 CPU 架构：`x86_64/aarch64/loongarch64`
+| [`CMAKE_HOST_SYSTEM_NAME`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_HOST_SYSTEM_NAME.html)           | 本机主机操作系统名称，即 CMake 运行所在的操作系统的名称
+| [`CMAKE_HOST_SYSTEM_PROCESSOR`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_HOST_SYSTEM_PROCESSOR.html) | 本机主机 CPU 架构，即 CMake 运行所在的机器 CPU 名称
+| [`UNIX`](https://cmake.com.cn/cmake/help/latest/variable/UNIX.html)                                               | 当目标系统为 UNIX 或类 UNIX 系统时，设置为 true
+| [`WIN32`](https://cmake.com.cn/cmake/help/latest/variable/WIN32.html)                                             | 当目标系统为 Windows（包括 Win64）时，设置为 true
+| [`LINUX`](https://cmake.com.cn/cmake/help/latest/variable/LINUX.html)                                             | 当目标系统为 Linux 时，设置为 true
+| [`ANDROID`](https://cmake.com.cn/cmake/help/latest/variable/ANDROID.html)                                         | 当目标系统为 Android 时，设置为 true
+
+
+| 控制构建的内置变量                          | 作用                                   
+| ---                                       | ---    
+| [`CMAKE_LINKER_TYPE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LINKER_TYPE.html)                           | 指定链接步骤将使用的链接器
+| [`CMAKE_EXE_LINKER_FLAGS`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_EXE_LINKER_FLAGS.html)                 | 指定可执行文件的链接标志
+| [`CMAKE_DEBUG_POSTFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_DEBUG_POSTFIX.html)                       | Debug 版本库文件名后缀
+| [`CMAKE_INCLUDE_CURRENT_DIR`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_INCLUDE_CURRENT_DIR.html)           | 自动将当前的源码目录和构建目录添加到包含路径中<br>默认情况下，`CMAKE_INCLUDE_CURRENT_DIR` 为 `OFF`
+| [`CMAKE_SHARED_LINKER_FLAGS`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SHARED_LINKER_FLAGS.html)           | 指定动态库的链接标志
+| [`CMAKE_STATIC_LINKER_FLAGS`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_STATIC_LINKER_FLAGS.html)           | 指定静态库的链接标志
+| [`CMAKE_ARCHIVE_OUTPUT_DIRECTORY`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_ARCHIVE_OUTPUT_DIRECTORY.html) | 指定构建时所有 [`ARCHIVE`](https://cmake.com.cn/cmake/help/latest/manual/cmake-buildsystem.7.html#archive-output-artifacts) 目标文件的存放位置
+| [`CMAKE_LIBRARY_OUTPUT_DIRECTORY`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LIBRARY_OUTPUT_DIRECTORY.html) | 指定构建时所有 [`LIBRARY`](https://cmake.com.cn/cmake/help/latest/manual/cmake-buildsystem.7.html#library-output-artifacts) 目标文件的存放位置
+| [`CMAKE_RUNTIME_OUTPUT_DIRECTORY`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_RUNTIME_OUTPUT_DIRECTORY.html) | 指定构建时所有 [`RUNTIME`](https://cmake.com.cn/cmake/help/latest/manual/cmake-buildsystem.7.html#runtime-output-artifacts) 目标文件的存放位置
+| [`CMAKE_POSITION_INDEPENDENT_CODE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_POSITION_INDEPENDENT_CODE.html) | 设置非 SHARED 或 MODULE 库目标上的 [`POSITION_INDEPENDENT_CODE`](https://cmake.com.cn/cmake/help/latest/prop_tgt/POSITION_INDEPENDENT_CODE.html#prop_tgt:POSITION_INDEPENDENT_CODE) 属性<br>无论如何设置此变量，SHARED 和 MODULE 库目标均默认启用 PIC
+
+
+| 用于语言的内置变量                          | 作用                                   
+| ---                                       | ---    
+| [`CMAKE_C_COMPILER`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_COMPILER.html)                          | 指定 `C` 编译器的完整路径
+| [`CMAKE_C_COMPILER_ID`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_COMPILER_ID.html)                    | 指定 `C` 编译器标识字符串
+| [`CMAKE_C_STANDARD`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_C_STANDARD.html)                             | 用于设置 [`C_STANDARD`](https://cmake.com.cn/cmake/help/latest/prop_tgt/C_STANDARD.html#prop_tgt:C_STANDARD)，指定构建目标时所请求的 `C` 标准特性
+| [`CMAKE_C_STANDARD_REQUIRED`](https://cmake.com.cn/cmake/help/latest/prop_tgt/C_STANDARD_REQUIRED.html#prop_tgt:C_STANDARD_REQUIRED) | 布尔值，描述 [`C_STANDARD`](https://cmake.com.cn/cmake/help/latest/prop_tgt/C_STANDARD.html#prop_tgt:C_STANDARD) 的值是否为强制要求
+| [`CMAKE_C_FLAGS`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS.html)                                | 指定 `C` 语言编译选项
+| [`CMAKE_C_FLAGS_DEBUG`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_DEBUG.html)                    | `C` 语言在 `Debug` 配置下构建时使用的编译选项
+| [`CMAKE_C_FLAGS_RELEASE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_RELEASE.html)                | `C` 语言在 `Release` 配置下构建时使用的编译选项
+| [`CMAKE_C_FLAGS_RELWITHDEBINFO`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_RELWITHDEBINFO.html)  | `C` 语言在 `RelWithDebInfo` 配置下构建时使用的编译选项
+| [`CMAKE_C_FLAGS_MINSIZEREL`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_MINSIZEREL.html)          | `C` 语言在 `MinSizeRel` 配置下构建时使用的编译选项
+| [`CMAKE_CXX_COMPILER`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_COMPILER.html)                        | `CXX` 编译器的完整路径
+| [`CMAKE_CXX_COMPILER_ID`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_COMPILER_ID.html)                  | 指定 `CXX` 编译器标识字符串
+| [`CMAKE_CXX_STANDARD`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_CXX_STANDARD.html)                         | 用于设置 [`CXX_STANDARD`](https://cmake.com.cn/cmake/help/latest/prop_tgt/CXX_STANDARD.html#prop_tgt:CXX_STANDARD)，指定构建目标时所请求的 `CXX` 标准特性
+| [`CMAKE_CXX_STANDARD_REQUIRED`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_CXX_STANDARD_REQUIRED.html)       | 布尔值，描述 [`CXX_STANDARD`](https://cmake.com.cn/cmake/help/latest/prop_tgt/CXX_STANDARD.html#prop_tgt:CXX_STANDARD) 的值是否为强制要求
+| [`CMAKE_CXX_FLAGS`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS.html)                              | 指定 `CXX` 语言编译选项
+| [`CMAKE_CXX_FLAGS_DEBUG`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_DEBUG.html)                  | `CXX` 语言在 `Debug` 配置下构建时使用的编译选项
+| [`CMAKE_CXX_FLAGS_RELEASE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_RELEASE.html)              | `CXX` 语言在 `Release` 配置下构建时使用的编译选项
+| [`CMAKE_CXX_FLAGS_RELWITHDEBINFO`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_RELWITHDEBINFO.html) | `CXX` 语言在 `RelWithDebInfo` 配置下构建时使用的编译选项
+| [`CMAKE_CXX_FLAGS_MINSIZEREL`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_MINSIZEREL.html)        | `CXX` 语言在 `MinSizeRel` 配置下构建时使用的编译选项
+
 ##### 4.2.1.2 环境变量 
 
-使用 `cmake -E environment` 命令行工具可显示所有当前环境变量。
+根据用途可分为改变行为、控制构建和针对编程语言三类环境变量，使用 `cmake -E environment` 命令行工具可显示所有当前环境变量。
 
-改变行为的环境变量
+* 改变行为的环境变量
 
-[`CMAKE_INCLUDE_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_INCLUDE_PATH.html)
+  | 环境变量                | 作用                                   
+  | ---                    | ---                               
+  | [`CMAKE_INCLUDE_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_INCLUDE_PATH.html)  | 供 find_file() 和 find_path() 命令搜索。
+  | [`CMAKE_LIBRARY_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_LIBRARY_PATH.html)  | 供 find_library() 命令在其中进行搜索。
+  | [`CMAKE_PROGRAM_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_PROGRAM_PATH.html)  | 供 find_program() 命令搜索。
 
-供 find_file() 和 find_path() 命令搜索。
+  这些路径类型环境变量可以被设置为单个目录，或在 UNIX 上用 : 分隔，在 Windows 上用 ; 分隔的目录列表。
 
-[`CMAKE_LIBRARY_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_LIBRARY_PATH.html)
+* 控制构建的环境变量
 
-供 find_library() 命令在其中进行搜索。
+  | 环境变量                | 作用                        | 说明                                
+  | ---                    | ---                         | --- 
+  | [`CMAKE_BUILD_TYPE`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_BUILD_TYPE.html) | 首次构建时为 CMAKE_BUILD_TYPE 变量提供默认值
+  | [`CMAKE_GENERATOR`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_GENERATOR.html)   | 未使用 `-G` 指定生成器时，作为 CMake 默认生成器 | 传入无效值则使用 CMake 内置默认，无论如何最终生效值存入 CMAKE_GENERATOR 变量
+  | [`CMAKE_INSTALL_PREFIX`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_INSTALL_PREFIX.html) | 覆盖 CMake 默认安装前缀    | 指定目录值必须是绝对路径
+  | [`CMAKE_TOOLCHAIN_FILE`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_TOOLCHAIN_FILE.html) | 首次构建时指定默认工具链文件  | 
+  | [`DESTDIR`](https://cmake.com.cn/cmake/help/latest/envvar/DESTDIR.html)                           | 在 UNIX 系统上重定向安装路径  | 例如：make DESTDIR=/package/stage install
+  | [`VERBOSE`](https://cmake.com.cn/cmake/help/latest/envvar/VERBOSE.html)                           | 开启 CMake 与底层构建工具的详细日志输出 |
+  | [`CMAKE_NO_VERBOSE`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_NO_VERBOSE.html)         | 禁用来自 CMake 的详细输出   |
 
-[`CMAKE_PROGRAM_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_PROGRAM_PATH.html)
+* 针对编程语言的环境变量
 
-供 find_program() 命令搜索。
-
-这些路径类型环境变量可以被设置为单个目录，或在 UNIX 上用 : 分隔，在 Windows 上用 ; 分隔的目录列表。
-
-控制构建的环境变量
-
-[`CMAKE_BUILD_TYPE`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_BUILD_TYPE.html)
-
-CMAKE_BUILD_TYPE 环境变量指定了在创建新构建树的首次运行时，如果没有给出明确的配置，则为 CMAKE_BUILD_TYPE 变量提供的默认值。
-
-[`CMAKE_GENERATOR`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_GENERATOR.html)
-
-指定在使用 -G 未提供生成器时，CMake 所使用的默认生成器。如果提供的值不是 CMake 已知的生成器，则使用内部默认值。无论哪种情况，最终选定的生成器都将存储在 CMAKE_GENERATOR 变量中。
-
-[`CMAKE_INSTALL_PREFIX`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_INSTALL_PREFIX.html)
-
-CMAKE_INSTALL_PREFIX 环境变量用于为 CMAKE_INSTALL_PREFIX 变量指定一个自定义的默认值，以替代 CMake 自身指定的默认值。指定的值必须是一个目录的绝对路径。
-
-[`CMAKE_NO_VERBOSE`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_NO_VERBOSE.html)
-
-当设置了 VERBOSE 环境变量时，禁用来自 CMake 的详细输出。
-
-[`CMAKE_TOOLCHAIN_FILE`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_TOOLCHAIN_FILE.html)
-
-CMAKE_TOOLCHAIN_FILE 环境变量为 CMAKE_TOOLCHAIN_FILE 变量指定了一个默认值，适用于在创建新构建树的首次运行时没有提供显式配置的情况。在现有构建树的后续运行中，该值将作为 CMAKE_TOOLCHAIN_FILE 持久化在缓存中。
-
-[`DESTDIR`](https://cmake.com.cn/cmake/help/latest/envvar/DESTDIR.html)
-
-在 UNIX 系统上，可以使用 DESTDIR 机制来重定向整个安装路径。它通常被打包人员用于将软件安装到暂存目录（staging directory）中。例如，运行
-
-make DESTDIR=/package/stage install
-
-[`LDFLAGS`](https://cmake.com.cn/cmake/help/latest/envvar/LDFLAGS.html)
-
-CMake 仅在首次配置时使用它来确定默认的链接器标志，之后 LDFLAGS 的值将作为 CMAKE_EXE_LINKER_FLAGS_INIT、CMAKE_SHARED_LINKER_FLAGS_INIT 以及 CMAKE_MODULE_LINKER_FLAGS_INIT 存储在缓存中。对于任何配置运行（包括第一次），如果定义了相应的 CMAKE_<TYPE>_LINKER_FLAGS_INIT 变量，该环境变量将被忽略。
-
-[`VERBOSE`](https://cmake.com.cn/cmake/help/latest/envvar/VERBOSE.html)
-
-激活 CMake 以及您选择的构建工具的详细输出（verbose output）。
-
-针对编程语言的环境变量
-
-[`CC`](https://cmake.com.cn/cmake/help/latest/envvar/CC.html)
-
-用于编译 C 语言文件的首选可执行文件。CMake 仅在首次配置时使用它来确定 C 编译器，之后 CC 的值将作为 CMAKE_C_COMPILER 存储在缓存中。对于任何配置运行（包括首次运行），如果定义了 CMAKE_C_COMPILER 变量，则该环境变量将被忽略。
-
-[`CFLAGS`](https://cmake.com.cn/cmake/help/latest/envvar/CFLAGS.html)
-
-添加在编译 C 文件时使用的默认编译标志。CMake 使用此环境变量的值，结合其针对工具链的内置默认标志，来初始化并存储 CMAKE_C_FLAGS 缓存条目。这发生在首次为 C 语言配置构建树时。对于任何配置运行（包括第一次），如果 CMAKE_C_FLAGS 变量已经定义，则该环境变量将被忽略。
-
-[`CXX`](https://cmake.com.cn/cmake/help/latest/envvar/CXX.html)
-
-用于编译 CXX 语言文件的首选可执行文件。CMake 仅在首次配置时使用它来确定 CXX 编译器，之后 CXX 的值将作为 CMAKE_CXX_COMPILER 存储在缓存中。对于任何配置运行（包括第一次），如果定义了 CMAKE_CXX_COMPILER 变量，则将忽略该环境变量。
-
-[`CXXFLAGS`](https://cmake.com.cn/cmake/help/latest/envvar/CXXFLAGS.html)
-
-添加在编译 CXX (C++) 文件时使用的默认编译标志。CMake 使用该环境变量的值，结合其针对工具链的内置默认标志，来初始化并存储 CMAKE_CXX_FLAGS 缓存项。这发生在首次为 CXX 语言配置构建树时。对于任何配置运行（包括首次运行），如果 CMAKE_CXX_FLAGS 变量已经定义，则该环境变量将被忽略。
+  | 环境变量                | 作用                        | 说明                                          
+  | ---                    | ---                         | ---   
+  | [`CC`](https://cmake.com.cn/cmake/help/latest/envvar/CC.html)             | 指定 C 语言编译器               | 仅在首次配置生效，之后将存入 CMAKE_C_COMPILER 缓存；对于任何配置运行（包括首次），如果定义了 CMAKE_C_COMPILER 变量则该环境变量将被忽略
+  | [`CFLAGS`](https://cmake.com.cn/cmake/help/latest/envvar/CFLAGS.html)     | 添加编译 C 文件时使用的编译选项  | 仅在首次配置生效；对于任何配置运行（包括首次），如果定义了 CMAKE_C_FLAGS 变量，则该环境变量将被忽略。
+  | [`CXX`](https://cmake.com.cn/cmake/help/latest/envvar/CXX.html)           | 指定 CXX 语言编译器             | 仅在首次配置生效，之后将存入 CMAKE_CXX_COMPILER 缓存；对于任何配置运行（包括首次），如果定义了 CMAKE_CXX_COMPILER 变量则该环境变量将被忽略
+  | [`CXXFLAGS`](https://cmake.com.cn/cmake/help/latest/envvar/CXXFLAGS.html) | 添加编译 C 文件时使用的编译选项   | 仅在首次配置生效；对于任何配置运行（包括首次），如果定义了 CMAKE_CXX_FLAGS 变量，则该环境变量将被忽略。
 
 ##### 4.2.1.3 缓存变量
 
-由 `-D` 标志和 [`option()`](https://cmake.com.cn/cmake/help/latest/command/option.html#command:option) 命令创建的是缓存（cache）变量。缓存变量是全局可见的变量，且具有“粘性”，一旦设置后就很难改变。如果一个缓存变量被设置了一次，它将一直保留，直到被另一个 `-D` 标志覆盖。[`set()`](https://cmake.com.cn/cmake/help/latest/command/set.html#command:set) 也可以用来操作缓存变量，但不会改变已经创建的变量。
+由 `-D` 标志和 [`option()`](https://cmake.com.cn/cmake/help/latest/command/option.html#command:option) 命令创建的是缓存（cache）变量。通常保存在 `CMakeCache.txt` 文件中。缓存变量是全局可见的变量，且具有“粘性”，一旦设置后就很难改变。如果一个缓存变量被设置了一次，它将一直保留，直到被另一个 `-D` 标志覆盖。[`set()`](https://cmake.com.cn/cmake/help/latest/command/set.html#command:set) 也可以用来操作缓存变量，但不会改变已经创建的变量。
 
 <iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:55,endLineNumber:4,positionColumn:55,positionLineNumber:4,selectionStartColumn:55,selectionStartLineNumber:4,startColumn:55,startLineNumber:4),source:'set(StickyCacheVariable+%22I+will+not+change%22+CACHE+STRING+%22%22)%0Aset(StickyCacheVariable+%22Overwrite+StickyCache%22+CACHE+STRING+%22%22)%0A%0Amessage(%22StickyCacheVariable:+$%7BStickyCacheVariable%7D%22)'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'1',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,options:'',source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
 
@@ -800,8 +860,11 @@ target_include_directories(myExe
 | [`INTERFACE_LINK_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_OPTIONS.html#prop_tgt:INTERFACE_LINK_OPTIONS)	              | 用于链接目标消费者（如果是可执行文件、共享库或模块库）的链接选项列表。
 | [`INTERFACE_LINK_DEPENDS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_DEPENDS.html#prop_tgt:INTERFACE_LINK_DEPENDS)	              | 链接目标消费者（如果是可执行文件、共享库或模块库）所依赖的文件列表。
 
-
-## References
+## 6. CMake 模块
+## 7. CMake 包
+## 8. CMake 属性
+## 9. CMake 工具链
+## 10. References
 >
 > * [GNU Automake](https://www.gnu.org/software/automake/manual/html_node/index.html)
 >
@@ -812,3 +875,4 @@ target_include_directories(myExe
 > * [CMake 参考文档中文版](https://cmake.com.cn/cmake/help/latest/)
 >
 > 
+
