@@ -83,7 +83,7 @@ class GAMEPLAYABILITIES_API UGameplayAbility : public UObject, public IGameplayT
 };
 ```
 
-## Actor
+## NewObject 与 LoadObject
 
 ```c++
 /* Struct of optional parameters passed to SpawnActor function(s). */
@@ -756,3 +756,233 @@ enum class ETriggerEvent : uint8
 	Completed	= (1 << 4),	// ETriggerState (Triggered -> None)
 };
 ```
+
+## GENERATED_BODY()
+
+GENERATED_BODY() 在 AActor 类声明中展开为一下内容：
+
+```c++
+__pragma (warning(push)) 
+__pragma (warning(disable: 4995)) 
+__pragma (warning(disable: 4996)) 
+
+public: 
+static void execMakeNoise(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetComponentsByInterface(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetComponentsByTag(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execFindComponentByTag(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_GetComponentsByClass(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetComponentByClass(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetActorEyesViewPoint(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execPrestreamTextures(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execForceNetUpdate(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execWasRecentlyRendered(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetTickGroup(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetAttachedActors(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetAttachParentSocketName(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetAttachParentActor(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetLevelTransform(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetLevel(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_TeleportTo(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetParentActor(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetParentComponent(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetAllChildActors(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execIsChildActor(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execFlushNetDormancy(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetNetDormancy(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execIsOverlappingActor(UObject* Context, FFrame& Stack, void* const Z_Param__Result);
+static void execGetOwner(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetOwner(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execOnRep_ReplicatedMovement(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetActorTickInterval(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetActorTickInterval(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execIsActorTickEnabled(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetActorTickEnabled(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetLifeSpan(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetLifeSpan(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetOverlappingComponents(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetOverlappingActors(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execIsActorBeingDestroyed(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetGameTimeSinceCreation(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetTickableWhenPaused(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetTickableWhenPaused(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execRemoveTickPrerequisiteComponent(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execRemoveTickPrerequisiteActor(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execAddTickPrerequisiteComponent(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execAddTickPrerequisiteActor(UObject* Context, FFrame& Stack, void* const Z_Param__Result);
+static void execGetActorTimeDilation(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execActorHasTag(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_DetachFromActor(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execDetachRootComponentFromParent(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_AttachToActor(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_AttachRootComponentToActor(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_AttachToComponent(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_AttachRootComponentTo(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execFinishAddComponent(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execAddComponentByClass(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execAddComponent(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execHasAuthority(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_DestroyActor(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetActorEnableCollision(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetActorEnableCollision(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetActorHiddenInGame(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetActorRelativeScale3D(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetActorRelativeScale3D(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_SetActorRelativeTransform(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_SetActorRelativeRotation(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_SetActorRelativeLocation(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_AddActorLocalTransform(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_AddActorLocalRotation(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_AddActorLocalOffset(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_SetActorTransform(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_AddActorWorldTransformKeepScale(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_AddActorWorldTransform(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_AddActorWorldRotation(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_AddActorWorldOffset(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetHorizontalDotProductTo(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetDotProductTo(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetVerticalDistanceTo(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetSquaredHorizontalDistanceTo(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetHorizontalDistanceTo(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetSquaredDistanceTo(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetDistanceTo(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetActorScale3D(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetActorScale3D(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_SetActorLocationAndRotation(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_SetActorRotation(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetVelocity(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_GetRootComponent(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetActorBounds(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetActorRightVector(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetActorUpVector(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetActorForwardVector(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_GetActorRotation(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_SetActorLocation(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execK2_GetActorLocation(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetTransform(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetInstigatorController(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetInstigator(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetInputVectorAxisValue(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetInputAxisKeyValue(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetInputAxisValue(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execDisableInput(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execCreateInputComponent(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execEnableInput(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetRayTracingGroupId(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetRayTracingGroupId(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execOnRep_Instigator(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetResimulationThreshold(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execCanTriggerResimulation(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetPhysicsReplicationMode(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetPhysicsReplicationMode(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execOnRep_AttachmentReplication(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetRemoteRole(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetLocalRole(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetReplicateMovement(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetReplicates(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execOnRep_Owner(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetAutoDestroyWhenFinished(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execTearOff(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execOnRep_ReplicateMovement(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetFolderPath(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetFolderPath(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetActorLabel(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetActorLabel(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execGetDefaultActorLabel(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execIsSelectable(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execIsEditable(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execIsTemporarilyHiddenInEditor(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execSetIsTemporarilyHiddenInEditor(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execIsHiddenEd(UObject* Context, FFrame& Stack, void* const Z_Param__Result); 
+static void execIsHiddenEdAtStartup(UObject* Context, FFrame& Stack, void* const Z_Param__Result);  
+
+private: 
+static void StaticRegisterNativesAActor(); 
+friend struct Z_Construct_UClass_AActor_Statics; 
+
+public: 
+
+private: 
+AActor& operator=(AActor&&); 
+AActor& operator=(const AActor&); 
+__declspec(dllimport) static UClass* GetPrivateStaticClass(); 
+
+public: 
+static constexpr EClassFlags StaticClassFlags = EClassFlags((0 | CLASS_Config | CLASS_Intrinsic)); 
+typedef UObject Super; typedef AActor ThisClass; 
+inline static UClass* StaticClass() {
+    return GetPrivateStaticClass();
+} 
+inline static const TCHAR* StaticPackage() {
+    return L"/Script/Engine";
+} 
+inline static EClassCastFlags StaticClassCastFlags() {
+    return CASTCLASS_AActor;
+} 
+inline void* operator new(const size_t InSize, EInternal InInternalOnly, UObject* InOuter = (UObject*)GetTransientPackage(), FName InName = NAME_None, EObjectFlags InSetFlags = RF_NoFlags) {
+    return StaticAllocateObject(StaticClass(), InOuter, InName, InSetFlags);
+} 
+inline void* operator new(const size_t InSize, EInternal* InMem) {
+    return (void*)InMem;
+} 
+inline void operator delete(void* InMem) {
+    ::operator delete(InMem);
+} 
+friend FArchive& operator<<(FArchive& Ar, AActor*& Res) {
+    return Ar << (UObject*&)Res;
+} 
+friend void operator<<(FStructuredArchive::FSlot InSlot, AActor*& Res) {
+    InSlot << (UObject*&)Res;
+} 
+virtual __declspec(dllimport) void Serialize(FStructuredArchive::FRecord Record) override; 
+static const TCHAR* StaticConfigName() {
+    return L"Engine";
+} 
+enum class ENetFields_Private : uint16 {
+    NETFIELD_REP_START = (uint16)((int32)Super::ENetFields_Private::NETFIELD_REP_END + (int32)1), bReplicateMovement = NETFIELD_REP_START, bHidden, bTearOff, bCanBeDamaged, RemoteRole, AttachmentReplication, ReplicatedMovement, Owner, Role, Instigator, NETFIELD_REP_END = Instigator
+}; 
+__declspec(dllimport) virtual void ValidateGeneratedRepEnums(const TArray<struct FRepRecord>& ClassReps) const override; 
+
+private: 
+
+private: 
+uint64 NetPushId_Internal = uint64(int64(INDEX_NONE)); 
+virtual void SetNetPushIdDynamic(const uint64 InNetPushId) override final {
+    NetPushId_Internal = InNetPushId;
+} 
+
+public: 
+virtual uint64 GetNetPushIdDynamic() const override final {
+    return GetNetPushId();
+} 
+uint64 GetNetPushId() const {
+    return NetPushId_Internal;
+} 
+
+public: 
+
+private: 
+AActor(AActor&&); 
+AActor(const AActor&); 
+
+public: 
+__declspec(dllimport) AActor(FVTableHelper& Helper);; 
+static UObject* __VTableCtorCaller(FVTableHelper& Helper) {
+    return new (EC_InternalUseOnlyConstructor, (UObject*)GetTransientPackage(), NAME_None, RF_NeedLoad | RF_ClassDefaultObject | RF_TagGarbageTemp) AActor(Helper);
+}; 
+static void __DefaultConstructor(const FObjectInitializer& X) {
+    new((EInternal*)X.GetObj())AActor(X);
+} 
+__declspec(dllimport) virtual ~AActor(); 
+
+private: 
+__pragma (warning(pop));
+```
+
+## Shader resource view (SRV)：着色器资源视图
+
+## Unordered access view (UAV)：无序访问视图
+
+无序访问视图 (UAV) 是无序访问资源的视图（可包括缓冲区、纹理和纹理数组，但无需多次采样）。 使用 UAV 可通过多个线程临时进行无序读/写访问。 这意味着此资源类型可由多个线程同时读/写，且不会产生内存冲突。 这种同时访问是通过使用 Atomic Functions（原子函数）来进行的。
+
+## Pipeline State Object (PSO): 管线状态对象
