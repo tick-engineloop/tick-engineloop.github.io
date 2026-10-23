@@ -40,12 +40,20 @@ html {
       --tbl-line-color: #e6e6e6;
       --tbl-head-bg: #f7f7f7;
       --tbl-stripe-bg: #fafafa;
+      --hover-card-border: #e5e7eb;
+      --hover-card-bg-from: #f8fafc;
+      --hover-card-bg-to: #f1f5f9;
+      --hover-card-shadow: rgba(0, 0, 0, 0.08);
     }
 
     &[data-mode='dark'] {
       --tbl-line-color: #38393c;
       --tbl-head-bg: #2a2a2d;
       --tbl-stripe-bg: #232326;
+      --hover-card-border: #34353a;
+      --hover-card-bg-from: #232326;
+      --hover-card-bg-to: #1e1e21;
+      --hover-card-shadow: rgba(0, 0, 0, 0.55);
     }
   }
 
@@ -55,12 +63,20 @@ html {
       --tbl-line-color: #38393c;
       --tbl-head-bg: #2a2a2d;
       --tbl-stripe-bg: #232326;
+      --hover-card-border: #34353a;
+      --hover-card-bg-from: #232326;
+      --hover-card-bg-to: #1e1e21;
+      --hover-card-shadow: rgba(0, 0, 0, 0.55);
     }
 
     &[data-mode='light'] {
       --tbl-line-color: #e6e6e6;
       --tbl-head-bg: #f7f7f7;
       --tbl-stripe-bg: #fafafa;
+      --hover-card-border: #e5e7eb;
+      --hover-card-bg-from: #f8fafc;
+      --hover-card-bg-to: #f1f5f9;
+      --hover-card-shadow: rgba(0, 0, 0, 0.08);
     }
   }
 }
@@ -119,4 +135,65 @@ div.content .table-wrapper > table tbody tr:last-child td:first-child {
 
 div.content .table-wrapper > table tbody tr:last-child td:last-child {
   border-bottom-right-radius: 0.5rem;
+}
+
+/* ---------- Hover card ---------- */
+
+/*
+ * Usage (kramdown block IAL on the line directly after the blockquote):
+ *
+ *   > **标题**
+ *   >
+ *   > 说明文字
+ *   {: .hover-card }
+ */
+div.content blockquote.hover-card {
+  position: relative;
+  z-index: 0;
+  margin: 1.25rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--hover-card-border);
+  border-radius: 0.75rem;
+  background: linear-gradient(
+    135deg,
+    var(--hover-card-bg-from),
+    var(--hover-card-bg-to)
+  );
+  color: var(--text-color);
+  box-shadow: 0 0 0 transparent;
+  transform: translateY(0);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+div.content blockquote.hover-card > :first-child {
+  margin-top: 0;
+}
+
+div.content blockquote.hover-card > :last-child {
+  margin-bottom: 0;
+}
+
+div.content blockquote.hover-card:hover,
+div.content blockquote.hover-card:focus-within {
+  z-index: 1;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px var(--hover-card-shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  div.content blockquote.hover-card {
+    transition: none;
+  }
+
+  div.content blockquote.hover-card:hover,
+  div.content blockquote.hover-card:focus-within {
+    transform: none;
+  }
+}
+
+/* Touch devices never hover: keep the card slightly raised at rest. */
+@media (hover: none) {
+  div.content blockquote.hover-card {
+    box-shadow: 0 2px 8px var(--hover-card-shadow);
+  }
 }
