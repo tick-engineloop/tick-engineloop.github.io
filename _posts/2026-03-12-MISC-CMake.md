@@ -441,6 +441,14 @@ add_executable(hello world.c)
 ```
 命令名称不区分大小写。
 
+#### 4.3.3 命令分类
+
+##### 4.3.3.1 脚本命令
+
+##### 4.3.3.2 项目命令
+
+##### 4.3.3.3 CTest 命令
+
 ### 4.4 函数和宏
 
 通过将相同或相似的功能进行抽象形成宏或函数，可避免在文件中出现大量重复相似的命令集，这可以借助 [`function()`](https://cmake.com.cn/cmake/help/latest/command/function.html#command:function) 和 [`macro()`](https://cmake.com.cn/cmake/help/latest/command/macro.html#command:macro) 来实现。
@@ -861,6 +869,70 @@ target_include_directories(myExe
 | [`INTERFACE_LINK_DEPENDS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_DEPENDS.html#prop_tgt:INTERFACE_LINK_DEPENDS)	              | 链接目标消费者（如果是可执行文件、共享库或模块库）所依赖的文件列表。
 
 ## 6. CMake 模块
+
+CMake 利用代码重用技术创建可重用的模块，称之cmake-modules。模块的位置可以使用模块文件的完整路径指定，也可以让 CMake 自己查找模块。CMake 将在 CMAKE_MODULE_PATH 指定的目录中查找模块；如果无法在该目录中找到模块，它将在 Modules 安装子目录中查找。模块可以细分为几个主要类别：
+
+### 6.1 查找模块
+
+以下列举了 CMake 提供的常用内建查找模块，，更多的请查阅 [cmake-modules](https://cmake.com.cn/cmake/help/latest/manual/cmake-modules.7.html)：
+
+| 模块名称         | 模块名称      | 模块名称      | 模块名称         | 模块名称        | 模块名称
+| ---             | ---          | ---           | ---             | ---            | --- 
+| [FindALSA](https://cmake.com.cn/cmake/help/latest/module/FindALSA.html) | [FindBLAS](https://cmake.com.cn/cmake/help/latest/module/FindBLAS.html) | [FindCURL](https://cmake.com.cn/cmake/help/latest/module/FindCURL.html) | [FindEXPAT](https://cmake.com.cn/cmake/help/latest/module/FindEXPAT.html)  | [FindFLEX](https://cmake.com.cn/cmake/help/latest/module/FindFLEX.html) | [FindFontconfig](https://cmake.com.cn/cmake/help/latest/module/FindFontconfig.html)
+| [FindFreetype](https://cmake.com.cn/cmake/help/latest/module/FindFreetype.html) | [FindGit](https://cmake.com.cn/cmake/help/latest/module/FindGit.html) | [FindGLEW](https://cmake.com.cn/cmake/help/latest/module/FindGLEW.html) | [FindGLUT](https://cmake.com.cn/cmake/help/latest/module/FindGLUT.html) | [FindGTK](https://cmake.com.cn/cmake/help/latest/module/FindGTK.html) | [FindGTK2](https://cmake.com.cn/cmake/help/latest/module/FindGTK2.html)
+| [FindIconv](https://cmake.com.cn/cmake/help/latest/module/FindIconv.html) | [FindJava](https://cmake.com.cn/cmake/help/latest/module/FindJava.html) | [FindJPEG](https://cmake.com.cn/cmake/help/latest/module/FindJPEG.html) | [FindLAPACK](https://cmake.com.cn/cmake/help/latest/module/FindLAPACK.html) | [FindLATEX](https://cmake.com.cn/cmake/help/latest/module/FindLATEX.html) | [FindLibXml2](https://cmake.com.cn/cmake/help/latest/module/FindLibXml2.html) 
+| [FindLua](https://cmake.com.cn/cmake/help/latest/module/FindLua.html) | [FindMPEG](https://cmake.com.cn/cmake/help/latest/module/FindMPEG.html) | [FindODBC](https://cmake.com.cn/cmake/help/latest/module/FindODBC.html) | [FindOpenCL](https://cmake.com.cn/cmake/help/latest/module/FindOpenCL.html) | [FindOpenGL](https://cmake.com.cn/cmake/help/latest/module/FindOpenGL.html) | [FindOpenMP](https://cmake.com.cn/cmake/help/latest/module/FindOpenMP.html)
+| [FindOpenAL](https://cmake.com.cn/cmake/help/latest/module/FindOpenAL.html) | [FindOpenSSL](https://cmake.com.cn/cmake/help/latest/module/FindOpenSSL.html) | [FindOpenThreads](https://cmake.com.cn/cmake/help/latest/module/FindOpenThreads.html) | [FindPatch](https://cmake.com.cn/cmake/help/latest/module/FindPatch.html) | [FindPkgConfig](https://cmake.com.cn/cmake/help/latest/module/FindPkgConfig.html) | [FindPNG](https://cmake.com.cn/cmake/help/latest/module/FindPNG.html) 
+| [FindProtobuf](https://cmake.com.cn/cmake/help/latest/module/FindProtobuf.html) | [FindPython](https://cmake.com.cn/cmake/help/latest/module/FindPython.html) | [FindPython2](https://cmake.com.cn/cmake/help/latest/module/FindPython2.html) | [FindPython3](https://cmake.com.cn/cmake/help/latest/module/FindPython3.html) | [FindRTI](https://cmake.com.cn/cmake/help/latest/module/FindRTI.html) | [FindRuby](https://cmake.com.cn/cmake/help/latest/module/FindRuby.html)
+| [FindSDL](https://cmake.com.cn/cmake/help/latest/module/FindSDL.html) | [FindSQLite3](https://cmake.com.cn/cmake/help/latest/module/FindSQLite3.html) | [FindSWIG](https://cmake.com.cn/cmake/help/latest/module/FindSWIG.html) | [FindThreads](https://cmake.com.cn/cmake/help/latest/module/FindThreads.html) | [FindTIFF](https://cmake.com.cn/cmake/help/latest/module/FindTIFF.html) | [FindVulkan](https://cmake.com.cn/cmake/help/latest/module/FindVulkan.html)
+| [FindWget](https://cmake.com.cn/cmake/help/latest/module/FindWget.html) | [FindwxWidgets](https://cmake.com.cn/cmake/help/latest/module/FindwxWidgets.html) | [FindX11](https://cmake.com.cn/cmake/help/latest/module/FindX11.html) | [FindZLIB](https://cmake.com.cn/cmake/help/latest/module/FindZLIB.html)
+
+
+### 6.2 实用程序模块
+
+以下列举了 CMake 提供的常用内建程序模块，更多的请查阅 [cmake-modules](https://cmake.com.cn/cmake/help/latest/manual/cmake-modules.7.html)：
+
+| 模块名称         | 说明
+| ---             | ---          | ---           | ---             | ---            | --- 
+| [CheckCompilerFlag](https://cmake.com.cn/cmake/help/latest/module/CheckCompilerFlag.html) | 
+| [CheckSourceCompiles](https://cmake.com.cn/cmake/help/latest/module/CheckSourceCompiles.html) | 
+| [CheckSourceRuns](https://cmake.com.cn/cmake/help/latest/module/CheckSourceRuns.html) | 
+| [CheckCCompilerFlag](https://cmake.com.cn/cmake/help/latest/module/CheckCCompilerFlag.html) | 
+| [CheckCSourceCompiles](https://cmake.com.cn/cmake/help/latest/module/CheckCSourceCompiles.html) | 
+| [CheckCSourceRuns](https://cmake.com.cn/cmake/help/latest/module/CheckCSourceRuns.html) | 
+| [CheckCXXCompilerFlag](https://cmake.com.cn/cmake/help/latest/module/CheckCXXCompilerFlag.html) | 
+| [CheckCXXSourceCompiles](https://cmake.com.cn/cmake/help/latest/module/CheckCXXSourceCompiles.html) | 
+| [CheckCXXSourceRuns](https://cmake.com.cn/cmake/help/latest/module/CheckCXXSourceRuns.html) | 
+| [CheckCXXSymbolExists](https://cmake.com.cn/cmake/help/latest/module/CheckCXXSymbolExists.html) | 
+| [CheckFunctionExists](https://cmake.com.cn/cmake/help/latest/module/CheckFunctionExists.html) | 
+| [CheckIncludeFile](https://cmake.com.cn/cmake/help/latest/module/CheckIncludeFile.html) | 
+| [CheckIncludeFileCXX](https://cmake.com.cn/cmake/help/latest/module/CheckIncludeFileCXX.html) | 
+| [CheckIncludeFiles](https://cmake.com.cn/cmake/help/latest/module/CheckIncludeFiles.html) | 
+| [CheckIPOSupported](https://cmake.com.cn/cmake/help/latest/module/CheckIPOSupported.html) | 
+| [CheckLibraryExists](https://cmake.com.cn/cmake/help/latest/module/CheckLibraryExists.html) | 
+| [CheckLinkerFlag](https://cmake.com.cn/cmake/help/latest/module/CheckLinkerFlag.html) | 
+| [CheckPIESupported](https://cmake.com.cn/cmake/help/latest/module/CheckPIESupported.html) | 
+| [CheckStructHasMember](https://cmake.com.cn/cmake/help/latest/module/CheckStructHasMember.html) | 
+| [CheckSymbolExists](https://cmake.com.cn/cmake/help/latest/module/CheckSymbolExists.html) | 
+| [CheckTypeSize](https://cmake.com.cn/cmake/help/latest/module/CheckTypeSize.html) | 
+| [CheckVariableExists](https://cmake.com.cn/cmake/help/latest/module/CheckVariableExists.html) | 
+| [CMakePrintHelpers](https://cmake.com.cn/cmake/help/latest/module/CMakePrintHelpers.html) | 
+| [CMakePrintSystemInformation](https://cmake.com.cn/cmake/help/latest/module/CMakePrintSystemInformation.html) | 
+| [CMakePackageConfigHelpers](https://cmake.com.cn/cmake/help/latest/module/CMakePackageConfigHelpers.html) | 
+| [CMakeDependentOption](https://cmake.com.cn/cmake/help/latest/module/CMakeDependentOption.html) | 
+| [CPack](https://cmake.com.cn/cmake/help/latest/module/CPack.html) | 
+| [CTest](https://cmake.com.cn/cmake/help/latest/module/CTest.html) | 
+| [ExternalData](https://cmake.com.cn/cmake/help/latest/module/ExternalData.html) | 
+| [ExternalProject](https://cmake.com.cn/cmake/help/latest/module/ExternalProject.html) | 
+| [FeatureSummary](https://cmake.com.cn/cmake/help/latest/module/FeatureSummary.html) | 
+| [FetchContent](https://cmake.com.cn/cmake/help/latest/module/FetchContent.html) | 
+| [FindPackageMessage](https://cmake.com.cn/cmake/help/latest/module/FindPackageMessage.html) | 
+| [GenerateExportHeader](https://cmake.com.cn/cmake/help/latest/module/GenerateExportHeader.html) | 
+| [GoogleTest](https://cmake.com.cn/cmake/help/latest/module/GoogleTest.html) | 
+| [ProcessorCount](https://cmake.com.cn/cmake/help/latest/module/ProcessorCount.html) |
+
+### 6.3 自定义模块
+
 ## 7. CMake 包
 ## 8. CMake 属性
 ## 9. CMake 工具链
