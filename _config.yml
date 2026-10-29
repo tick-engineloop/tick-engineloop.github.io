@@ -14,7 +14,7 @@ timezone: Asia/Shanghai
 # jekyll-seo-tag settings › https://github.com/jekyll/jekyll-seo-tag/blob/master/docs/usage.md
 # ↓ --------------------------
 
-title: EngineLoop.Tick # the main title
+title: Tick.EngineLoop # the main title
 
 tagline: What's the point? # it will display as the sub-title
 

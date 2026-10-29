@@ -142,9 +142,9 @@ div.content .table-wrapper > table tbody tr:last-child td:last-child {
 /*
  * Usage (kramdown block IAL on the line directly after the blockquote):
  *
- *   > **标题**
+ *   > **æ ‡é¢˜**
  *   >
- *   > 说明文字
+ *   > è¯´æ˜Žæ–‡å­—
  *   {: .hover-card }
  */
 div.content blockquote.hover-card {
@@ -195,5 +195,71 @@ div.content blockquote.hover-card:focus-within {
 @media (hover: none) {
   div.content blockquote.hover-card {
     box-shadow: 0 2px 8px var(--hover-card-shadow);
+  }
+}
+
+/* ---------- Coolors-style site title ---------- */
+
+/*
+ * `assets/js/site-title-color.js` wraps every character in `.site-title-char`
+ * and hands out the palette colour through `--char-color` / `--char-color-dark`
+ * so the shades follow the active colour scheme.
+ */
+#sidebar .site-title a .site-title-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+#sidebar .site-title a .site-title-char {
+  display: inline-block;
+  transition: color 0.3s cubic-bezier(0.6, 0.4, 0, 1);
+}
+
+#sidebar .site-title a .site-title-char.is-colored {
+  color: var(--char-color, currentColor);
+  animation: site-title-wobble 1s ease;
+}
+
+html[data-mode='dark'] #sidebar .site-title a .site-title-char.is-colored {
+  color: var(--char-color-dark, var(--char-color, currentColor));
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-mode]) #sidebar .site-title a .site-title-char.is-colored {
+    color: var(--char-color-dark, var(--char-color, currentColor));
+  }
+}
+
+@keyframes site-title-wobble {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  15% {
+    transform: translate3d(-25%, 0, 0) rotate3d(0, 0, 1, -5deg);
+  }
+  30% {
+    transform: translate3d(20%, 0, 0) rotate3d(0, 0, 1, 3deg);
+  }
+  45% {
+    transform: translate3d(-15%, 0, 0) rotate3d(0, 0, 1, -3deg);
+  }
+  60% {
+    transform: translate3d(10%, 0, 0) rotate3d(0, 0, 1, 2deg);
+  }
+  75% {
+    transform: translate3d(-5%, 0, 0) rotate3d(0, 0, 1, -1deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #sidebar .site-title a .site-title-char {
+    transition: color 0.2s ease;
+  }
+
+  #sidebar .site-title a .site-title-char.is-colored {
+    animation: none;
   }
 }
