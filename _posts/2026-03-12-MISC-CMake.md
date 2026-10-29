@@ -788,8 +788,8 @@ target_link_libraries(test_exe archiveObjs)
 
 | 类型             | 作用                                          
 | ---             | ---                                    
-| [`LINK_LIBRARIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_LIBRARIES.html#prop_tgt:LINK_LIBRARIES)	        | 此项为链接该目标所需的链接库列表。    <br> 静态库 和 共享库 的条目通过其链接产物的路径，或使用 -l 标志或等效标志传递给链接器。
-| [`LINK_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_DIRECTORIES.html#prop_tgt:LINK_DIRECTORIES)	  | 此项为链接该目标所需的链接目录列表。   <br> 目录通过 -L 标志或等效标志传递给链接器。
+| [`LINK_LIBRARIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_LIBRARIES.html#prop_tgt:LINK_LIBRARIES)	        | 此项为链接该目标所需的链接库列表。  <br> 静态库 和 共享库 的条目通过其链接产物的路径，或使用 -l 标志或等效标志传递给链接器。
+| [`LINK_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_DIRECTORIES.html#prop_tgt:LINK_DIRECTORIES)	  | 此项为链接该目标所需的链接目录列表。  <br> 目录通过 -L 标志或等效标志传递给链接器。
 | [`LINK_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_OPTIONS.html#prop_tgt:LINK_OPTIONS)	              | 此项为链接该目标所需的链接选项列表。  <br> 选项按出现顺序作为标志传递给链接器。
 | [`LINK_DEPENDS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_DEPENDS.html#prop_tgt:LINK_DEPENDS)	              | 此项为链接该目标所依赖的文件列表。  
 
@@ -849,13 +849,13 @@ target_include_directories(myExe
 
 | 类型             | 作用                                          
 | ---             | ---                                    
-| [`INTERFACE_COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_DEFINITIONS.html#prop_tgt:INTERFACE_COMPILE_DEFINITIONS)	                | 用于编译目标消费者中源文件的编译定义列表。    <br> 通常这些由目标的头文件使用。
+| [`INTERFACE_COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_DEFINITIONS.html#prop_tgt:INTERFACE_COMPILE_DEFINITIONS)	        | 用于编译目标消费者中源文件的编译定义列表。    <br> 通常这些由目标的头文件使用。
 | [`INTERFACE_COMPILE_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_OPTIONS.html#prop_tgt:INTERFACE_COMPILE_OPTIONS)	                    | 用于编译目标消费者中源文件的编译选项列表。     
-| [`INTERFACE_COMPILE_FEATURES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_FEATURES.html#prop_tgt:INTERFACE_COMPILE_FEATURES)	                    | 用于编译目标消费者中源文件所需的 编译特性 列表。  
-| [`INTERFACE_INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES)	                | 用于编译目标消费者中源文件的包含目录列表。    <br> 通常这些是目标头文件的位置。
-| [`INTERFACE_SYSTEM_INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_SYSTEM_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)	          | 当指定为包含目录时，<br> 在编译目标消费者中的源文件时应被视为“系统”包含目录的目录列表。
+| [`INTERFACE_COMPILE_FEATURES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_FEATURES.html#prop_tgt:INTERFACE_COMPILE_FEATURES)	                  | 用于编译目标消费者中源文件所需的 编译特性 列表。  
+| [`INTERFACE_INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES)	        | 用于编译目标消费者中源文件的包含目录列表。    <br> 通常这些是目标头文件的位置。
+| [`INTERFACE_SYSTEM_INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_SYSTEM_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)	                                                                                                                    | 当指定为包含目录时，<br> 在编译目标消费者中的源文件时应被视为“系统”包含目录的目录列表。
 | [`INTERFACE_SOURCES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_SOURCES.html#prop_tgt:INTERFACE_SOURCES)  | 要与目标消费者关联的源文件列表。  
-| [`INTERFACE_PRECOMPILE_HEADERS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_PRECOMPILE_HEADERS.html#prop_tgt:INTERFACE_PRECOMPILE_HEADERS)	                  | 编译目标消费者中的源文件时要预编译并包含的头文件列表。
+| [`INTERFACE_PRECOMPILE_HEADERS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_PRECOMPILE_HEADERS.html#prop_tgt:INTERFACE_PRECOMPILE_HEADERS)	            | 编译目标消费者中的源文件时要预编译并包含的头文件列表。
 
 ##### 5.2.3.2 传递链接属性
 
@@ -870,64 +870,70 @@ target_include_directories(myExe
 
 ## 6. CMake 模块
 
-CMake 利用代码重用技术创建可重用的模块，称之cmake-modules。模块的位置可以使用模块文件的完整路径指定，也可以让 CMake 自己查找模块。CMake 将在 CMAKE_MODULE_PATH 指定的目录中查找模块；如果无法在该目录中找到模块，它将在 Modules 安装子目录中查找。模块可以细分为几个主要类别：
+CMake 利用代码重用技术创建可重用的模块，称之 [`cmake-modules`](https://cmake.com.cn/cmake/help/latest/manual/cmake-modules.7.html)。模块的位置可以使用模块文件的完整路径指定，也可以让 CMake 自己查找模块。CMake 将在 CMAKE_MODULE_PATH 指定的目录中查找模块；如果无法在该目录中找到模块，它将在 Modules 安装子目录中查找。模块可以细分为几个主要类别：
 
 ### 6.1 查找模块
 
-以下列举了 CMake 提供的常用内置查找模块，更多的请查阅 [cmake-modules](https://cmake.com.cn/cmake/help/latest/manual/cmake-modules.7.html)：
+以下列举了 CMake 提供的常用内置查找模块，更多的请查阅 [`cmake-modules`](https://cmake.com.cn/cmake/help/latest/manual/cmake-modules.7.html)：
            
-| [FindALSA](https://cmake.com.cn/cmake/help/latest/module/FindALSA.html) | [FindBLAS](https://cmake.com.cn/cmake/help/latest/module/FindBLAS.html) | [FindCURL](https://cmake.com.cn/cmake/help/latest/module/FindCURL.html) | [FindEXPAT](https://cmake.com.cn/cmake/help/latest/module/FindEXPAT.html)  | [FindFLEX](https://cmake.com.cn/cmake/help/latest/module/FindFLEX.html) | [FindFontconfig](https://cmake.com.cn/cmake/help/latest/module/FindFontconfig.html)
-| [FindFreetype](https://cmake.com.cn/cmake/help/latest/module/FindFreetype.html) | [FindGit](https://cmake.com.cn/cmake/help/latest/module/FindGit.html) | [FindGLEW](https://cmake.com.cn/cmake/help/latest/module/FindGLEW.html) | [FindGLUT](https://cmake.com.cn/cmake/help/latest/module/FindGLUT.html) | [FindGTK](https://cmake.com.cn/cmake/help/latest/module/FindGTK.html) | [FindGTK2](https://cmake.com.cn/cmake/help/latest/module/FindGTK2.html)
-| [FindIconv](https://cmake.com.cn/cmake/help/latest/module/FindIconv.html) | [FindJava](https://cmake.com.cn/cmake/help/latest/module/FindJava.html) | [FindJPEG](https://cmake.com.cn/cmake/help/latest/module/FindJPEG.html) | [FindLAPACK](https://cmake.com.cn/cmake/help/latest/module/FindLAPACK.html) | [FindLATEX](https://cmake.com.cn/cmake/help/latest/module/FindLATEX.html) | [FindLibXml2](https://cmake.com.cn/cmake/help/latest/module/FindLibXml2.html) 
-| [FindLua](https://cmake.com.cn/cmake/help/latest/module/FindLua.html) | [FindMPEG](https://cmake.com.cn/cmake/help/latest/module/FindMPEG.html) | [FindODBC](https://cmake.com.cn/cmake/help/latest/module/FindODBC.html) | [FindOpenCL](https://cmake.com.cn/cmake/help/latest/module/FindOpenCL.html) | [FindOpenGL](https://cmake.com.cn/cmake/help/latest/module/FindOpenGL.html) | [FindOpenMP](https://cmake.com.cn/cmake/help/latest/module/FindOpenMP.html)
-| [FindOpenAL](https://cmake.com.cn/cmake/help/latest/module/FindOpenAL.html) | [FindOpenSSL](https://cmake.com.cn/cmake/help/latest/module/FindOpenSSL.html) | [FindOpenThreads](https://cmake.com.cn/cmake/help/latest/module/FindOpenThreads.html) | [FindPatch](https://cmake.com.cn/cmake/help/latest/module/FindPatch.html) | [FindPkgConfig](https://cmake.com.cn/cmake/help/latest/module/FindPkgConfig.html) | [FindPNG](https://cmake.com.cn/cmake/help/latest/module/FindPNG.html) 
-| [FindProtobuf](https://cmake.com.cn/cmake/help/latest/module/FindProtobuf.html) | [FindPython](https://cmake.com.cn/cmake/help/latest/module/FindPython.html) | [FindPython2](https://cmake.com.cn/cmake/help/latest/module/FindPython2.html) | [FindPython3](https://cmake.com.cn/cmake/help/latest/module/FindPython3.html) | [FindRTI](https://cmake.com.cn/cmake/help/latest/module/FindRTI.html) | [FindRuby](https://cmake.com.cn/cmake/help/latest/module/FindRuby.html)
-| [FindSDL](https://cmake.com.cn/cmake/help/latest/module/FindSDL.html) | [FindSQLite3](https://cmake.com.cn/cmake/help/latest/module/FindSQLite3.html) | [FindSWIG](https://cmake.com.cn/cmake/help/latest/module/FindSWIG.html) | [FindThreads](https://cmake.com.cn/cmake/help/latest/module/FindThreads.html) | [FindTIFF](https://cmake.com.cn/cmake/help/latest/module/FindTIFF.html) | [FindVulkan](https://cmake.com.cn/cmake/help/latest/module/FindVulkan.html)
-| [FindWget](https://cmake.com.cn/cmake/help/latest/module/FindWget.html) | [FindwxWidgets](https://cmake.com.cn/cmake/help/latest/module/FindwxWidgets.html) | [FindX11](https://cmake.com.cn/cmake/help/latest/module/FindX11.html) | [FindZLIB](https://cmake.com.cn/cmake/help/latest/module/FindZLIB.html)
+| [`FindALSA`](https://cmake.com.cn/cmake/help/latest/module/FindALSA.html) | [`FindBLAS`](https://cmake.com.cn/cmake/help/latest/module/FindBLAS.html) | [`FindCURL`](https://cmake.com.cn/cmake/help/latest/module/FindCURL.html) | [`FindEXPAT`](https://cmake.com.cn/cmake/help/latest/module/FindEXPAT.html)  | [`FindFLEX`](https://cmake.com.cn/cmake/help/latest/module/FindFLEX.html) | [`FindFontconfig`](https://cmake.com.cn/cmake/help/latest/module/FindFontconfig.html)
+| [`FindFreetype`](https://cmake.com.cn/cmake/help/latest/module/FindFreetype.html) | [`FindGit`](https://cmake.com.cn/cmake/help/latest/module/FindGit.html) | [`FindGLEW`](https://cmake.com.cn/cmake/help/latest/module/FindGLEW.html) | [`FindGLUT`](https://cmake.com.cn/cmake/help/latest/module/FindGLUT.html) | [`FindGTK`](https://cmake.com.cn/cmake/help/latest/module/FindGTK.html) | [`FindGTK2`](https://cmake.com.cn/cmake/help/latest/module/FindGTK2.html)
+| [`FindIconv`](https://cmake.com.cn/cmake/help/latest/module/FindIconv.html) | [`FindJava`](https://cmake.com.cn/cmake/help/latest/module/FindJava.html) | [`FindJPEG`](https://cmake.com.cn/cmake/help/latest/module/FindJPEG.html) | [`FindLAPACK`](https://cmake.com.cn/cmake/help/latest/module/FindLAPACK.html) | [`FindLATEX`](https://cmake.com.cn/cmake/help/latest/module/FindLATEX.html) | [`FindLibXml2`](https://cmake.com.cn/cmake/help/latest/module/FindLibXml2.html) 
+| [`FindLua`](https://cmake.com.cn/cmake/help/latest/module/FindLua.html) | [`FindMPEG`](https://cmake.com.cn/cmake/help/latest/module/FindMPEG.html) | [`FindODBC`](https://cmake.com.cn/cmake/help/latest/module/FindODBC.html) | [`FindOpenCL`](https://cmake.com.cn/cmake/help/latest/module/FindOpenCL.html) | [`FindOpenGL`](https://cmake.com.cn/cmake/help/latest/module/FindOpenGL.html) | [`FindOpenThreads`](https://cmake.com.cn/cmake/help/latest/module/FindOpenThreads.html)
+| [`FindOpenAL`](https://cmake.com.cn/cmake/help/latest/module/FindOpenAL.html) | [`FindOpenSSL`](https://cmake.com.cn/cmake/help/latest/module/FindOpenSSL.html) | [`FindOpenMP`](https://cmake.com.cn/cmake/help/latest/module/FindOpenMP.html) | [`FindPatch`](https://cmake.com.cn/cmake/help/latest/module/FindPatch.html) | [`FindPNG`](https://cmake.com.cn/cmake/help/latest/module/FindPNG.html) | [`FindPkgConfig`](https://cmake.com.cn/cmake/help/latest/module/FindPkgConfig.html) 
+| [`FindProtobuf`](https://cmake.com.cn/cmake/help/latest/module/FindProtobuf.html) | [`FindPython`](https://cmake.com.cn/cmake/help/latest/module/FindPython.html) | [`FindPython2`](https://cmake.com.cn/cmake/help/latest/module/FindPython2.html) | [`FindPython3`](https://cmake.com.cn/cmake/help/latest/module/FindPython3.html) | [`FindRTI`](https://cmake.com.cn/cmake/help/latest/module/FindRTI.html) | [`FindRuby`](https://cmake.com.cn/cmake/help/latest/module/FindRuby.html)
+| [`FindSDL`](https://cmake.com.cn/cmake/help/latest/module/FindSDL.html) | [`FindSQLite3`](https://cmake.com.cn/cmake/help/latest/module/FindSQLite3.html) | [`FindSWIG`](https://cmake.com.cn/cmake/help/latest/module/FindSWIG.html) | [`FindThreads`](https://cmake.com.cn/cmake/help/latest/module/FindThreads.html) | [`FindTIFF`](https://cmake.com.cn/cmake/help/latest/module/FindTIFF.html) | [`FindVulkan`](https://cmake.com.cn/cmake/help/latest/module/FindVulkan.html)
+| [`FindWget`](https://cmake.com.cn/cmake/help/latest/module/FindWget.html) | [`FindX11`](https://cmake.com.cn/cmake/help/latest/module/FindX11.html) | [`FindZLIB`](https://cmake.com.cn/cmake/help/latest/module/FindZLIB.html)
 
+以 [`FindZLIB`](https://cmake.com.cn/cmake/help/latest/module/FindZLIB.html) 模块为例，查找 `zlib` 并将其链接到项目目标，使用方式如下：
+
+```cmake
+find_package(ZLIB)
+target_link_libraries(project_target PRIVATE ZLIB::ZLIB)
+```
 
 ### 6.2 实用程序模块
 
-以下列举了 CMake 提供的常用内置实用程序模块，更多的请查阅 [cmake-modules](https://cmake.com.cn/cmake/help/latest/manual/cmake-modules.7.html)：
+以下列举了 CMake 提供的常用内置实用程序模块，更多的请查阅 [`cmake-modules`](https://cmake.com.cn/cmake/help/latest/manual/cmake-modules.7.html)：
 
 | 模块名称         | 说明
 | ---             | ---          
-| [CheckCompilerFlag](https://cmake.com.cn/cmake/help/latest/module/CheckCompilerFlag.html) | 
-| [CheckSourceCompiles](https://cmake.com.cn/cmake/help/latest/module/CheckSourceCompiles.html) | 
-| [CheckSourceRuns](https://cmake.com.cn/cmake/help/latest/module/CheckSourceRuns.html) | 
-| [CheckCCompilerFlag](https://cmake.com.cn/cmake/help/latest/module/CheckCCompilerFlag.html) | 
-| [CheckCSourceCompiles](https://cmake.com.cn/cmake/help/latest/module/CheckCSourceCompiles.html) | 
-| [CheckCSourceRuns](https://cmake.com.cn/cmake/help/latest/module/CheckCSourceRuns.html) | 
-| [CheckCXXCompilerFlag](https://cmake.com.cn/cmake/help/latest/module/CheckCXXCompilerFlag.html) | 
-| [CheckCXXSourceCompiles](https://cmake.com.cn/cmake/help/latest/module/CheckCXXSourceCompiles.html) | 
-| [CheckCXXSourceRuns](https://cmake.com.cn/cmake/help/latest/module/CheckCXXSourceRuns.html) | 
-| [CheckCXXSymbolExists](https://cmake.com.cn/cmake/help/latest/module/CheckCXXSymbolExists.html) | 
-| [CheckFunctionExists](https://cmake.com.cn/cmake/help/latest/module/CheckFunctionExists.html) | 
-| [CheckIncludeFile](https://cmake.com.cn/cmake/help/latest/module/CheckIncludeFile.html) | 
-| [CheckIncludeFileCXX](https://cmake.com.cn/cmake/help/latest/module/CheckIncludeFileCXX.html) | 
-| [CheckIncludeFiles](https://cmake.com.cn/cmake/help/latest/module/CheckIncludeFiles.html) | 
-| [CheckIPOSupported](https://cmake.com.cn/cmake/help/latest/module/CheckIPOSupported.html) | 
-| [CheckLibraryExists](https://cmake.com.cn/cmake/help/latest/module/CheckLibraryExists.html) | 
-| [CheckLinkerFlag](https://cmake.com.cn/cmake/help/latest/module/CheckLinkerFlag.html) | 
-| [CheckPIESupported](https://cmake.com.cn/cmake/help/latest/module/CheckPIESupported.html) | 
-| [CheckStructHasMember](https://cmake.com.cn/cmake/help/latest/module/CheckStructHasMember.html) | 
-| [CheckSymbolExists](https://cmake.com.cn/cmake/help/latest/module/CheckSymbolExists.html) | 
-| [CheckTypeSize](https://cmake.com.cn/cmake/help/latest/module/CheckTypeSize.html) | 
-| [CheckVariableExists](https://cmake.com.cn/cmake/help/latest/module/CheckVariableExists.html) | 
-| [CMakePrintHelpers](https://cmake.com.cn/cmake/help/latest/module/CMakePrintHelpers.html) | 
-| [CMakePrintSystemInformation](https://cmake.com.cn/cmake/help/latest/module/CMakePrintSystemInformation.html) | 
-| [CMakePackageConfigHelpers](https://cmake.com.cn/cmake/help/latest/module/CMakePackageConfigHelpers.html) | 
-| [CMakeDependentOption](https://cmake.com.cn/cmake/help/latest/module/CMakeDependentOption.html) | 
-| [CPack](https://cmake.com.cn/cmake/help/latest/module/CPack.html) | 
-| [CTest](https://cmake.com.cn/cmake/help/latest/module/CTest.html) | 
-| [ExternalData](https://cmake.com.cn/cmake/help/latest/module/ExternalData.html) | 
-| [ExternalProject](https://cmake.com.cn/cmake/help/latest/module/ExternalProject.html) | 
-| [FeatureSummary](https://cmake.com.cn/cmake/help/latest/module/FeatureSummary.html) | 
-| [FetchContent](https://cmake.com.cn/cmake/help/latest/module/FetchContent.html) | 
-| [FindPackageMessage](https://cmake.com.cn/cmake/help/latest/module/FindPackageMessage.html) | 
-| [GenerateExportHeader](https://cmake.com.cn/cmake/help/latest/module/GenerateExportHeader.html) | 
-| [GoogleTest](https://cmake.com.cn/cmake/help/latest/module/GoogleTest.html) | 
-| [ProcessorCount](https://cmake.com.cn/cmake/help/latest/module/ProcessorCount.html) |
+| [`CheckCompilerFlag`](https://cmake.com.cn/cmake/help/latest/module/CheckCompilerFlag.html)                     | 提供检查编译器是否支持给定标志的命令
+| [`CheckSourceCompiles`](https://cmake.com.cn/cmake/help/latest/module/CheckSourceCompiles.html)                 | 提供检查给定语言的源代码能否被构建的命令
+| [`CheckSourceRuns`](https://cmake.com.cn/cmake/help/latest/module/CheckSourceRuns.html)                         | 提供检查源代码是否可以构建并运行的命令
+| [`CheckCCompilerFlag`](https://cmake.com.cn/cmake/help/latest/module/CheckCCompilerFlag.html)                   | 提供命令用于检查 C 编译器是否支持给定的标志
+| [`CheckCSourceCompiles`](https://cmake.com.cn/cmake/help/latest/module/CheckCSourceCompiles.html)               | 提供检查 C 源代码是否能够构建的命令
+| [`CheckCSourceRuns`](https://cmake.com.cn/cmake/help/latest/module/CheckCSourceRuns.html)                       | 提供检查 C 源代码是否可以构建并运行的命令
+| [`CheckCXXCompilerFlag`](https://cmake.com.cn/cmake/help/latest/module/CheckCXXCompilerFlag.html)               | 提供检查 C++ 编译器是否支持给定标志的命令
+| [`CheckCXXSourceCompiles`](https://cmake.com.cn/cmake/help/latest/module/CheckCXXSourceCompiles.html)           | 提供检查 C++ 源代码是否可以构建的命令
+| [`CheckCXXSourceRuns`](https://cmake.com.cn/cmake/help/latest/module/CheckCXXSourceRuns.html)                   | 提供检查 C++ 源代码是否可以被构建并运行
+| [`CheckCXXSymbolExists`](https://cmake.com.cn/cmake/help/latest/module/CheckCXXSymbolExists.html)               | 提供检查 C++ 符号是否存在的命令
+| [`CheckFunctionExists`](https://cmake.com.cn/cmake/help/latest/module/CheckFunctionExists.html)                 | 提供检查 C 函数是否存在的命令
+| [`CheckIncludeFile`](https://cmake.com.cn/cmake/help/latest/module/CheckIncludeFile.html)                       | 提供检查 C 头文件的命令
+| [`CheckIncludeFileCXX`](https://cmake.com.cn/cmake/help/latest/module/CheckIncludeFileCXX.html)                 | 提供检查 C++ 头文件的命令
+| [`CheckIncludeFiles`](https://cmake.com.cn/cmake/help/latest/module/CheckIncludeFiles.html)                     | 提供检查一个或多个 C/C++ 头文件的命令
+| [`CheckIPOSupported`](https://cmake.com.cn/cmake/help/latest/module/CheckIPOSupported.html)                     | 提供检查编译器是否支持过程间优化（IPO/LTO）的命令
+| [`CheckLibraryExists`](https://cmake.com.cn/cmake/help/latest/module/CheckLibraryExists.html)                   | 提供检查 C 语言库是否存在的命令
+| [`CheckLinkerFlag`](https://cmake.com.cn/cmake/help/latest/module/CheckLinkerFlag.html)                         | 提供检查编译器是否支持给定链接器标志的命令
+| [`CheckPIESupported`](https://cmake.com.cn/cmake/help/latest/module/CheckPIESupported.html)                     | 提供命令用于检查链接器是否支持可执行文件的位置无关代码 (PIE) 
+| [`CheckStructHasMember`](https://cmake.com.cn/cmake/help/latest/module/CheckStructHasMember.html)               | 提供检查结构体或类是否包含指定成员变量的命令
+| [`CheckSymbolExists`](https://cmake.com.cn/cmake/help/latest/module/CheckSymbolExists.html)                     | 提供检查 C 语言符号是否存在的命令
+| [`CheckTypeSize`](https://cmake.com.cn/cmake/help/latest/module/CheckTypeSize.html)                             | 提供检查 C/C++ 类型或表达式大小的命令
+| [`CheckVariableExists`](https://cmake.com.cn/cmake/help/latest/module/CheckVariableExists.html)                 | 提供检查 C 语言变量是否存在的命令
+| [`CMakePrintHelpers`](https://cmake.com.cn/cmake/help/latest/module/CMakePrintHelpers.html)                     | 提供打印属性和变量值的命令
+| [`CMakePrintSystemInformation`](https://cmake.com.cn/cmake/help/latest/module/CMakePrintSystemInformation.html) | 包含此模块将会自动打印系统信息
+| [`CMakePackageConfigHelpers`](https://cmake.com.cn/cmake/help/latest/module/CMakePackageConfigHelpers.html)     | 提供命令用于创建可被其他项目包含以查找和使用包的配置文件
+| [`CMakeDependentOption`](https://cmake.com.cn/cmake/help/latest/module/CMakeDependentOption.html)               | 提供用于定义布尔选项的命令
+| [`CPack`](https://cmake.com.cn/cmake/help/latest/module/CPack.html)                                             | 该模块为二进制安装程序和源码包配置生成器
+| [`CTest`](https://cmake.com.cn/cmake/help/latest/module/CTest.html)                                             | 在项目的顶层 `CMakeLists.txt` 文件中包含此模块，可启用 `CTest` 测试
+| [`ExternalData`](https://cmake.com.cn/cmake/help/latest/module/ExternalData.html)                               | 提供用于管理存储在源树之外的数据文件的命令
+| [`ExternalProject`](https://cmake.com.cn/cmake/help/latest/module/ExternalProject.html)                         | 提供在 CMake 构建阶段下载并构建外部项目的命令
+| [`FeatureSummary`](https://cmake.com.cn/cmake/help/latest/module/FeatureSummary.html)                           | 提供用于生成已启用/已禁用特性摘要的命令
+| [`FetchContent`](https://cmake.com.cn/cmake/help/latest/module/FetchContent.html)                               | 提供在配置时或作为调用脚本的一部分来填充内容的命令
+| [`FindPackageMessage`](https://cmake.com.cn/cmake/help/latest/module/FindPackageMessage.html)                   | 提供用于打印查找结果消息的命令
+| [`GenerateExportHeader`](https://cmake.com.cn/cmake/help/latest/module/GenerateExportHeader.html)               | 提供用于生成头文件的命令
+| [`GoogleTest`](https://cmake.com.cn/cmake/help/latest/module/GoogleTest.html)                                   | 提供用于辅助使用 Google Test 框架的命令
+| [`ProcessorCount`](https://cmake.com.cn/cmake/help/latest/module/ProcessorCount.html)                           | 提供用于确定处理器/核心数量的命令
 
 ### 6.3 自定义模块
 
