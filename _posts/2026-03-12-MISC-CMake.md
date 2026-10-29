@@ -773,25 +773,25 @@ target_link_libraries(test_exe archiveObjs)
 
 这些表示编译目标的 构建规范。
 
-| 类型             | 作用                       | 说明                          
+| 类型             | 作用                                     
 | ---             | ---                                    
-| [`COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS)	        | 用于编译目标中源文件的编译定义列表。    | 它们以未指定的顺序通过 -D 标志或等效标志传递给编译器。
-| [`COMPILE_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_OPTIONS.html#prop_tgt:COMPILE_OPTIONS)	                    | 用于编译目标中源文件的编译选项列表。    | 它们按出现顺序作为标志传递给编译器。
-| [`COMPILE_FEATURES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_FEATURES.html#prop_tgt:COMPILE_FEATURES)	                  | 编译目标中源文件所需的 编译特性 列表。  | 通常，这些确保目标的源文件使用足够的语言标准级别进行编译。
-| [`INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES)	        | 用于编译目标中源文件的包含目录列表。    | 它们按出现顺序通过 -I 或 -isystem 标志或等效标志传递给编译器。
-| [`SOURCES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/SOURCES.html#prop_tgt:SOURCES)	                                            | 与目标关联的源文件列表。  | 包括在通过 add_executable()、add_library() 或 add_custom_target() 命令创建目标时指定的源文件。
+| [`COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS)	        | 用于编译目标中源文件的编译定义列表。    <br> 它们以未指定的顺序通过 -D 标志或等效标志传递给编译器。
+| [`COMPILE_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_OPTIONS.html#prop_tgt:COMPILE_OPTIONS)	                    | 用于编译目标中源文件的编译选项列表。    <br> 它们按出现顺序作为标志传递给编译器。
+| [`COMPILE_FEATURES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_FEATURES.html#prop_tgt:COMPILE_FEATURES)	                  | 编译目标中源文件所需的 编译特性 列表。  <br> 通常，这些确保目标的源文件使用足够的语言标准级别进行编译。
+| [`INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES)	        | 用于编译目标中源文件的包含目录列表。    <br> 它们按出现顺序通过 -I 或 -isystem 标志或等效标志传递给编译器。
+| [`SOURCES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/SOURCES.html#prop_tgt:SOURCES)	                                            | 与目标关联的源文件列表。  <br> 包括在通过 add_executable()、add_library() 或 add_custom_target() 命令创建目标时指定的源文件。
 | [`PRECOMPILE_HEADERS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/PRECOMPILE_HEADERS.html#prop_tgt:PRECOMPILE_HEADERS)	            | 编译目标中源文件时要预编译并包含的头文件列表。
 
 ##### 5.2.2.2 目标链接属性
 
 这些表示链接目标的 构建规范。如果目标是可执行文件、共享库或模块库，则
 
-| 类型             | 作用                       | 说明                          
+| 类型             | 作用                                          
 | ---             | ---                                    
-| [`LINK_LIBRARIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_LIBRARIES.html#prop_tgt:LINK_LIBRARIES)	        | 此项为链接该目标所需的链接库列表。    | 静态库 和 共享库 的条目通过其链接产物的路径，或使用 -l 标志或等效标志传递给链接器。对象库 的条目通过其对象文件的路径传递给链接器。
-| [`LINK_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_DIRECTORIES.html#prop_tgt:LINK_DIRECTORIES)	  | 此项为链接该目标所需的链接目录列表。    | 目录通过 -L 标志或等效标志传递给链接器。
-| [`LINK_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_OPTIONS.html#prop_tgt:LINK_OPTIONS)	              | 此项为链接该目标所需的链接选项列表。  | 选项按出现顺序作为标志传递给链接器。
-| [`LINK_DEPENDS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_DEPENDS.html#prop_tgt:LINK_DEPENDS)	              | 此项为链接该目标所依赖的文件列表。  | 
+| [`LINK_LIBRARIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_LIBRARIES.html#prop_tgt:LINK_LIBRARIES)	        | 此项为链接该目标所需的链接库列表。    <br> 静态库 和 共享库 的条目通过其链接产物的路径，或使用 -l 标志或等效标志传递给链接器。
+| [`LINK_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_DIRECTORIES.html#prop_tgt:LINK_DIRECTORIES)	  | 此项为链接该目标所需的链接目录列表。   <br> 目录通过 -L 标志或等效标志传递给链接器。
+| [`LINK_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_OPTIONS.html#prop_tgt:LINK_OPTIONS)	              | 此项为链接该目标所需的链接选项列表。  <br> 选项按出现顺序作为标志传递给链接器。
+| [`LINK_DEPENDS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_DEPENDS.html#prop_tgt:LINK_DEPENDS)	              | 此项为链接该目标所依赖的文件列表。  
 
 
 #### 5.2.3 目标使用要求
@@ -847,14 +847,14 @@ target_include_directories(myExe
 
 这些表示用于编译消费者的 使用要求。
 
-| 类型             | 作用                       | 说明                          
+| 类型             | 作用                                          
 | ---             | ---                                    
-| [`INTERFACE_COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_DEFINITIONS.html#prop_tgt:INTERFACE_COMPILE_DEFINITIONS)	                | 用于编译目标消费者中源文件的编译定义列表。    | 通常这些由目标的头文件使用。
-| [`INTERFACE_COMPILE_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_OPTIONS.html#prop_tgt:INTERFACE_COMPILE_OPTIONS)	                    | 用于编译目标消费者中源文件的编译选项列表。    | 
-| [`INTERFACE_COMPILE_FEATURES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_FEATURES.html#prop_tgt:INTERFACE_COMPILE_FEATURES)	                    | 用于编译目标消费者中源文件所需的 编译特性 列表。  | 通常，这些确保目标的头文件在消费者使用足够的语言标准级别编译时得到正确处理。
-| [`INTERFACE_INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES)	                | 用于编译目标消费者中源文件的包含目录列表。    | 通常这些是目标头文件的位置。
-| [`INTERFACE_SYSTEM_INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_SYSTEM_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)	          | 当指定为包含目录时，在编译目标消费者中的源文件时应被视为“系统”包含目录的目录列表。    | 例如通过 INCLUDE_DIRECTORIES 或 INTERFACE_INCLUDE_DIRECTORIES
-| [`INTERFACE_SOURCES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_SOURCES.html#prop_tgt:INTERFACE_SOURCES)  | 要与目标消费者关联的源文件列表。  | 
+| [`INTERFACE_COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_DEFINITIONS.html#prop_tgt:INTERFACE_COMPILE_DEFINITIONS)	                | 用于编译目标消费者中源文件的编译定义列表。    <br> 通常这些由目标的头文件使用。
+| [`INTERFACE_COMPILE_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_OPTIONS.html#prop_tgt:INTERFACE_COMPILE_OPTIONS)	                    | 用于编译目标消费者中源文件的编译选项列表。     
+| [`INTERFACE_COMPILE_FEATURES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_FEATURES.html#prop_tgt:INTERFACE_COMPILE_FEATURES)	                    | 用于编译目标消费者中源文件所需的 编译特性 列表。  
+| [`INTERFACE_INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES)	                | 用于编译目标消费者中源文件的包含目录列表。    <br> 通常这些是目标头文件的位置。
+| [`INTERFACE_SYSTEM_INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_SYSTEM_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)	          | 当指定为包含目录时，<br> 在编译目标消费者中的源文件时应被视为“系统”包含目录的目录列表。
+| [`INTERFACE_SOURCES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_SOURCES.html#prop_tgt:INTERFACE_SOURCES)  | 要与目标消费者关联的源文件列表。  
 | [`INTERFACE_PRECOMPILE_HEADERS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_PRECOMPILE_HEADERS.html#prop_tgt:INTERFACE_PRECOMPILE_HEADERS)	                  | 编译目标消费者中的源文件时要预编译并包含的头文件列表。
 
 ##### 5.2.3.2 传递链接属性
@@ -874,10 +874,8 @@ CMake 利用代码重用技术创建可重用的模块，称之cmake-modules。�
 
 ### 6.1 查找模块
 
-以下列举了 CMake 提供的常用内建查找模块，，更多的请查阅 [cmake-modules](https://cmake.com.cn/cmake/help/latest/manual/cmake-modules.7.html)：
-
-| 模块名称         | 模块名称      | 模块名称      | 模块名称         | 模块名称        | 模块名称
-| ---             | ---          | ---           | ---             | ---            | --- 
+以下列举了 CMake 提供的常用内置查找模块，更多的请查阅 [cmake-modules](https://cmake.com.cn/cmake/help/latest/manual/cmake-modules.7.html)：
+           
 | [FindALSA](https://cmake.com.cn/cmake/help/latest/module/FindALSA.html) | [FindBLAS](https://cmake.com.cn/cmake/help/latest/module/FindBLAS.html) | [FindCURL](https://cmake.com.cn/cmake/help/latest/module/FindCURL.html) | [FindEXPAT](https://cmake.com.cn/cmake/help/latest/module/FindEXPAT.html)  | [FindFLEX](https://cmake.com.cn/cmake/help/latest/module/FindFLEX.html) | [FindFontconfig](https://cmake.com.cn/cmake/help/latest/module/FindFontconfig.html)
 | [FindFreetype](https://cmake.com.cn/cmake/help/latest/module/FindFreetype.html) | [FindGit](https://cmake.com.cn/cmake/help/latest/module/FindGit.html) | [FindGLEW](https://cmake.com.cn/cmake/help/latest/module/FindGLEW.html) | [FindGLUT](https://cmake.com.cn/cmake/help/latest/module/FindGLUT.html) | [FindGTK](https://cmake.com.cn/cmake/help/latest/module/FindGTK.html) | [FindGTK2](https://cmake.com.cn/cmake/help/latest/module/FindGTK2.html)
 | [FindIconv](https://cmake.com.cn/cmake/help/latest/module/FindIconv.html) | [FindJava](https://cmake.com.cn/cmake/help/latest/module/FindJava.html) | [FindJPEG](https://cmake.com.cn/cmake/help/latest/module/FindJPEG.html) | [FindLAPACK](https://cmake.com.cn/cmake/help/latest/module/FindLAPACK.html) | [FindLATEX](https://cmake.com.cn/cmake/help/latest/module/FindLATEX.html) | [FindLibXml2](https://cmake.com.cn/cmake/help/latest/module/FindLibXml2.html) 
@@ -890,10 +888,10 @@ CMake 利用代码重用技术创建可重用的模块，称之cmake-modules。�
 
 ### 6.2 实用程序模块
 
-以下列举了 CMake 提供的常用内建程序模块，更多的请查阅 [cmake-modules](https://cmake.com.cn/cmake/help/latest/manual/cmake-modules.7.html)：
+以下列举了 CMake 提供的常用内置实用程序模块，更多的请查阅 [cmake-modules](https://cmake.com.cn/cmake/help/latest/manual/cmake-modules.7.html)：
 
 | 模块名称         | 说明
-| ---             | ---          | ---           | ---             | ---            | --- 
+| ---             | ---          
 | [CheckCompilerFlag](https://cmake.com.cn/cmake/help/latest/module/CheckCompilerFlag.html) | 
 | [CheckSourceCompiles](https://cmake.com.cn/cmake/help/latest/module/CheckSourceCompiles.html) | 
 | [CheckSourceRuns](https://cmake.com.cn/cmake/help/latest/module/CheckSourceRuns.html) | 
