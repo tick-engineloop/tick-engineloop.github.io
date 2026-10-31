@@ -8,8 +8,16 @@
 (() => {
   'use strict';
 
-  const link = document.querySelector('#sidebar .site-title a');
-  if (!link || link.querySelector('.site-title-char')) {
+  const title = document.querySelector('#sidebar .site-title');
+  if (!title) {
+    return;
+  }
+
+  // Chirpy <= 7.1 wraps the title in `<h1 class="site-title"><a>…</a></h1>`,
+  // newer versions put `site-title` straight on the `<a>`. Support both.
+  const link = title.tagName === 'A' ? title : title.querySelector('a') || title;
+
+  if (link.querySelector('.site-title-char')) {
     return;
   }
 
@@ -38,50 +46,48 @@
   // Shared across hovers: every touched letter advances the wheel by one step.
   let cursor = 0;
 
+  // `title: "Tick \u200BEngineLoop"` in `_config.yml` marks the line break with
+  // a zero-width space: invisible on the page and safe from the HTML minifier,
+  // which would otherwise collapse a real newline into a plain space.
   const text = link.textContent;
   link.textContent = '';
-  link.setAttribute('aria-label', text);
+  link.setAttribute('aria-label', text.replace(/[\u200B-\u200D\uFEFF\r\n]+/g, ' ').replace(/\s+/g, ' ').trim());
 
-  // Characters are split per word so the title can still wrap between words
-  // but never inside one. A dot ends the line, so `EngineLoop.Tick` becomes
-  // two stacked lines.
   const chars = [];
 
-  const appendWord = () => {
-    const word = document.createElement('span');
-    word.className = 'site-title-word';
-    word.setAttribute('aria-hidden', 'true');
-    link.appendChild(word);
-    return word;
-  };
-
-  text.split(/(\s+)/).forEach((chunk) => {
-    if (chunk === '') {
+  text.split(/\s*[\u200B-\u200D\uFEFF]\s*|\r?\n/).forEach((lineText) => {
+    if (lineText.trim() === '') {
       return;
     }
 
-    if (/^\s+$/.test(chunk)) {
-      link.appendChild(document.createTextNode(chunk));
-      return;
-    }
+    const line = document.createElement('span');
+    line.className = 'site-title-line';
+    line.setAttribute('aria-hidden', 'true');
+    link.appendChild(line);
 
-    let word = appendWord();
-    const letters = Array.from(chunk);
-
-    letters.forEach((char, index) => {
-      const span = document.createElement('span');
-      span.className = 'site-title-char';
-      span.textContent = char;
-      word.appendChild(span);
-      chars.push(span);
-
-      if (char === '.' && index < letters.length - 1) {
-        const lineBreak = document.createElement('br');
-        lineBreak.className = 'site-title-break';
-        lineBreak.setAttribute('aria-hidden', 'true');
-        link.appendChild(lineBreak);
-        word = appendWord();
+    lineText.split(/(\s+)/).forEach((chunk) => {
+      if (chunk === '') {
+        return;
       }
+
+      if (/^\s+$/.test(chunk)) {
+        line.appendChild(document.createTextNode(chunk));
+        return;
+      }
+
+      // Words stay inline-blocks so a long line can still wrap between words
+      // but never inside one.
+      const word = document.createElement('span');
+      word.className = 'site-title-word';
+      line.appendChild(word);
+
+      Array.from(chunk).forEach((char) => {
+        const span = document.createElement('span');
+        span.className = 'site-title-char';
+        span.textContent = char;
+        word.appendChild(span);
+        chars.push(span);
+      });
     });
   });
 

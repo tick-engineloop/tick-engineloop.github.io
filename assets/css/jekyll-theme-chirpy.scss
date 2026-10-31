@@ -204,28 +204,48 @@ div.content blockquote.hover-card:focus-within {
  * `assets/js/site-title-color.js` wraps every character in `.site-title-char`
  * and hands out the palette colour through `--char-color` / `--char-color-dark`
  * so the shades follow the active colour scheme.
+ *
+ * The selectors stay one level below `.site-title` because Chirpy 7.0 renders
+ * `<h1 class="site-title"><a>` while 7.2+ renders `<a class="site-title">`
+ * directly. Dark mode moved from `data-mode` to `data-bs-theme` in 7.2 too.
  */
-#sidebar .site-title a .site-title-word {
+#sidebar .site-title {
+  /* Line sizes: 第一行 Tick 5rem，第二行 EngineLoop 3rem。改成 `inherit` 则跟随主题。 */
+  --site-title-line-1-size: 5rem;
+  --site-title-line-2-size: 3rem;
+}
+
+#sidebar .site-title .site-title-line {
+  display: block;
+  font-size: var(--site-title-line-1-size);
+}
+
+#sidebar .site-title .site-title-line:nth-child(2) {
+  font-size: var(--site-title-line-2-size);
+}
+
+#sidebar .site-title .site-title-word {
   display: inline-block;
   white-space: nowrap;
 }
 
-#sidebar .site-title a .site-title-char {
+#sidebar .site-title .site-title-char {
   display: inline-block;
   transition: color 0.3s cubic-bezier(0.6, 0.4, 0, 1);
 }
 
-#sidebar .site-title a .site-title-char.is-colored {
+#sidebar .site-title .site-title-char.is-colored {
   color: var(--char-color, currentColor);
   animation: site-title-wobble 1s ease;
 }
 
-html[data-mode='dark'] #sidebar .site-title a .site-title-char.is-colored {
+html[data-mode='dark'] #sidebar .site-title .site-title-char.is-colored,
+html[data-bs-theme='dark'] #sidebar .site-title .site-title-char.is-colored {
   color: var(--char-color-dark, var(--char-color, currentColor));
 }
 
 @media (prefers-color-scheme: dark) {
-  html:not([data-mode]) #sidebar .site-title a .site-title-char.is-colored {
+  html:not([data-mode]):not([data-bs-theme]) #sidebar .site-title .site-title-char.is-colored {
     color: var(--char-color-dark, var(--char-color, currentColor));
   }
 }
@@ -255,11 +275,11 @@ html[data-mode='dark'] #sidebar .site-title a .site-title-char.is-colored {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #sidebar .site-title a .site-title-char {
+  #sidebar .site-title .site-title-char {
     transition: color 0.2s ease;
   }
 
-  #sidebar .site-title a .site-title-char.is-colored {
+  #sidebar .site-title .site-title-char.is-colored {
     animation: none;
   }
 }

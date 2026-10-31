@@ -14,7 +14,9 @@ timezone: Asia/Shanghai
 # jekyll-seo-tag settings › https://github.com/jekyll/jekyll-seo-tag/blob/master/docs/usage.md
 # ↓ --------------------------
 
-title: Tick.EngineLoop # the main title
+# 侧边栏标题中 `\u200B`（零宽空格）标记换行，字符本身不可见。
+# 例：`"Tick \u200BEngineLoop"` 在侧边栏显示为两行，页面标题仍是 `Tick EngineLoop`。
+title: "Tick \u200BEngineLoop" # the main title
 
 tagline: What's the point? # it will display as the sub-title
 
