@@ -210,9 +210,9 @@ div.content blockquote.hover-card:focus-within {
  * directly. Dark mode moved from `data-mode` to `data-bs-theme` in 7.2 too.
  */
 #sidebar .site-title {
-  /* Line sizes: 第一行 Tick 5rem，第二行 EngineLoop 3rem。改成 `inherit` 则跟随主题。 */
-  --site-title-line-1-size: 5rem;
-  --site-title-line-2-size: 3rem;
+  /* Line sizes: 第一行 Tick 4rem，第二行 EngineLoop 2rem。改成 `inherit` 则跟随主题。 */
+  --site-title-line-1-size: 4rem;
+  --site-title-line-2-size: 2rem;
 }
 
 #sidebar .site-title .site-title-line {
