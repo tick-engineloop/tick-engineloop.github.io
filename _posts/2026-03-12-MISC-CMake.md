@@ -523,8 +523,6 @@ add_executable(hello world.c)
 | [`try_compile`](https://cmake.com.cn/cmake/help/latest/command/try_compile.html) | 尝试构建一些代码
 | [`try_run`](https://cmake.com.cn/cmake/help/latest/command/try_run.html) | 尝试编译并运行一些代码
 
-##### 4.3.3.3 自定义命令
-
 ### 4.4 函数和宏
 
 通过将相同或相似的功能进行抽象形成宏或函数，可避免在文件中出现大量重复相似的命令集，这可以借助 [`function()`](https://cmake.com.cn/cmake/help/latest/command/function.html#command:function) 和 [`macro()`](https://cmake.com.cn/cmake/help/latest/command/macro.html#command:macro) 来实现。
@@ -869,7 +867,6 @@ target_link_libraries(test_exe archiveObjs)
 | [`LINK_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_OPTIONS.html#prop_tgt:LINK_OPTIONS)	              | 此项为链接该目标所需的链接选项列表。  <br> 选项按出现顺序作为标志传递给链接器。
 | [`LINK_DEPENDS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_DEPENDS.html#prop_tgt:LINK_DEPENDS)	              | 此项为链接该目标所依赖的文件列表。  
 
-
 #### 5.2.3 目标使用要求
 
 目标的 使用要求 是传播给消费者的设置，消费者通过 target_link_libraries() 链接到该目标，以便正确与其编译和链接。它们由传递性 编译 和 链接 属性表示。
@@ -1011,20 +1008,92 @@ target_link_libraries(project_target PRIVATE ZLIB::ZLIB)
 | [`GoogleTest`](https://cmake.com.cn/cmake/help/latest/module/GoogleTest.html)                                   | 提供用于辅助使用 Google Test 框架的命令
 | [`ProcessorCount`](https://cmake.com.cn/cmake/help/latest/module/ProcessorCount.html)                           | 提供用于确定处理器/核心数量的命令
 
+以 [`CheckIncludeFile`](https://cmake.com.cn/cmake/help/latest/module/CheckIncludeFile.html) 检查 C 头文件模块为例，查找 C 头文件 <unistd.h> 是否存在，并将检查结果存储在 `HAVE_UNISTD_H` 缓存变量中。使用方式如下：
+
+```cmake
+include(CheckIncludeFile)
+
+check_include_file(unistd.h HAVE_UNISTD_H)
+```
+
 ### 6.3 自定义模块
 
+自定义模块是一个以 .cmake 为扩展名的文件，其中定义了可被 include 加载的 CMake 函数和宏。其创建步骤是：
+
+1. 创建自定义模块存放文件夹
+2. 在自定义模块文件夹下创建模块文件，编写模块内容，实现模块功能
+3. 扩展 CMake 模块搜索路径，在 CMakeLists.txt 中通过 CMAKE_MODULE_PATH 注册该目录
+4. 加载模块并使用模块函数，使用 include() 引入模块并调用其中的函数
+
+创建自定义模块并命名为 CustomModule.cmake，编写模块内容：
+
+```cmake
+function(custom_module_function)
+   message(STATUS "This is a custom function!")
+endfunction()
+```
+
+假设模块文件创建在 `${CMAKE_SOURCE_DIR}/cmake` 文件夹中，在 CMakeLists.txt 中加载该自定义模块：
+
+```cmake
+
+# 将 cmake/ 目录添加到模块搜索路径
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
+# 加载自定义模块
+include(CustomModule)
+
+# 调用模块中的自定义函数
+custom_module_function()
+```
+
+CMAKE_MODULE_PATH 是 CMake 查找模块文件时的搜索路径列表。CMake 会先在内置模块路径中查找，找不到时再到 CMAKE_MODULE_PATH 指定的路径中查找。
+
 ## 7. CMake 包
+
 ## 8. CMake 属性
-## 9. CMake 工具链
-## 10. References
+
+## 9. CMake 自定义命令
+
+通常，软件项目的构建过程不仅包括编译库和可执行文件。在许多情况下，在构建过程期间或之后可能需要额外的任务。常见的示例包括：移动生成的可执行文件；对可执行文件进行后处理等。CMake 支持使用 add_custom_command 和 add_custom_target 命令来执行这些其他任务。本章将描述如何使用自定义命令和目标来执行 CMake 本身不支持的复杂任务。
+
+### 9.1 添加自定义命令
+
+要添加一个自定义目标，请使用 [`add_custom_command`](https://cmake.com.cn/cmake/help/latest/command/add_custom_command.html#command:add_custom_command) 命令。现在自定义一个在可执行文件构建后对其进行复制的命令：
+
+```cmake
+# first define the executable target as usual
+add_executable(Foo bar.c)
+
+# then add the custom command to copy it
+add_custom_command(
+  TARGET Foo
+  POST_BUILD
+  COMMAND ${CMAKE_COMMAND}
+  ARGS -E copy $<TARGET_FILE:Foo> /testing_department/files
+  )
+```
+
+### 9.2 添加自定义目标
+
+通常，CMake 目标是指可执行文件和库。此外，CMake 还支持一个更通用的目标概念，称为自定义目标，可以在你想要目标概念但不想要最终产品是库或可执行文件时使用。要添加一个自定义目标，请使用 [`add_custom_target`](https://cmake.com.cn/cmake/help/latest/command/add_custom_target.html#command:add_custom_target) 命令。
+
+## 10. CMake 工具链
+
+## 11. References
 >
-> * [GNU Automake](https://www.gnu.org/software/automake/manual/html_node/index.html)
->
-> * [Autotools Tutorial --- Alexandre Duret-Lutz](https://www.lrde.epita.fr/~adl/autotools.html)
->
-> * [CMake 参考文档英文版](https://cmake.org/cmake/help/latest/)
->
-> * [CMake 参考文档中文版](https://cmake.com.cn/cmake/help/latest/)
->
-> 
+> [GNU Automake](https://www.gnu.org/software/automake/manual/html_node/index.html)
+{: .hover-card }
+
+> [Autotools Tutorial --- Alexandre Duret-Lutz](https://www.lrde.epita.fr/~adl/autotools.html)
+{: .hover-card }
+
+> [CMake 参考文档英文版](https://cmake.org/cmake/help/latest/)
+{: .hover-card }
+
+> [CMake 参考文档中文版](https://cmake.com.cn/cmake/help/latest/)
+{: .hover-card }
+
+> [精通 CMake](https://cmake.com.cn/cmake/help/book/mastering-cmake/index.html)
+{: .hover-card }
 
