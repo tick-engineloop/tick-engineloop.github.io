@@ -445,9 +445,85 @@ add_executable(hello world.c)
 
 ##### 4.3.3.1 脚本命令
 
+可在脚本模式下执行的命令称为脚本命令，常用的脚本命令列举如下：
+
+| 类型             | 作用                                          
+| ---             | --- 
+| [`cmake_host_system_information`](https://cmake.com.cn/cmake/help/latest/command/cmake_host_system_information.html) | 查询各类主机系统信息
+| [`cmake_minimum_required`](https://cmake.com.cn/cmake/help/latest/command/cmake_minimum_required.html) | 设置项目的 CMake 最低要求版本
+| [`cmake_parse_arguments`](https://cmake.com.cn/cmake/help/latest/command/cmake_parse_arguments.html) | 解析函数或宏的参数
+| [`cmake_path`](https://cmake.com.cn/cmake/help/latest/command/cmake_path.html) | 路径操作
+| [`cmake_pkg_config`](https://cmake.com.cn/cmake/help/latest/command/cmake_pkg_config.html) | 处理 pkg-config 格式的包文件
+| [`configure_file`](https://cmake.com.cn/cmake/help/latest/command/configure_file.html) | 将文件复制到另一个位置并修改其内容
+| [`block`](https://cmake.com.cn/cmake/help/latest/command/block.html) / [`endblock`](https://cmake.com.cn/cmake/help/latest/command/endblock.html) | 在一个专用的变量和/或策略作用域内执行一组命令
+| [`break`](https://cmake.com.cn/cmake/help/latest/command/break.html) | 从外层的 foreach 或 while 循环中跳出
+| [`continue`](https://cmake.com.cn/cmake/help/latest/command/continue.html) | 继续执行外层 foreach 或 while 循环的顶部
+| [`if`](https://cmake.com.cn/cmake/help/latest/command/if.html) / [`elseif`](https://cmake.com.cn/cmake/help/latest/command/elseif.html) / [`else`](https://cmake.com.cn/cmake/help/latest/command/else.html) / [`endif`](https://cmake.com.cn/cmake/help/latest/command/endif.html) | 有条件地执行一组命令
+| [`execute_process`](https://cmake.com.cn/cmake/help/latest/command/execute_process.html) | 执行一个或多个子进程
+| [`file`](https://cmake.com.cn/cmake/help/latest/command/file.html) | 文件操作
+| [`find_file`](https://cmake.com.cn/cmake/help/latest/command/find_file.html) | 查找指定文件的完整路径
+| [`find_library`](https://cmake.com.cn/cmake/help/latest/command/find_library.html) | 查找库
+| [`find_package`](https://cmake.com.cn/cmake/help/latest/command/find_package.html) | 查找包
+| [`find_path`](https://cmake.com.cn/cmake/help/latest/command/find_path.html) | 查找包含指定文件的目录
+| [`find_program`](https://cmake.com.cn/cmake/help/latest/command/find_program.html) | 查找程序
+| [`foreach`](https://cmake.com.cn/cmake/help/latest/command/foreach.html) / [`endforeach`](https://cmake.com.cn/cmake/help/latest/command/endforeach.html) | 针对列表中的每一项执行一组命令
+| [`function`](https://cmake.com.cn/cmake/help/latest/command/function.html) / [`endfunction`](https://cmake.com.cn/cmake/help/latest/command/endfunction.html) | 定义一个函数
+| [`get_directory_property`](https://cmake.com.cn/cmake/help/latest/command/get_directory_property.html) | 获取目录作用域的属性
+| [`get_filename_component`](https://cmake.com.cn/cmake/help/latest/command/get_filename_component.html) | 获取完整文件名的特定部分
+| [`get_property`](https://cmake.com.cn/cmake/help/latest/command/get_property.html) | 获取一个属性
+| [`include`](https://cmake.com.cn/cmake/help/latest/command/include.html) | 从文件或模块加载并运行 CMake 代码
+| [`list`](https://cmake.com.cn/cmake/help/latest/command/list.html) | 对分号分隔的列表进行操作
+| [`macro`](https://cmake.com.cn/cmake/help/latest/command/macro.html) / [`endmacro`](https://cmake.com.cn/cmake/help/latest/command/endmacro.html) | 定义一个宏
+| [`message`](https://cmake.com.cn/cmake/help/latest/command/message.html) | 记录并输出消息
+| [`option`](https://cmake.com.cn/cmake/help/latest/command/option.html) | 提供可以选择的布尔选项
+| [`return`](https://cmake.com.cn/cmake/help/latest/command/return.html) | 从文件、目录或函数中返回
+| [`separate_arguments`](https://cmake.com.cn/cmake/help/latest/command/separate_arguments.html) | 将命令行参数解析为以分号分隔的列表
+| [`set`](https://cmake.com.cn/cmake/help/latest/command/set.html) / [`unset`](https://cmake.com.cn/cmake/help/latest/command/unset.html) | 设置/取消变量、缓存变量或环境变量
+| [`set_directory_properties`](https://cmake.com.cn/cmake/help/latest/command/set_directory_properties.html) | 设置当前目录及其子目录的属性
+| [`set_property`](https://cmake.com.cn/cmake/help/latest/command/set_property.html) | 在给定的作用域内设置命名的属性
+| [`string`](https://cmake.com.cn/cmake/help/latest/command/string.html) | 字符串操作
+| [`variable_watch`](https://cmake.com.cn/cmake/help/latest/command/variable_watch.html) | 监视 CMake 变量的变化
+| [`while`](https://cmake.com.cn/cmake/help/latest/command/while.html) / [`endwhile`](https://cmake.com.cn/cmake/help/latest/command/endwhile.html) | 在条件为真时执行一组命令
+
 ##### 4.3.3.2 项目命令
 
-##### 4.3.3.3 CTest 命令
+只能在项目模式中使用，不能在脚本模式中使用的命令为项目命令，常用的项目命令列举如下：
+
+| 类型             | 作用                                          
+| ---             | --- 
+| [`add_compile_definitions`](https://cmake.com.cn/cmake/help/latest/command/add_compile_definitions.html) | 向编译器添加预处理器定义
+| [`add_compile_options`](https://cmake.com.cn/cmake/help/latest/command/add_compile_options.html) | 向编译器添加编译选项，这些选项不会用于链接阶段
+| [`add_custom_command`](https://cmake.com.cn/cmake/help/latest/command/add_custom_command.html) | 添加自定义命令
+| [`add_custom_target`](https://cmake.com.cn/cmake/help/latest/command/add_custom_target.html) | 添加自定义目标
+| [`add_definitions`](https://cmake.com.cn/cmake/help/latest/command/add_definitions.html) | 为源文件的编译添加 `-D` 定义标志
+| [`add_dependencies`](https://cmake.com.cn/cmake/help/latest/command/add_dependencies.html) | 在顶层目标之间添加依赖关系
+| [`add_executable`](https://cmake.com.cn/cmake/help/latest/command/add_executable.html) | 添加一个可执行文件
+| [`add_library`](https://cmake.com.cn/cmake/help/latest/command/add_library.html) | 添加一个库目标
+| [`add_link_options`](https://cmake.com.cn/cmake/help/latest/command/add_link_options.html) | 添加链接选项，不能用于为静态库目标添加选项，因为它们不使用链接器
+| [`add_subdirectory`](https://cmake.com.cn/cmake/help/latest/command/add_subdirectory.html) | 向构建中添加一个子目录
+| [`aux_source_directory`](https://cmake.com.cn/cmake/help/latest/command/aux_source_directory.html) | 收集指定目录中所有源文件的名称
+| [`get_source_file_property`](https://cmake.com.cn/cmake/help/latest/command/get_source_file_property.html) | 获取源文件的属性
+| [`get_target_property`](https://cmake.com.cn/cmake/help/latest/command/get_target_property.html) | 获取目标的属性
+| [`include_directories`](https://cmake.com.cn/cmake/help/latest/command/include_directories.html) | 向构建中添加头文件搜索目录
+| [`install`](https://cmake.com.cn/cmake/help/latest/command/install.html) | 指定在安装时运行的规则
+| [`link_directories`](https://cmake.com.cn/cmake/help/latest/command/link_directories.html) | 添加链接器查找库时所使用的目录
+| [`project`](https://cmake.com.cn/cmake/help/latest/command/project.html) | 设置项目名称
+| [`remove_definitions`](https://cmake.com.cn/cmake/help/latest/command/remove_definitions.html) | 移除由 `add_compile_definitions()` 或 `add_definitions()` 添加的编译定义
+| [`set_source_files_properties`](https://cmake.com.cn/cmake/help/latest/command/set_source_files_properties.html) | 设置源文件的属性
+| [`set_target_properties`](https://cmake.com.cn/cmake/help/latest/command/set_target_properties.html) | 设置目标的属性
+| [`target_compile_definitions`](https://cmake.com.cn/cmake/help/latest/command/target_compile_definitions.html) | 向目标添加编译定义
+| [`target_compile_features`](https://cmake.com.cn/cmake/help/latest/command/target_compile_features.html) | 向目标添加所需的编译器特性
+| [`target_compile_options`](https://cmake.com.cn/cmake/help/latest/command/target_compile_options.html) | 向目标添加编译选项
+| [`target_include_directories`](https://cmake.com.cn/cmake/help/latest/command/target_include_directories.html) | 为目标添加包含目录
+| [`target_link_directories`](https://cmake.com.cn/cmake/help/latest/command/target_link_directories.html) | 为目标添加链接目录
+| [`target_link_libraries`](https://cmake.com.cn/cmake/help/latest/command/target_link_libraries.html) | 为目标添加链接库
+| [`target_link_options`](https://cmake.com.cn/cmake/help/latest/command/target_link_options.html) | 为目标添加链接选项
+| [`target_precompile_headers`](https://cmake.com.cn/cmake/help/latest/command/target_precompile_headers.html) | 添加一个需要预编译的头文件列表
+| [`target_sources`](https://cmake.com.cn/cmake/help/latest/command/target_sources.html) | 向目标添加源文件
+| [`try_compile`](https://cmake.com.cn/cmake/help/latest/command/try_compile.html) | 尝试构建一些代码
+| [`try_run`](https://cmake.com.cn/cmake/help/latest/command/try_run.html) | 尝试编译并运行一些代码
+
+##### 4.3.3.3 自定义命令
 
 ### 4.4 函数和宏
 
