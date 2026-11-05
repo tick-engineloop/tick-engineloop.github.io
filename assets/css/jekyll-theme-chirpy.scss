@@ -146,6 +146,21 @@ div.content .table-wrapper > table tbody tr:last-child td:last-child {
  *   >
  *   > è¯´æ˜Žæ–‡å­—
  *   {: .hover-card }
+ *
+ * A linked card keeps its URL in the second paragraph; `.hover-card--link`
+ * hides that line and makes the full card clickable:
+ *
+ *   > æ ‡é¢˜
+ *   >
+ *   > <https://example.com/>
+ *   >
+ *   > è¯´æ˜Žæ–‡å­—
+ *   {: .hover-card .hover-card--link }
+ *
+ * Add `.hover-card--coolors` and one palette class to give a card a fixed
+ * palette that becomes saturated on hover and press:
+ *
+ *   {: .hover-card .hover-card--coolors .hover-card--coolors-cyan }
  */
 div.content blockquote.hover-card {
   position: relative;
@@ -195,6 +210,221 @@ div.content blockquote.hover-card:focus-within {
 @media (hover: none) {
   div.content blockquote.hover-card {
     box-shadow: 0 2px 8px var(--hover-card-shadow);
+  }
+}
+
+div.content blockquote.hover-card--coolors {
+  --coolors-card-bg: var(--main-bg);
+  --coolors-card-color: var(--text-color);
+  --coolors-card-hover-bg: #3b82f6;
+  --coolors-card-shadow: rgb(37 99 235 / 40%);
+  position: relative;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  padding-bottom: 3.25rem;
+  border-color: transparent;
+  background: var(--coolors-card-bg);
+  color: var(--coolors-card-color);
+  box-shadow: 0 2px 8px var(--hover-card-shadow);
+  transition:
+    transform 0.3s cubic-bezier(0.6, 0.4, 0, 1),
+    background-color 0.3s cubic-bezier(0.6, 0.4, 0, 1),
+    color 0.3s cubic-bezier(0.6, 0.4, 0, 1),
+    box-shadow 0.3s ease;
+}
+
+div.content blockquote.hover-card--link {
+  position: relative;
+  padding-bottom: 3.25rem;
+  cursor: pointer;
+}
+
+div.content blockquote.hover-card--link > p:nth-child(2) {
+  margin: 0;
+  padding: 0;
+  height: 0;
+  line-height: 0;
+}
+
+div.content blockquote.hover-card--link > p:nth-child(2) > a {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  display: block;
+  border-bottom: 0;
+  font-size: 0;
+  line-height: 0;
+  text-decoration: none;
+}
+
+div.content blockquote.hover-card--link > p:nth-child(2) > a:hover {
+  border-bottom: 0;
+}
+
+div.content blockquote.hover-card--link > p:nth-child(2) > a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+div.content blockquote.hover-card--link > p:nth-child(n + 3) a {
+  position: relative;
+  z-index: 2;
+}
+
+div.content blockquote.hover-card--link::after {
+  position: absolute;
+  z-index: 1;
+  right: 1.5rem;
+  bottom: calc(1.7rem - 11px);
+  width: 1.5rem;
+  height: 1.5rem;
+  content: '';
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h16m-6-6 6 6-6 6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  pointer-events: none;
+  transform: translateX(0);
+  transition: transform 0.3s cubic-bezier(0.6, 0.4, 0, 1);
+}
+
+div.content blockquote.hover-card--link:hover::after,
+div.content blockquote.hover-card--link:focus-within::after {
+  transform: translateX(10px);
+}
+
+div.content blockquote.hover-card--coolors > p:first-child {
+  margin-bottom: 0.65rem;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+div.content blockquote.hover-card--link a {
+  color: inherit;
+  text-decoration: none;
+}
+
+div.content blockquote.hover-card--link > p:nth-child(n + 3) a:hover {
+  text-decoration: underline;
+}
+
+div.content blockquote.hover-card--coolors-cyan {
+  --coolors-card-bg: #cffafe;
+  --coolors-card-color: #0891b2;
+  --coolors-card-hover-bg: #06b6d4;
+  --coolors-card-shadow: rgb(8 145 178 / 40%);
+}
+
+div.content blockquote.hover-card--coolors-blue {
+  --coolors-card-bg: #dbeafe;
+  --coolors-card-color: #2563eb;
+  --coolors-card-hover-bg: #3b82f6;
+  --coolors-card-shadow: rgb(37 99 235 / 40%);
+}
+
+div.content blockquote.hover-card--coolors-purple {
+  --coolors-card-bg: #f3e8ff;
+  --coolors-card-color: #a855f7;
+  --coolors-card-hover-bg: #a855f7;
+  --coolors-card-shadow: rgb(126 34 206 / 40%);
+}
+
+div.content blockquote.hover-card--coolors-pink {
+  --coolors-card-bg: #fce7f3;
+  --coolors-card-color: #ec4899;
+  --coolors-card-hover-bg: #ec4899;
+  --coolors-card-shadow: rgb(190 24 93 / 40%);
+}
+
+div.content blockquote.hover-card--coolors-red {
+  --coolors-card-bg: #fee2e2;
+  --coolors-card-color: #dc2626;
+  --coolors-card-hover-bg: #ef4444;
+  --coolors-card-shadow: rgb(185 28 28 / 40%);
+}
+
+div.content blockquote.hover-card--coolors-orange {
+  --coolors-card-bg: #ffedd5;
+  --coolors-card-color: #ea580c;
+  --coolors-card-hover-bg: #f97316;
+  --coolors-card-shadow: rgb(194 65 12 / 40%);
+}
+
+div.content blockquote.hover-card--coolors-green {
+  --coolors-card-bg: #dcfce7;
+  --coolors-card-color: #16a34a;
+  --coolors-card-hover-bg: #22c55e;
+  --coolors-card-shadow: rgb(21 128 61 / 40%);
+}
+
+div.content blockquote.hover-card--coolors-yellow {
+  --coolors-card-bg: #fef9c3;
+  --coolors-card-color: #ca8a04;
+  --coolors-card-hover-bg: #eab308;
+  --coolors-card-shadow: rgb(161 98 7 / 40%);
+}
+
+html[data-mode='dark'] div.content blockquote.hover-card--coolors,
+html[data-bs-theme='dark'] div.content blockquote.hover-card--coolors {
+  --coolors-card-bg: color-mix(
+    in srgb,
+    var(--coolors-card-hover-bg) 25%,
+    #1e1e21
+  );
+  --coolors-card-color: color-mix(
+    in srgb,
+    var(--coolors-card-hover-bg) 45%,
+    white
+  );
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-mode]):not([data-bs-theme]) div.content blockquote.hover-card--coolors {
+    --coolors-card-bg: color-mix(
+      in srgb,
+      var(--coolors-card-hover-bg) 25%,
+      #1e1e21
+    );
+    --coolors-card-color: color-mix(
+      in srgb,
+      var(--coolors-card-hover-bg) 45%,
+      white
+    );
+  }
+}
+
+div.content blockquote.hover-card--coolors:hover,
+div.content blockquote.hover-card--coolors:focus-within {
+  z-index: 1;
+  transform: scale(1.02);
+  background: var(--coolors-card-hover-bg);
+  color: #fff;
+  box-shadow: 0 12px 28px var(--coolors-card-shadow);
+}
+
+div.content blockquote.hover-card--coolors:active {
+  transform: scale(1);
+}
+
+@media (hover: none) {
+  div.content blockquote.hover-card--coolors:active {
+    background: var(--coolors-card-hover-bg);
+    color: #fff;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  div.content blockquote.hover-card--coolors {
+    transition: none;
+  }
+
+  div.content blockquote.hover-card--link::after {
+    transition: none;
+  }
+
+  div.content blockquote.hover-card--coolors:hover,
+  div.content blockquote.hover-card--coolors:focus-within,
+  div.content blockquote.hover-card--coolors:active {
+    transform: none;
   }
 }
 
