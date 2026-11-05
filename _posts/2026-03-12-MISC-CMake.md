@@ -1059,7 +1059,7 @@ CMAKE_MODULE_PATH 是 CMake 查找模块文件时的搜索路径列表。CMake �
 
 ### 9.1 添加自定义命令
 
-要添加一个自定义目标，请使用 [`add_custom_command`](https://cmake.com.cn/cmake/help/latest/command/add_custom_command.html#command:add_custom_command) 命令。现在自定义一个在可执行文件构建后对其进行复制的命令：
+要添加一个自定义命令，请使用 [`add_custom_command`](https://cmake.com.cn/cmake/help/latest/command/add_custom_command.html#command:add_custom_command) 命令。现在自定义一个在可执行文件构建后对其进行复制的命令：
 
 ```cmake
 # first define the executable target as usual
@@ -1074,14 +1074,44 @@ add_custom_command(
   )
 ```
 
+这将在构建后把生成的 Foo 可执行文件从其构建位置复制到 /testing_department/files 目录。
+
 ### 9.2 添加自定义目标
 
-通常，CMake 目标是指可执行文件和库。此外，CMake 还支持一个更通用的目标概念，称为自定义目标，可以在你想要目标概念但不想要最终产品是库或可执行文件时使用。要添加一个自定义目标，请使用 [`add_custom_target`](https://cmake.com.cn/cmake/help/latest/command/add_custom_target.html#command:add_custom_target) 命令。
+通常情况下，CMake 目标是指可执行文件和库。在此之外，CMake 还支持一个更通用的目标概念，称为自定义目标，可以在你想要目标概念但不想要最终产品是库或可执行文件时使用，即定义一个“动作”目标。要添加一个自定义目标，请使用 [`add_custom_target`](https://cmake.com.cn/cmake/help/latest/command/add_custom_target.html#command:add_custom_target) 命令。以下示例展示了如何使用 add_custom_target 创建一个目标来运行 Python 脚本：
+
+```cmake
+# 创建一个自定义目标，运行 Python 脚本
+add_custom_target(run_script
+   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/setup.py
+   COMMENT "Running setup script..."
+)
+```
+
+运行 `make run_script` 即可触发该目标，执行脚本。如果希望自定义目标成为默认构建的一部分，可以添加 `ALL` 参数：
+
+```cmake
+add_custom_target(clean_all ALL
+   COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/output
+   COMMENT "Cleaning all generated files..."
+)
+```
+
+直接运行 `make` 时，该目标会自动执行。如果自定义目标依赖其他内容，可使用 `DEPENDS` 参数指定：
+
+```cmake
+add_custom_command(
+    OUTPUT printout
+    COMMAND ${CMAKE_COMMAND} -E echo "Compile finish"
+)
+add_custom_target(finish ALL DEPENDS printout)
+
+```
 
 ## 10. CMake 工具链
 
 ## 11. References
->
+
 > [GNU Automake](https://www.gnu.org/software/automake/manual/html_node/index.html)
 {: .hover-card }
 
