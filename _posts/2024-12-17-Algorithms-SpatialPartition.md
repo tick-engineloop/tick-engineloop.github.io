@@ -1,5 +1,5 @@
 ---
-title: Spatial Partition
+title: 空间划分
 description: 空间划分算法总览：BSP、kd-tree、Quadtree、Octree 与 BVH 的原理、构建、查询与工程取舍
 date: 2024-12-17 00:00:00 +0800
 categories: [Algorithms]

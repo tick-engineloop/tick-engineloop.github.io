@@ -1097,3 +1097,6 @@ add_custom_command(
 > [精通 CMake](https://cmake.com.cn/cmake/help/book/mastering-cmake/index.html)
 {: .hover-card }
 
+> [Modern CMake](https://cliutils.gitlab.io/modern-cmake/)
+{: .hover-card }
+

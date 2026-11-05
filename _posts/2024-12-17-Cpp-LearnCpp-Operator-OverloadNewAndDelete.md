@@ -1,5 +1,5 @@
 ---
-title: overload operator new and delete
+title: C++ 中运算符 new 和 delete 的重载
 description: 重载运算符 new 和 delete 的写法
 date: 2024-12-17 00:00:00 +0800
 categories: [Cpp, LearnCpp]

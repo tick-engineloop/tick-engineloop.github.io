@@ -1,5 +1,5 @@
 ---
-title: Object File Format
+title: 目标文件格式
 description: 展示了一个典型的 ELF 可重定位目标文件的格式、典型的 ELF 可执行目标文件的格式、Linux 程序运行时内存映像。
 date: 2024-12-31 00:00:00 +0800
 categories: [CSAPP]
