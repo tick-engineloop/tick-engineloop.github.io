@@ -36,6 +36,26 @@ tags: [tools]     # TAG names should always be lowercase
 > Photopea Online Photo Editor lets you edit photos, apply effects, filters, add text, crop or resize pictures.
 {: .hover-card .hover-card--coolors .hover-card--link }
 
+> The Online Shader Editor
+>
+> <https://oneshader.net/>
+>
+> Create and share real-time procedural art with just one WebGL shader.
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+> Shadertoy
+>
+> <https://www.shadertoy.com/>
+>
+> 构建并分享你最好的着色器给全世界，并获得灵感
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+> The Book of Shaders Editor
+>
+> <https://editor.thebookofshaders.com/>
+>
+{: .hover-card .hover-card--coolors .hover-card--link }
+
 ## 数学工具
 
 > CalcuClub
@@ -77,6 +97,29 @@ tags: [tools]     # TAG names should always be lowercase
 > [科学计数法计算器](https://kanaries.net/zh/tools/scientific-notation-calculator)
 >
 > 在线数据分析与可视化工具集合。探索 Kanaries 的在线数据工具套件，轻松可视化您的数据。拖放您的数据即可获得即时可视化效果。
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+> Graphtoy
+>
+> <https://graphtoy.com/>
+>
+> Graphtoy is a web-based tool that lets you create and explore graphs of various functions.
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+## 算法可视化
+
+> VisuAlgo
+>
+> <https://visualgo.net/zh>
+>
+> 通过动画可视化数据结构和算法
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+> Algorithm Visualizer
+>
+> <https://algorithm-visualizer.org/>
+>
+> Welcome to Algorithm Visualizer, an interactive online platform designed to bring algorithms to life through visualization.
 {: .hover-card .hover-card--coolors .hover-card--link }
 
 ## 颜色配色

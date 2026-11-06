@@ -65,7 +65,41 @@ tags: [books]     # TAG names should always be lowercase
 >
 > <https://www.pbr-book.org/>
 >
-> Physically Based Rendering: From Theory To Implementation
+> Physically Based Rendering: From Theory To Implementation.
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+> Real-Time Rendering Resources
+>
+> <https://www.realtimerendering.com/>
+>
+> This is the main resources page for the book Real-Time Rendering, Fourth Edition.
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+> Ray Tracing in One Weekend
+>
+> <https://raytracing.github.io/>
+>
+> In Ray Tracing in One Weekend, you will build a simple brute-force path tracer. Continuing with Ray Tracing: The Next Week, you will add textures, volumes (like fog), rectangles, instances, lights, and support for lots of objects using a bounding volume hierarchy (BVH). Finally, with Ray Tracing: The Rest Of Your Life, we'll dive into the math of creating a very serious ray tracer.
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+> smallpt
+>
+> <http://www.kevinbeason.com/smallpt/>
+>
+> Global Illumination in 99 lines of C++
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+> Forward vs Deferred vs Forward+ Rendering
+>
+> <https://www.3dgep.com/forward-plus/>
+>
+> In this article, We will analyze and compare three rendering algorithms: Forward Rendering、Deferred Shading、Forward+ (Tiled Forward Rendering).
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+> Inigo Quilez Articles
+>
+> <https://iquilezles.org/articles/>
+>
 {: .hover-card .hover-card--coolors .hover-card--link }
 
 
@@ -77,6 +111,37 @@ tags: [books]     # TAG names should always be lowercase
 >
 {: .hover-card .hover-card--coolors .hover-card--link }
 
+> OpenGL Wiki
+>
+> <https://wikis.khronos.org/opengl/Main_Page>
+>
+> This Wiki is a collection of information about OpenGL, as well as frequently asked questions about OpenGL and its API. Tutorials are also welcome and may be hosted on this Wiki.
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+> WebGL Fundamentals
+>
+> <https://webglfundamentals.org/>
+>
+> These are a set of articles that teach WebGL from basic principles.
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+> songho's OpenGL
+>
+> <https://www.songho.ca/opengl/index.html>
+>
+> This page contains fundamental OpenGL tutorials and notes.
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+## Shader
+
+> The Book of Shaders
+>
+> <https://thebookofshaders.com/?lan=ch>
+>
+> 这是一本关于 Fragment Shaders（片段着色器）的入门指南，它将一步一步地带你领略其中的纷繁与抽象。
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+
 ## GPU
 
 > How to Think About GPUs
@@ -84,6 +149,13 @@ tags: [books]     # TAG names should always be lowercase
 > <https://jax-ml.github.io/scaling-book/gpus/>
 >
 > This article takes a deep dive into the world of GPUs – how each chip works, how they're networked together, and what that means for LLMs, especially compared to TPUs.
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+> GPU Gems
+>
+> <https://developer.nvidia.com/gpugems/gpugems/contributors>
+>
+> GPU Gems is a series of NVIDIA‑published books (GPU Gems 1–3) offering free, online collections of advanced real‑time graphics and GPU computing techniques, covering topics from procedural geometry to CUDA‑based GPGPU algorithms.
 {: .hover-card .hover-card--coolors .hover-card--link }
 
 ## KATEX
@@ -111,4 +183,13 @@ tags: [books]     # TAG names should always be lowercase
 > <https://devdocs.io/>
 >
 > DevDocs combines multiple API documentations in a fast, organized, and searchable interface.
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+## 算法
+
+> Hello 算法
+>
+> <https://www.hello-algo.com/>
+>
+> 动画图解、一键运行的数据结构与算法教程
 {: .hover-card .hover-card--coolors .hover-card--link }
