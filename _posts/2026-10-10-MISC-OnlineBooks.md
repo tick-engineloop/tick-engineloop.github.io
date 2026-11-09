@@ -19,7 +19,16 @@ tags: [books]     # TAG names should always be lowercase
 >
 > <https://immersivemath.com>
 >
+> [沉浸式数学](https://immersivemath.cn/zh/index.html)
+>
 > The world's first linear algebra book with fully interactive figures.
+{: .hover-card .hover-card--coolors .hover-card--link }
+
+> Interactive Linear Algebra
+>
+> <https://textbooks.math.gatech.edu/>
+>
+> 世界上第一本具有完全交互式图形的线性代数教材
 {: .hover-card .hover-card--coolors .hover-card--link }
 
 > MATH
@@ -34,15 +43,6 @@ tags: [books]     # TAG names should always be lowercase
 > <https://www.mathsisfun.com/index.html>
 >
 > We offer mathematics in an enjoyable and easy-to-learn manner, because we believe that mathematics is fun.
-{: .hover-card .hover-card--coolors .hover-card--link }
-
-> Interactive Linear Algebra
->
-> <https://textbooks.math.gatech.edu/>
->
-> [沉浸式数学](https://immersivemath.cn/zh/index.html)
->
-> 世界上第一本具有完全交互式图形的线性代数教材
 {: .hover-card .hover-card--coolors .hover-card--link }
 
 > LibreTexts PHYSICS
