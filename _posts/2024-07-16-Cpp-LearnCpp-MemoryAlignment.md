@@ -1,13 +1,17 @@
 ---
-title: Meomry Alignment
-description: 正确理解内存对齐
+title: 内存对齐
+description: 本文总结了内存对齐的核心概念与应用：数据对象的地址需要满足一定的倍数要求，这样可以提升 CPU 访问内存的效率，并减少跨缓存行或跨内存块访问带来的额外开销。文章从基本类型的对齐规则出发，说明了 char、short、int、double 等类型分别对应不同的对齐要求，并解释了为什么结构体成员在编译器中常常需要插入填充字节。接着通过结构体布局示例展示了对齐如何影响字段偏移和结构体总大小，同时也说明了为什么数组中的结构体元素必须保持统一的对齐方式。最后总结到，内存对齐虽然会让数据布局中出现空隙，但这是为了兼顾性能与正确性，是底层系统设计中非常关键的一部分。
 date: 2024-07-16 00:00:00 +0800
 categories: [Cpp, LearnCpp]
 tags: [meomry, alignment]     # TAG names should always be lowercase
 mermaid: true
 ---
 
+## 前言
+
 许多计算机系统对基本数据类型的合法地址做了一些限制，要求某种类型对象的地址必须是某个值 K 的倍数（通常是 2、4 或 8的倍数）。这种对齐限制简化了形成处理器和内存系统之间接口的硬件设计。例如，假设一个处理器总是从内存中取 8 个字节，则地址必须为 8 的倍数。如果我们能保证将所有的 double 类型数据的地址对齐成 8 的倍数，那么就可以用一个内存操作来读或者写值了。否则，我们可能需要执行两次内存访问，因为对象可能被分放在两个 8 字节内存块中。
+
+## 正文
 
 无论数据是否对齐，x86-64 硬件都能正确工作。不过，还是建议要对齐数据以提高内存系统的性能。对齐原则是任何 K 字节的基本对象的地址必须是 K 的倍数。可以看到这条原则会得到如下对齐：
 
@@ -97,3 +101,12 @@ style f fill:#0af,stroke:#333,stroke-width:2px
 ```
 
 这样一来，S2Array 的元素地址分别为 arrayPtrVal、arrayPtrVal + 12、arrayPtrVal + 24、arrayPtrVal + 36。只要 arrayPtrVal 是 4 的倍数，所有的对齐限制就都可以满足了。概括来说就是，在不考虑对齐模数的情况下，结构体末尾填充量要视结构体中成员变量的最大类型而定，确保结构体大小为这个最大类型大小的整数倍，这样就能保证在结构体数组中每个元素的每个成员变量都满足对齐要求。同时，当结构体存在嵌套时，父结构体中的子结构体类型成员变量起始地址要视子结构体中成员变量的最大类型而定，确保子结构体起始地址为这个最大类型大小的整数倍。
+
+## 引用
+
+> ABI Explorer
+>
+> <https://abiexplorer.org/>
+>
+> Visualize C and C++ struct layouts (field offsets, sizes, alignment, padding) for any LLVM target, powered by clang compiled to WebAssembly and running entirely in your browser.
+{: .hover-card .hover-card--coolors .hover-card--link }
