@@ -84,7 +84,7 @@ tags: [books]     # TAG names should always be lowercase
 
 > smallpt
 >
-> <http://www.kevinbeason.com/smallpt/>
+> <https://www.kevinbeason.com/smallpt/>
 >
 > Global Illumination in 99 lines of C++
 {: .hover-card .hover-card--coolors .hover-card--link }
