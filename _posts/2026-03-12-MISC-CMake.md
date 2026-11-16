@@ -8,7 +8,7 @@ tags: [cmake]     # TAG names should always be lowercase
 
 ## 1. 简介
 
-CMake 是一个开源的、跨平台的配置程序，用于构建、测试和打包软件，有时被称为“元”构建系统，简单来说，它就是一个用于管理源代码构建的工具。它使用简单的独立配置文件来控制软件的编译过程，根据项目、环境和用户提供的配置信息生成一个构建系统。注意 CMake 仅被设计用于与本地构建环境协同工作，而不负责运行生成软件构建的命令。
+CMake 是一个开源的、跨平台的配置程序，用于构建、测试和打包软件，有时被称为“元”构建系统，简单来说，它就是一个用于管理源代码构建的工具。CMake 被设计用于与本地构建环境协同工作，它使用简单的独立配置文件来控制软件的编译过程，根据项目、环境和用户提供的配置信息生成一个构建系统。
 
 ![Cmake Icon](/assets/img/post/MISC-Tools-CMakeIcon.jpeg){: .shadow }
 
@@ -16,34 +16,35 @@ CMake 是一个开源的、跨平台的配置程序，用于构建、测试和�
 
 ### 2.1 为何选择 CMake？
 
-CMake 是一个面向软件项目的开源构建系统生成器，开发人员可使用简单、可移植的文本文件格式来指定构建参数。之后，CMake 会使用该文件来生成面向本地构建工具（包括 Make/NMake 和 Ninja）的项目文件。 CMake 以简洁的方式处理软件构建的难点，如跨平台构建、系统自省和用户自定义构建，这使用户能够轻松地为复杂的硬件和软件系统定制构建。 CMake 的优势包括：
+CMake 是一个面向软件项目的开源构建系统生成器，它以简洁的方式处理软件构建的难点，开发人员可使用简单、可移植的文本文件格式来指定构建参数，之后，CMake 会使用该文件来生成面向本地构建工具（包括 Make/NMake 和 Ninja）的项目文件。CMake 的优势包括：
 
-* 一套适用于所有平台的构建配置文件。 
+* 构建配置文件可适用于所有平台。 
 * 能够测试机器字节顺序和其他特定硬件特征。 
 * 能够自动搜索软件构建可能需要的程序、库和头文件。 
-* 能够在源代码树外部的目录树中构建。这允许开发者删除整个构建目录，而不必担心删除源文件。能够在配置时选择可选组件。例如，VTK 的一些库是可选的，而且 CMake 为用户提供了一种简单的方法来选择要构建的库。 
+* 能够在源代码树外部的目录树中构建。这允许开发者删除整个构建目录，而不必担心删除源文件。
 * 能够轻松地在静态和共享构建之间切换。 
-* 可以使用系统相关的信息配置文件，例如数据文件的位置和其他信息。 CMake 可以创建包含信息的标头文件，例如数据文件的路径和其他信息，形式为 #define 宏。系统特定标志也可以放在已配置的标头文件中
+* 可以使用系统相关的信息配置文件，例如数据文件的位置和其他信息。
 
 ### 2.2 为何不使用 Autotools？
 
 Autotools 是一组用于为软件包创建 GNU 构建系统的工具，主要包括 Autoconf、Automake 和 Libtool 等，其中 Autoconf 主要处理 configure 相关的事情，而 Automake 则负责 Makefile 相关的工作。因为它源自 GNU 项目，所以被称为 GNU 构建系统。与 CMake 相比：
+
 * 项目类型上：Autotools 在 GNU 项目上使用居多，CMake 在中间件及应用层 C++ 项目上使用居多，有的项目同时提供 Autotools 和 CMake 构建方式。
 * 工作流程上：Autotools 是一个松散耦合的工具链：Autoconf 根据 configure.ac 生成 configure 脚本，Automake 根据 Makefile.am 生成 Makefile.in 模板，然后 configure 脚本在用户机器上运行，生成最终的 Makefile。Autoconf 与 Automake 组合在一起提供了与 CMake 相同的部分功能。CMake 是一个元构建系统，它读取 CMakeLists.txt，然后生成指定平台的原生构建文件，例如 Unix Makefiles、Ninja、Visual Studio 项目文件。
 * 跨平台支持：Autotools 对 Unix-like 系统支持的很好，但对 Windows 的支持较差。CMake 原生支持 Windows，可以生成 Visual Studio 项目文件，直接使用 MSVC 编译器，无需额外的 Unix 兼容层，这使得它成为跨平台（尤其是同时覆盖 Unix 和 Windows）项目的首选。
 * 学习成本上：对于 Autotools 开发者需要同时掌握 Autoconf 的 M4 宏语法和 Automake 的 Makefile 语法，往往晦涩难懂，有时需要深入理解 shell、M4、sed 等多种工具。CMake 的 CMakeLists.txt 语法是自定义的，一致性更好，只需学习一种语法，通常比 Autotools 更易理解。
 
-## 3. 基本的 CMake 用法
+## 3. CMake 基本用法
 
-CMake 以一个或多个 CMakeLists 文件作为输入，并生成项目文件或 Makefile，以供各种本地开发工具使用。典型的 CMake 工作流程如下： 
+CMake 读取项目中的 `CMakeLists.txt`，根据所选生成器生成相应构建系统的规则；随后由该构建系统执行编译和链接。典型工作流程如下：
 
-1. 在一个或多个 CMakeLists 文件中定义项目构建任务
-2. 配置并生成项目 
-3. 使用喜欢的本地开发工具构建项目
+1. 在一个或多个 `CMakeLists.txt` 文件中描述项目，声明目标及其源文件、依赖和构建属性。
+2. 运行 CMake 配置项目，并按所选生成器生成构建规则。
+3. 通过 `cmake --build`，或直接使用对应的构建工具或 IDE，执行编译和链接。
 
 ### 3.1 创建 CMakeLists 文件
 
-CMakeLists 文件（实际上是 CMakeLists.txt，但通常省略扩展名）使用 cmake-language 编写，表现为一系列注释、命令和变量组成项目描述的纯文本文件。首先，让我们考虑最简单的 CMakeLists 文件。要从一个源文件编译一个可执行文件，CMakeLists 文件将包含三行：
+CMakeLists 文件（即 CMakeLists.txt）使用 cmake-language 编写，表现为一系列注释、命令和变量组成项目描述的纯文本文件。首先，让我们考虑最简单的 CMakeLists 文件：
 
 ```cmake
 cmake_minimum_required(VERSION 3.20) 
@@ -51,51 +52,51 @@ project(Hello)
 add_executable(Hello Hello.c)
 ```
 
-CMakeLists 文件的第一行应始终是 cmake_minimum_required，指定项目要求的 CMake 最小版本。任何 CMakeLists 文件的下一行应该是 project 命令，此命令设置项目的名称。最后，使用 add_executable 命令将给定的源文件添加向项目可执行文件。在此示例中，源目录中有两个文件：CMakeLists.txt 和 Hello.c。
-
-<iframe style="display:block;width:100%;height:clamp(480px,80vh,800px);margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#z:OYLghAFBqd5TKALEAXATgU0wGgJYgQBGArngDYAmAygJ4DOqmAtiAMbMCGA1rqRTQZNmAQXTB6hDj0wgA5AFoAIgGEAsiIDSAUQD6AIQCqASQAyS3QBUAmgAVtAUgDMSgEqZyAdTyokSzETGAHYAZgD2cgCUONK8YhLyyupaekZmFjb2zm4e3r7%2BgaERMWHMAA4UmOimnEHAJJzAmMaU7A4ATPod%2BjEkjKUA8iSoZcMAYpVBnMyyvpi6mAAemGzDnETkuCGVkrCYlD5h6C0gAGw425snAIwALBeT07JceEEAdGxlZTigcnL49GCbHIJEo%2B3kAAZ/nh6GpOK9qGESOg2LI5NdofQBmVMEFIf9yLVgCc/tEIPtDsdWtcHldqQBWWm4p4gdQyUww1D0N6oRaoH7yMroMIAKxWqAg9CQnBx9EiDghIgVIli82YrzwzBIzF0WAAjmQsJQIAA1bSuajGAYAOQA1E43vT5YrlZxKJQFstVqh1ptJdLZQbOFhlbaw7apTLMPQAPRsPAozYfL6h8OR2UxrBsH11JOfMqpsMvd7551KxU%2B8SYVC6civbi1vBEdDBvDR/1R%2BhBkOK8O2kLMVCUMuYoEgsGtORQgFwhFIlFo6cw7G4/E4Ql1E6qskU1BHE7tJk3c6XZkzEBYejz1GxpAechhHl8gVyZUACXvYRwtoA7kcqGAYDKsqCigQoyqWHetraEElDKqOQTAqC4JTpis5BIiyKovIGIAiueKoeuRJbt03Q7gce5UiAThHtSACcTJTOeeCPvmL4IUhE5rjC6GYQuOGYvha4bsSk5RDg5IUfurT3KeB4QoxLIsW8SDsQCY7IZOS6wvCGHXmiuHLjiBHTiJJJRNEMJsrwtjCmK2ZriKIA0kEmA/hMdIgO01zROQ8j0v8Jn/GE8iWFgmC2h0Ti4ag%2BKRNE3BeRCjq3AA7HRtz0u0EL0mlGW5eu8i3P8rCnO0bzXO09JOLcOV0fl9IQk45xBTgIV/DgkgKbFqFkogEAoEsKzDEc%2BCEMGEi2LUHjUEgYQ/gRuFsKUFSEqgLFBFNrnkLN82Lf8y3lJU6AgMA1xZSUR2bOg1osh1h2rVUQyoLtC0CTgQ1sPEkiXvpt6fk%2B/KfdQQ6vPI/zhEEL1sJwmzObJYRQ4Y9CYLYiyOc5RF1G0nTdOuTa7FATGyAO/IAG5VPIqXXE4FltWU62I5IiiMHBLhsKRnTZbaCgDE4PMhOQe7BRT6DoHgYKE9E6AkFDmqYJYYRhOQUudaDm3TTtc1vei/wYNgmM/i2ZQCb5/mBWu7XaF6I3oLaiwABynAopy3LawBsGwtrnW87S2hAKicz0tphdgkXtNFkR63FEkoA9x1jRA8fXad52HpcTDoJIxBrkQrzBrQ7151M6C0AMRD2T1S2lDMUMDEE5CF4RYKkMAKiwyr71glwuaLv8BxZutFPM9On3DAZ0JQx4wlNi2pcqGEYJrhgmrvaLRBhCj/g98AdbY71FyEhIJptj%2BQm6xciPQ7Dsh3JfSMo2jGM0SJONdJ0%2BNEITEDEyApM4KLKmNM6ZhAZhtZmChWbZA5rjLmEIeZ8wFkLYoYRRbi0lvAaIKNNjZg2oQXElAF4gmYHia45wCEclctabURBKaVRwGUTePgNpEO1KQ84jD6DMMRpQzA1DmC0JOvQ7B4oNog2DKgVhJDnLnBEbgxG4j0CoF4fwwRzlDyMAkVI9hasJEqJoXQ9o0R9a3zNnIAKOBWrtXtk7F2bsPZex9n7CAocIpRR8tHXq0Q7xukphAMxxUcCsCcKlN4DtUq3FOPSDKEIcq3FuHRV2ljLbg06iAbqcUErUQdLE%2Bk1UyHVRqnRVKh4/JyFpskwi7VPFQj6vAOAsA46L0wNoKS6BE6nl/sWZM3xIbXzhnfPpyNUbo0Ik5c4r8YHvx6HIxmeJySwW0ZjChrw%2BEGJOg7BhTC5lLJpJw7hQR9ECMpps2ZYjKySOVmwzGZyFEXKOWo05Fzdm6KUQ8k5WD9LyCiq8TibinAqFJnGI4mAVLOEcC6F0Edfnjjce0doykkAdHaMBRUrxUC2mLP4yKqUui9nDKTEAIAhToogMijyEVlpTyhpIBw9IVBBAcLiplShkXfiaDWSgnAfT%2BPlE4PFSpUqssVOJMpFirEgG6WxHqtTY7sGaa0ykHTHjnmspgDkjBuS8n5H06gMMBkIwfiMjGNJJlcF4J1DwojEb4MWVc6RNIVlUPWc5PZ2yWH2tIVsrhcz3lCJpLcjCzzPU3KtfIoNejVmqLoQG4NxCvWaLeVGl11wfKdS%2BXIVUuh1RBE1NqXUmADQJn2Kac0lobT2kdGWZUQpRTig7LKatio3QejHj6DYmAIBzE9MNdtmxCy2mUvmAdUqvhNpEJWDljYggNjrM2Vs7Zu1tt9JgAdpNhzwTMeKlJaqNVckBjgGV4kBryrBIqyiyrNi/1%2BlhaMMY7zkAfAe3V%2Brb6GtQMMp%2BYyvJY1AFMvGgbbWEJDY62CfqzjeoOS8/Zvrk3HJOrIsNczFGXPjaGnByH7lwbUbIuN1zY2RudfBs4nzb3fMVB%2BR9X5fz/koIBVFIgwLgUVJBCKME4Iiq3RbKpF5ox/XvQDbVh6Y4nuWmetpl6zyyCHV8e%2B/S31yc/aM6cTkX5EjfgBpDeCFnAbQ6Byg4GGIwY9XpyDsGiNqIYoGlDLzrNYYs5TKzeGHWvOUdhxzpH%2BKvmhYhWFkUAUhEYFgaY4LgI%2Bb%2Bf5lQQXXjAFC5CkQrMiXRbqO7asuguU8siDigVfZEsgDwIF/W0xB2BbJfCm9C5/pUcBsivlOXwx9Bi7aYwGLsgRiHESzkwWBEkBCLoHwVRuVHGcCoNg0p0Chf5QOrAqBkRBHa60EAyXgAQBaxAArcpvxrfis4AVLLN2FXMdx6cIUZPfCPWSJp4mlUEAgJ0pSj5VIvpvvDRTj9lP/CcvcSZQdLUYe0wQl5Tq1nEaM%2B6xG0HweHPcydKzWm7laJA3961Eak0Odh652z9mQeWc89hbzTgCuwUwCEW0YwBgDF0G%2BMLTgwTbFcmTinVOGM/N88hSLy24vlgSx1pbK8UtToy5wfxu2WcRwIQVg7YrjvBXy494TXicA%2BLBCdfxOBEq3Adm8eJOvdd68O4E0q5VKrVVqtEhqTUWopI6pIGkF2JL9RQEiEYwwOlXz1S9wZV8lPP0PeFCWhtjam0O9unjchnqjAxWEUnjtnau3dp7b29Jfb%2BwXldKo4cnBOCjgr2p3jMC%2BNVwEkq1FQnhMidE2qcSElJIlTb9Jue6aJVOKcN49V4mnAdjVFvjV2ibLKRUuvNS6ZlPaDLtqqSLvRFFlwm1twgA"></iframe>
+CMakeLists 文件的第一行应始终是 [`cmake_minimum_required`](https://cmake.com.cn/cmake/help/latest/command/cmake_minimum_required.html)，指定项目要求的 CMake 最小版本。任何 CMakeLists 文件的下一行应该是 [`project`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令，此命令设置项目的名称。最后，使用 [`add_executable`](https://cmake.com.cn/cmake/help/latest/command/add_executable.html) 命令将给定的源文件添加向项目可执行文件。在此示例中，源目录中有两个文件：CMakeLists.txt 和 Hello.c。
 
 ### 3.2 配置和生成
 
-创建 CMakeLists 文件后，CMake 会处理文本文件并在缓存文件中创建条目。接下来，CMake 使用缓存条目在用户所需的构建系统（例如 Makefile 或 Visual Studio 解决方案）中生成项目。
+上面的 `CMakeLists.txt` 描述了项目及其可执行目标，但这份描述还不是可直接执行的构建规则。接下来需要运行 CMake，对项目进行配置并生成所选构建系统的规则。通常可通过 `cmake -S <源码目录> -B <构建目录>` 指定源码目录和构建目录；CMake 随后从源码目录的顶层 `CMakeLists.txt` 开始执行配置过程，并按项目逻辑处理 [`include()`](https://cmake.com.cn/cmake/help/latest/command/include.html#command:include)、[`add_subdirectory()`](https://cmake.com.cn/cmake/help/latest/command/add_subdirectory.html) 等命令引入的其他 CMake 文件。
+
+配置过程中，CMake 会根据工具链、平台和项目条件评估构建描述，建立目标及其依赖关系。配置完成后，CMake 根据选定的生成器进入生成阶段，把配置结果转换为对应构建系统可读取的文件：例如 Ninja 生成 `build.ninja`，Unix Makefiles 生成 Makefile，Visual Studio 生成解决方案和项目文件。这个过程主要是描述和生成构建规则，不会因此编译源文件，当运行 `cmake --build <构建目录>` 后，才会调用该构建目录对应的原生构建工具执行编译、链接等任务。修改构建描述或相关配置后，CMake 也可能在构建前重新配置并生成这些规则。
 
 #### 3.2.1 从命令行运行 CMake
 
-从命令行，可以使用 cmake 可执行文件生成项目构建系统。要使用 cmake 构建项目，首先创建并切换到您希望放置二进制文件的目录。运行 cmake 并指定源码树的路径，并使用 -D 标志传入任何选项。
+在命令行中运行 `cmake`，并通过参数指定源码目录、构建目录及所需配置，即可完成项目配置并生成对应的构建系统文件。下面介绍几个常用参数。
 
 cmake -S dir
-: 指定项目根目录，CMake 将在此找到要构建的项目。它包含根 CMakeLists.txt 文件。如果未指定，则默认为当前工作目录。
+: 指定项目根目录，该目录应包含根 CMakeLists.txt 文件，CMake 将在此寻找要构建的项目。如果未指定，则默认为当前工作目录。
 
 cmake -B dir
-: 指定构建目录，CMake 将在此输出生成的构建系统的文件，以及在运行构建系统时产生的缓存文件。如果未指定，则默认为当前工作目录。
+: 指定构建目录，CMake 将在此目录中输出生成的构建系统的文件，以及在运行构建系统时产生的缓存文件。如果未指定，则默认为当前工作目录。
 
 cmake --build dir
 : 在指定的构建目录中运行构建系统。
 
-向 CMake 指定生成器
-: CMake 支持将多个构建系统作为配置过程的输出，这些输出后端被称为“生成器”。CMake 生成器负责为原生构建系统编写输入文件。必须为构建树选择 CMake 生成器中的一个来决定使用哪个原生构建系统。使用 -G 选项来为新的构建树指定生成器。
+cmake -G
+: 指定生成器，生成器决定 CMake 为构建目录生成哪种原生构建系统文件，例如 Ninja 或 Makefile。
 
 ![Single Source Build](/assets/img/post/MISC-Tools-SingleSourceBuild.png){: .shadow }{: width="600" height="337" }
 
 向 CMake 指定编译器
-: 在某些系统上，您可能有多个编译器可供选择，或者您的编译器可能位于非标准位置。在这些情况下，您需要向 CMake 指定所需编译器的位置。有三种方法可以指定：生成器可以指定编译器；可以设置环境变量；或者可以设置缓存条目。可以使用在运行 CMake 之前设置的环境变量来抢占这些列表。CC 环境变量指定 C 编译器，而 CXX 指定 C++ 编译器。例如，您可以使用 -DCMAKE_CXX_COMPILER=cl 在命令行上直接指定编译器。编译器和链接器的标志也可以通过设置环境变量来更改，设置 LDFLAGS 将初始化链接标志的缓存值，而 CXXFLAGS 和 CFLAGS 将分别初始化 CMAKE_CXX_FLAGS 和 CMAKE_C_FLAGS。
+: 若需使用特定编译器，可在首次配置时通过 `CMAKE_C_COMPILER`、`CMAKE_CXX_COMPILER` 指定，或使用 `CC`、`CXX` 环境变量。`CFLAGS`、`CXXFLAGS` 和 `LDFLAGS` 可用于初始化相应的编译或链接标志。编译器选择会记录在构建目录的缓存中；更换编译器时，建议使用新的构建目录。
 
-指定构建配置
-: 构建配置允许以调试、优化等不同的方式构建项目。默认情况下，CMake 支持 Debug、Release、MinSizeRel 和 RelWithDebInfo 配置。Debug 是启用基本的调试标志。Release 是启用基本的优化标志。MinSizeRel 具有生成最小目标代码的标志，但不一定是速度最快的代码。RelWithDebInfo 构建具有调试信息的优化版本。
+向 CMake 指定构建配置
+: 构建配置允许以调试、优化等不同的方式构建项目。默认情况下，CMake 支持 `Debug`、`Release`、`MinSizeRel` 和 `RelWithDebInfo` 配置。`Debug` 是启用基本的调试标志。`Release` 是启用基本的优化标志。`MinSizeRel` 具有生成最小目标代码的标志，但不一定是速度最快的代码。`RelWithDebInfo` 构建具有调试信息的优化版本。
 
-  | 构建类型           | 编译选项             | 适用场景
-  | ---               | ---                 | ---
-  | Debug             | -g                  | 开发调试阶段，需要断点和变量查看
-  | Release           | -O2 -DNDEBUG        | 生产发布，追求运行速度
-  | RelWithDebInfo    | -O2 -g              | 需要性能分析或调试优化的发布版本
-  | MinSizeRel        | -Os                 | 嵌入式或对体积敏感的场景
+  | 构建类型             | 编译选项               | 适用场景
+  | ---                 | ---                   | ---
+  | `Debug`             | `-g`                  | 开发调试阶段，需要断点和变量查看
+  | `Release`           | `-O2 -DNDEBUG`        | 生产发布，追求运行速度
+  | `RelWithDebInfo`    | `-O2 -g`              | 需要性能分析或调试优化的发布版本
+  | `MinSizeRel`        | `-Os`                 | 嵌入式或对体积敏感的场景
 
-对于基于 Makefile 的生成器，在运行 CMake 时只能激活一个配置，并使用 CMAKE_BUILD_TYPE 变量指定。如果变量为空，则不会向构建添加任何标志。如果变量设置为配置的名称，则相应的变量和规则（例如 CMAKE_CXX_FLAGS_<ConfigName>）将添加到编译行。要构建调试和发布树，用户应使用 CMake 的源外构建功能创建多个构建目录，并将 CMAKE_BUILD_TYPE 设置为每个构建所需的选项。例如：
+对于基于 Makefile 的生成器，在运行 CMake 时只能激活一个配置，并使用 `CMAKE_BUILD_TYPE` 变量指定。如果变量为空，则不会向构建添加任何标志。要构建调试和发布树，用户应使用 CMake 的源外构建功能创建多个构建目录，并将 `CMAKE_BUILD_TYPE` 设置为每个构建所需的选项。例如：
 
 ```cmake
 # With source code in the directory MyProject
 # to build MyProject-debug create that directory, cd into it and
-cmake ../MyProject -DCMAKE_BUILD_TYPE=Debug
+cmake ../MyProjectd -DCMAKE_BUILD_TYPE=Debug
 # the same idea is used for the release tree MyProject-release
 cmake ../MyProject -DCMAKE_BUILD_TYPE=Release
 ```
@@ -106,29 +107,32 @@ cmake ../MyProject -DCMAKE_BUILD_TYPE=Release
 
 ### 3.3 构建您的项目
 
-运行 CMake 后，您的项目将准备好构建。如果您的目标生成器基于 Makefile，则可以通过将目录更改为您的二进制树并键入 make（或 gmake 或 nmake，具体取决于情况）来构建项目。对于简单的项目，安装和运行 CMake 就这么简单。
+完成配置和生成后，即可构建项目。推荐运行 `cmake --build <构建目录>`，由 CMake 调用该构建目录对应的原生构建工具；也可以直接调用生成器对应的工具，例如在 Makefile 构建目录中运行 `make`。构建完成后，便可运行生成的程序。
+
+<iframe style="display:block;width:100%;height:clamp(480px,80vh,800px);margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((g:!((h:tree,i:(buildSystem:cmake,buildSystemArgs:(cmake:'-DCMAKE_BUILD_TYPE%3DRelWithDebInfo'),cmakeArgs:'-DCMAKE_BUILD_TYPE%3DRelWithDebInfo',compilerLanguageId:c%2B%2B,customOutputFilename:Hello,files:!((editorId:6,fileId:14,filename:Hello.cpp,g:'',isIncluded:'0',isMainSource:'1',isOpen:'0',langId:''),(editorId:1,fileId:15,filename:CMakeLists.txt,g:'project(shapes)%0A%0Acmake_minimum_required(VERSION+3.5)%0A%0Aadd_executable(shapesquare%0A++++shapes/circle.cpp%0A++++shapes/rectangle.cpp%0A++++main.cpp)%0A%0Atarget_link_libraries(shapesquare%0A++++fmtd)%0A',isIncluded:'0',isMainSource:'0',isOpen:'0',langId:cmake)),isCMakeProject:'0',j:1,newFileId:21),l:'5',n:'0',o:'Tree+%231',t:'0')),k:20.547945205479454,l:'4',m:45.87412587412587,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'0',compilationPanelShown:'0',compiler:g152,compilerName:'',compilerOutShown:'1',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,libs:!((name:fmt,ver:'713')),options:'-std%3Dc%2B%2B20+-O3+-flto',overrides:!(),runtimeTools:!(),stdinPanelShown:'1',tree:1,wrap:'1'),l:'5',n:'0',o:'Executor+x86-64+gcc+15.2+(C%2B%2B,+Tree+%231)',t:'0'),(h:compiler,i:(compiler:g152,filters:(b:'0',binary:'1',binaryObject:'1',commentOnly:'0',debugCalls:'1',demangle:'0',directives:'0',execute:'1',intel:'0',libraryCode:'0',trim:'1',verboseDemangling:'0'),flagsViewOpen:'1',fontScale:14,fontUsePx:'0',j:3,lang:c%2B%2B,libs:!((name:fmt,ver:'713')),options:'-std%3Dc%2B%2B20+-O3+-flto',overrides:!(),selection:(endColumn:1,endLineNumber:1,positionColumn:1,positionLineNumber:1,selectionStartColumn:1,selectionStartLineNumber:1,startColumn:1,startLineNumber:1),tree:1),l:'5',n:'0',o:'+x86-64+gcc+15.2+(Tree+%231)',t:'0')),header:(),l:'4',m:54.12587412587413,n:'0',o:'',s:0,t:'0')),k:33.00553165334972,l:'3',n:'0',o:'',t:'0'),(g:!((g:!((h:codeEditor,i:(filename:Hello.cpp,fontScale:14,fontUsePx:'0',j:6,lang:c%2B%2B,selection:(endColumn:45,endLineNumber:4,positionColumn:45,positionLineNumber:4,selectionStartColumn:45,selectionStartLineNumber:4,startColumn:45,startLineNumber:4),source:'%23include+%3Ciostream%3E%0A%0Aint+main()+%7B%0A++++std::cout+%3C%3C+%22Hello+World!!%22+%3C%3C+std::endl%3B%0A%7D%0A'),l:'5',n:'0',o:Hello.cpp,t:'0'),(h:codeEditor,i:(filename:CMakeLists.txt,fontScale:14,fontUsePx:'0',j:1,lang:cmake,selection:(endColumn:1,endLineNumber:7,positionColumn:1,positionLineNumber:7,selectionStartColumn:1,selectionStartLineNumber:7,startColumn:1,startLineNumber:7),source:'cmake_minimum_required(VERSION+3.20)%0A%0Aproject(Hello)%0A%0Aadd_executable(Hello+%0A++++Hello.cpp)%0A%0A'),l:'5',n:'0',o:CMakeLists.txt,t:'0')),header:(),k:48.44444444444444,l:'4',m:62.125340599455036,n:'0',o:'',s:1,t:'0'),(g:!((h:output,i:(fontScale:14,fontUsePx:'0',j:3,treeid:1,wrap:'1'),l:'5',n:'0',o:'Output+of+x86-64+gcc+15.2+(Compiler+%233)',t:'0')),header:(),l:'4',m:37.874659400544964,n:'0',o:'',s:0,t:'0')),k:66.99446834665028,l:'3',n:'0',o:'',t:'0')),l:'2',n:'0',o:'',t:'0')),version:4"></iframe>
 
 ## 4. CMake 语言基础
 
-CMake 提供了一种图灵完备的领域特定语言来描述软件的构建过程。这门语言正式称为“CMake 语言”，或者更通俗地说，称为 CMakeLang。CMakeLang 中唯一的基础类型是字符串和列表。CMake 中的每个对象都是字符串，而列表本身也是包含分号作为分隔符的字符串。任何看起来操作非字符串（如布尔值、数字、JSON 对象等）的命令，实际上都是在解析一个字符串，执行一些内部转换逻辑（使用 CMakeLang 以外的语言），然后为任何潜在的输出转换回字符串。
+CMake 使用专门的语言描述和控制构建过程，通常称为 CMake 语言（CMakeLang）。CMakeLang 中唯一的基础类型是字符串和列表。普通变量的值以字符串形式表示；列表则通常表示为以分号分隔的字符串序列。布尔值和数字等含义由具体命令根据参数用途解释，并不是通用的独立变量类型。因此，阅读 CMake 代码时，需要结合命令的参数规则理解字符串和列表如何被解析。
 
 ### 4.1 注释
 
-注释以 `#` 开头，该字符不在 **括号参数**、**引号参数** 中，也未被不带引号参数中的反斜杠转义。有两种类型的注释：**括号注释** 和 **行注释**。
+在 CMake 语言中，`#` 可用于开始注释，但位于括号参数或引号参数内部时不作为注释起始符；在不带引号的参数中，若 `#` 被反斜杠转义，也不开始注释。注释分为 **行注释** 和 **括号注释** 两种。
 
 #### 4.1.1 括号注释
 
-一个紧跟 bracket_open 的 `#` 形成一个括号注释，包含整个括号的范围。例如：
+当 `#` 后紧接左方括号分隔符（如 `#[[` 或 `#[=[`）时，开始一个括号注释；注释在对应的右方括号分隔符（如 `]]` 或 `]=]`）处结束。例如：
 
 ```cmake
 #[[This is a bracket comment.
 It runs until the close bracket.]]
+
 message("First Argument\n" #[[Bracket Comment]] "Second Argument")
 ```
 
 #### 4.1.2 行注释
 
-一个未紧跟 bracket_open 的 `#` 形成一个行注释，该注释一直持续到行尾。例如：
+在可开始注释的位置，若 `#` 后没有紧跟左方括号分隔符，它就开始一个行注释，注释内容延续到行尾。例如：
 
 ```cmake
 # This is a line comment.
@@ -138,7 +142,7 @@ message("First Argument\n" # This is a line comment :)
 
 ### 4.2 变量
 
-变量是 CMake 语言中存储的基本单元。它们的值始终是字符串类型。变量名称区分大小写，并且可以包含几乎任何文本，但我们建议坚持使用仅包含字母数字字符加上 `_` 和 `-` 的名称。
+变量是 CMake 语言中用于存储值的基本单位。变量的值始终是字符串类型，不过某些命令会将这些字符串按其他类型解释。变量名区分大小写。虽然变量名可以包含多种字符，实际编写时通常使用字母、数字、下划线（`_`）和连字符（`-`），以提高可读性并减少引用时的歧义。
 
 #### 4.2.1 变量类型
 
@@ -146,9 +150,7 @@ message("First Argument\n" # This is a line comment :)
 
 ##### 4.2.1.1 普通变量
 
-使用 [`set()`](https://cmake.com.cn/cmake/help/latest/command/set.html#command:set) 和 [`unset()`](https://cmake.com.cn/cmake/help/latest/command/unset.html#command:unset) 命令可显式设置或取消设置变量。
-
-使用 `set()` 命令创建一个变量，也就是一个字符串的名称。并可以使用花括号扩展来访问变量的值。
+使用 [`set()`](https://cmake.com.cn/cmake/help/latest/command/set.html#command:set) 设置普通变量的值，使用 [`unset()`](https://cmake.com.cn/cmake/help/latest/command/unset.html#command:unset) 移除普通变量定义。[`unset()`](https://cmake.com.cn/cmake/help/latest/command/unset.html#command:unset) 会移除普通变量的定义，而不是将其设为空字符串把它定义为值为空的变量；若存在同名缓存变量，移除普通变量后，引用该名称时可能会读到缓存值。引用变量时，可用 `${<variable>}` 展开其值，例如：
 
 ```cmake
 set(var "World!")
@@ -169,14 +171,14 @@ CMake 内置了五种类别的变量，分别是提供信息、改变行为、�
 
 | 提供信息的内置变量                          | 作用                                   
 | ---                                       | ---                               
-| [`PROJECT_NAME`](https://cmake.com.cn/cmake/help/latest/variable/PROJECT_NAME.html)                             | 当前目录作用域或其上层目录中，<br>最近一次调用 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令时所给出的名称
-| [`PROJECT_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/PROJECT_VERSION.html)                       | 当前目录作用域或其上层目录中，<br>最近一次调用 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令时所提供的版本号
-| [`PROJECT_DESCRIPTION`](https://cmake.com.cn/cmake/help/latest/variable/PROJECT_VERSION.html)                   | 当前目录作用域或其上层目录中，<br>最近一次调用 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令时所提供的描述
-| [`PROJECT_SOURCE_DIR`](https://cmake.com.cn/cmake/help/latest/variable/PROJECT_SOURCE_DIR.html)                 | 当前目录作用域或其上层目录中，<br>最近一次调用 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令时的源目录
-| [`PROJECT_BINARY_DIR`](https://cmake.com.cn/cmake/help/latest/variable/PROJECT_BINARY_DIR.html)                 | 当前目录作用域或其上层目录中，<br>最近一次调用 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令时的二进制目录
-| [`CMAKE_PROJECT_NAME`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PROJECT_NAME.html)                 | 顶层 `CMakeLists.txt` 文件中通过 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令指定的项目名称
-| [`CMAKE_PROJECT_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PROJECT_VERSION.html)           | 顶层 `CMakeLists.txt` 文件中通过 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令指定的项目版本
-| [`CMAKE_PROJECT_DESCRIPTION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PROJECT_DESCRIPTION.html)   | 顶层 `CMakeLists.txt` 文件中通过 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令指定的项目描述
+| [`PROJECT_NAME`](https://cmake.com.cn/cmake/help/latest/variable/PROJECT_NAME.html)                             | 当前目录或其上层目录中，<br>最近一次调用 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令时所提供的名称
+| [`PROJECT_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/PROJECT_VERSION.html)                       | 当前目录或其上层目录中，<br>最近一次调用 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令时所提供的版本号
+| [`PROJECT_DESCRIPTION`](https://cmake.com.cn/cmake/help/latest/variable/PROJECT_VERSION.html)                   | 当前目录或其上层目录中，<br>最近一次调用 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令时所提供的描述
+| [`PROJECT_SOURCE_DIR`](https://cmake.com.cn/cmake/help/latest/variable/PROJECT_SOURCE_DIR.html)                 | 当前目录或其上层目录中，<br>最近一次调用 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令时的源目录
+| [`PROJECT_BINARY_DIR`](https://cmake.com.cn/cmake/help/latest/variable/PROJECT_BINARY_DIR.html)                 | 当前目录或其上层目录中，<br>最近一次调用 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令时的二进制目录
+| [`CMAKE_PROJECT_NAME`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PROJECT_NAME.html)                 | 顶层 CMakeLists.txt 文件中通过 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令指定的项目名称
+| [`CMAKE_PROJECT_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PROJECT_VERSION.html)           | 顶层 CMakeLists.txt 文件中通过 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令指定的项目版本
+| [`CMAKE_PROJECT_DESCRIPTION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PROJECT_DESCRIPTION.html)   | 顶层 CMakeLists.txt 文件中通过 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html#command:project) 命令指定的项目描述
 | [`CMAKE_SOURCE_DIR`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SOURCE_DIR.html)                     | 源码树顶层目录的完整路径
 | [`CMAKE_BINARY_DIR`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_BINARY_DIR.html)                                                                                                             | 构建树顶层目录的完整路径
 | [`CMAKE_CURRENT_SOURCE_DIR`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_CURRENT_SOURCE_DIR.html)     | 当前正在处理的源目录的完整路径
@@ -189,11 +191,11 @@ CMake 内置了五种类别的变量，分别是提供信息、改变行为、�
 | [`CMAKE_MAJOR_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_MAJOR_VERSION.html)               | [`CMAKE_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_VERSION.html#variable:CMAKE_VERSION) 变量的版本号第一个组成部分
 | [`CMAKE_MINOR_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_MINOR_VERSION.html)               | [`CMAKE_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_VERSION.html#variable:CMAKE_VERSION) 变量的版本号第二个组成部分
 | [`CMAKE_COMMAND`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_COMMAND.html)                           | [`cmake`](https://cmake.com.cn/cmake/help/latest/manual/cmake.1.html#manual:cmake(1)) 可执行程序完整路径
-| [`CMAKE_EXECUTABLE_SUFFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_EXECUTABLE_SUFFIX.html)          | 添加修改可执行文件后缀
-| [`CMAKE_STATIC_LIBRARY_PREFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_STATIC_LIBRARY_PREFIX.html)  | 静态库前缀
-| [`CMAKE_STATIC_LIBRARY_SUFFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_STATIC_LIBRARY_SUFFIX.html)  | 静态库后缀
-| [`CMAKE_SHARED_LIBRARY_PREFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SHARED_LIBRARY_PREFIX.html)  | 动态库前缀
-| [`CMAKE_SHARED_LIBRARY_SUFFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SHARED_LIBRARY_SUFFIX.html)  | 动态库后缀
+| [`CMAKE_EXECUTABLE_SUFFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_EXECUTABLE_SUFFIX.html)          | 可执行文件名使用的后缀
+| [`CMAKE_STATIC_LIBRARY_PREFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_STATIC_LIBRARY_PREFIX.html)  | 静态库文件名使用的前缀
+| [`CMAKE_STATIC_LIBRARY_SUFFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_STATIC_LIBRARY_SUFFIX.html)  | 静态库文件名使用的后缀
+| [`CMAKE_SHARED_LIBRARY_PREFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SHARED_LIBRARY_PREFIX.html)  | 共享库文件名使用的前缀
+| [`CMAKE_SHARED_LIBRARY_SUFFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SHARED_LIBRARY_SUFFIX.html)  | 共享库文件名使用的后缀
 | [`CMAKE_MINIMUM_REQUIRED_VERSION`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_MINIMUM_REQUIRED_VERSION.html)  | CMake 被要求的最低版本
 | [`CMAKE_PARENT_LIST_FILE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PARENT_LIST_FILE.html)                  | 包含当前 CMake 文件的那个文件的完整路径
 | [`CMAKE_TOOLCHAIN_FILE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_TOOLCHAIN_FILE.html)                      | 工具链文件路径
@@ -201,21 +203,21 @@ CMake 内置了五种类别的变量，分别是提供信息、改变行为、�
 
 | 改变行为的内置变量                          | 作用                                   
 | ---                                       | ---    
-| [`BUILD_SHARED_LIBS`](https://cmake.com.cn/cmake/help/latest/variable/BUILD_SHARED_LIBS.html)        | 在调用 [`add_library()`](https://cmake.com.cn/cmake/help/latest/command/add_library.html#command:add_library) 时若未明确指定库类型，<br>则默认使用 SHARED（动态）库而非 STATIC（静态）库
-| [`CMAKE_BUILD_TYPE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html)          | 指定构建类型，典型值包括 `Debug`, `Release`, `RelWithDebInfo` 和 `MinSizeRel`
+| [`BUILD_SHARED_LIBS`](https://cmake.com.cn/cmake/help/latest/variable/BUILD_SHARED_LIBS.html)        | 开启后，在调用 [`add_library()`](https://cmake.com.cn/cmake/help/latest/command/add_library.html#command:add_library) 时若未明确指定库类型，<br>则默认使用 `SHARED`（动态）库而非 `STATIC`（静态）库
+| [`CMAKE_BUILD_TYPE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html)          | 指定构建类型，<br>典型值包括 `Debug`, `Release`, `RelWithDebInfo` 和 `MinSizeRel`
 | [`CMAKE_INSTALL_PREFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_INSTALL_PREFIX.html)  | 指定安装目录
 | [`CMAKE_INCLUDE_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_INCLUDE_PATH.html)      | 指定 [`find_file()`](https://cmake.com.cn/cmake/help/latest/command/find_file.html#command:find_file) 和 [`find_path()`](https://cmake.com.cn/cmake/help/latest/command/find_path.html#command:find_path) 命令的搜索路径列表
-| [`CMAKE_LIBRARY_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LIBRARY_PATH.html)      | 指定 [`find_library()`](https://cmake.com.cn/cmake/help/latest/command/find_library.html#command:find_library) 命令的搜索路径目录列表
-| [`CMAKE_PREFIX_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PREFIX_PATH.html)        | 指定 [`find_package()`](https://cmake.com.cn/cmake/help/latest/command/find_package.html#command:find_package)、[`find_library()`](https://cmake.com.cn/cmake/help/latest/command/find_library.html#command:find_library) 等的搜索前缀列表
-| [`CMAKE_PROGRAM_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PROGRAM_PATH.html)      | 指定 [`find_program()`](https://cmake.com.cn/cmake/help/latest/command/find_program.html#command:find_program) 命令的搜索路径目录列表
+| [`CMAKE_LIBRARY_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LIBRARY_PATH.html)      | 指定 [`find_library()`](https://cmake.com.cn/cmake/help/latest/command/find_library.html#command:find_library) 命令的搜索路径列表
+| [`CMAKE_PREFIX_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PREFIX_PATH.html)        | 指定 [`find_package()`](https://cmake.com.cn/cmake/help/latest/command/find_package.html#command:find_package)、[`find_library()`](https://cmake.com.cn/cmake/help/latest/command/find_library.html#command:find_library) 等的搜索路径前缀列表
+| [`CMAKE_PROGRAM_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PROGRAM_PATH.html)      | 指定 [`find_program()`](https://cmake.com.cn/cmake/help/latest/command/find_program.html#command:find_program) 命令的搜索路径列表
 | [`CMAKE_MODULE_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_MODULE_PATH.html)        | 指定由 [`include()`](https://cmake.com.cn/cmake/help/latest/command/include.html#command:include) 或 [`find_package()`](https://cmake.com.cn/cmake/help/latest/command/find_package.html#command:find_package) 命令加载 CMake 模块的搜索路径
-| [`CMAKE_SYSROOT`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSROOT.html) | 指定编译器的 --sysroot 标志的根目录路径
+| [`CMAKE_SYSROOT`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSROOT.html) | 指定编译器的 `--sysroot` 标志的根目录路径
 | [`CMAKE_FIND_ROOT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH.html)  | 指定备选的根目录查找路径列表
 | [`CMAKE_FIND_`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_INCLUDE.html)<br>[`ROOT_PATH_MODE_INCLUDE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_INCLUDE.html) | 控制查找文件和目录时，<br>是否搜索 [`CMAKE_FIND_ROOT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH.html) 和 [`CMAKE_SYSROOT`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSROOT.html) 中定义的路径
 | [`CMAKE_FIND_`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_LIBRARY.html)<br>[`ROOT_PATH_MODE_LIBRARY`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_LIBRARY.html) | 控制查找库时，<br>是否搜索 [`CMAKE_FIND_ROOT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH.html) 和 [`CMAKE_SYSROOT`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSROOT.html) 中定义的路径
 | [`CMAKE_FIND_`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_PACKAGE.html)<br>[`ROOT_PATH_MODE_PACKAGE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_PACKAGE.html) | 控制查找包时，<br>是否搜索 [`CMAKE_FIND_ROOT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH.html) 和 [`CMAKE_SYSROOT`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSROOT.html) 中定义的路径
 | [`CMAKE_FIND_`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_PROGRAM.html)<br>[`ROOT_PATH_MODE_PROGRAM`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_PROGRAM.html) | 控制查找程序时，<br>是否搜索 [`CMAKE_FIND_ROOT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH.html) 和 [`CMAKE_SYSROOT`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSROOT.html) 中定义的路径
-| [`CMAKE_FIND_`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH.html)<br>[`USE_SYSTEM_ENVIRONMENT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH.html) | 默认为 TRUE，决定是否搜索由标准系统环境变量提供的路径
+| [`CMAKE_FIND_`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH.html)<br>[`USE_SYSTEM_ENVIRONMENT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH.html) | 默认为 `TRUE`，决定是否搜索由标准系统环境变量提供的路径
 
 | 描述系统的内置变量                          | 作用                                   
 | ---                                       | ---    
@@ -223,46 +225,46 @@ CMake 内置了五种类别的变量，分别是提供信息、改变行为、�
 | [`CMAKE_SYSTEM_PROCESSOR`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSTEM_PROCESSOR.html)           | 目标 CPU 架构：`x86_64/aarch64/loongarch64`
 | [`CMAKE_HOST_SYSTEM_NAME`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_HOST_SYSTEM_NAME.html)           | 本机主机操作系统名称，即 CMake 运行所在的操作系统的名称
 | [`CMAKE_HOST_SYSTEM_PROCESSOR`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_HOST_SYSTEM_PROCESSOR.html) | 本机主机 CPU 架构，即 CMake 运行所在的机器 CPU 名称
-| [`UNIX`](https://cmake.com.cn/cmake/help/latest/variable/UNIX.html)                                               | 当目标系统为 UNIX 或类 UNIX 系统时，设置为 true
-| [`WIN32`](https://cmake.com.cn/cmake/help/latest/variable/WIN32.html)                                             | 当目标系统为 Windows（包括 Win64）时，设置为 true
-| [`LINUX`](https://cmake.com.cn/cmake/help/latest/variable/LINUX.html)                                             | 当目标系统为 Linux 时，设置为 true
-| [`ANDROID`](https://cmake.com.cn/cmake/help/latest/variable/ANDROID.html)                                         | 当目标系统为 Android 时，设置为 true
+| [`UNIX`](https://cmake.com.cn/cmake/help/latest/variable/UNIX.html)                                               | 当目标系统为 UNIX 或类 UNIX 系统时，设置为 `true`
+| [`WIN32`](https://cmake.com.cn/cmake/help/latest/variable/WIN32.html)                                             | 当目标系统为 Windows（包括 Win64）时，设置为 `true`
+| [`LINUX`](https://cmake.com.cn/cmake/help/latest/variable/LINUX.html)                                             | 当目标系统为 Linux 时，设置为 `true`
+| [`ANDROID`](https://cmake.com.cn/cmake/help/latest/variable/ANDROID.html)                                         | 当目标系统为 Android 时，设置为 `true`
 
 
 | 控制构建的内置变量                          | 作用                                   
 | ---                                       | ---    
 | [`CMAKE_LINKER_TYPE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LINKER_TYPE.html)                           | 指定链接步骤将使用的链接器
 | [`CMAKE_EXE_LINKER_FLAGS`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_EXE_LINKER_FLAGS.html)                 | 指定可执行文件的链接标志
-| [`CMAKE_DEBUG_POSTFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_DEBUG_POSTFIX.html)                       | Debug 版本库文件名后缀
-| [`CMAKE_INCLUDE_CURRENT_DIR`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_INCLUDE_CURRENT_DIR.html)           | 自动将当前的源码目录和构建目录添加到包含路径中<br>默认情况下，`CMAKE_INCLUDE_CURRENT_DIR` 为 `OFF`
+| [`CMAKE_DEBUG_POSTFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_DEBUG_POSTFIX.html)                       | `Debug` 版本库文件名后缀
+| [`CMAKE_INCLUDE_CURRENT_DIR`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_INCLUDE_CURRENT_DIR.html)           | 自动将当前的源码目录和构建目录添加到包含路径中，<br>默认情况下，`CMAKE_INCLUDE_CURRENT_DIR` 为 `OFF`
 | [`CMAKE_SHARED_LINKER_FLAGS`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SHARED_LINKER_FLAGS.html)           | 指定动态库的链接标志
 | [`CMAKE_STATIC_LINKER_FLAGS`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_STATIC_LINKER_FLAGS.html)           | 指定静态库的链接标志
 | [`CMAKE_ARCHIVE_OUTPUT_DIRECTORY`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_ARCHIVE_OUTPUT_DIRECTORY.html) | 指定构建时所有 [`ARCHIVE`](https://cmake.com.cn/cmake/help/latest/manual/cmake-buildsystem.7.html#archive-output-artifacts) 目标文件的存放位置
 | [`CMAKE_LIBRARY_OUTPUT_DIRECTORY`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LIBRARY_OUTPUT_DIRECTORY.html) | 指定构建时所有 [`LIBRARY`](https://cmake.com.cn/cmake/help/latest/manual/cmake-buildsystem.7.html#library-output-artifacts) 目标文件的存放位置
 | [`CMAKE_RUNTIME_OUTPUT_DIRECTORY`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_RUNTIME_OUTPUT_DIRECTORY.html) | 指定构建时所有 [`RUNTIME`](https://cmake.com.cn/cmake/help/latest/manual/cmake-buildsystem.7.html#runtime-output-artifacts) 目标文件的存放位置
-| [`CMAKE_POSITION_INDEPENDENT_CODE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_POSITION_INDEPENDENT_CODE.html) | 设置非 SHARED 或 MODULE 库目标上的 [`POSITION_INDEPENDENT_CODE`](https://cmake.com.cn/cmake/help/latest/prop_tgt/POSITION_INDEPENDENT_CODE.html#prop_tgt:POSITION_INDEPENDENT_CODE) 属性<br>无论如何设置此变量，SHARED 和 MODULE 库目标均默认启用 PIC
+| [`CMAKE_POSITION_INDEPENDENT_CODE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_POSITION_INDEPENDENT_CODE.html) | 设置非 SHARED 或 MODULE 库上的 [`POSITION_INDEPENDENT_CODE`](https://cmake.com.cn/cmake/help/latest/prop_tgt/POSITION_INDEPENDENT_CODE.html#prop_tgt:POSITION_INDEPENDENT_CODE) 属性，<br>无论如何设置此变量，SHARED 和 MODULE 库目标均默认启用 `PIC`
 
 
 | 用于语言的内置变量                          | 作用                                   
 | ---                                       | ---    
-| [`CMAKE_C_COMPILER`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_COMPILER.html)                          | 指定 `C` 编译器的完整路径
-| [`CMAKE_C_COMPILER_ID`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_COMPILER_ID.html)                    | 指定 `C` 编译器标识字符串
-| [`CMAKE_C_STANDARD`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_C_STANDARD.html)                             | 用于设置 [`C_STANDARD`](https://cmake.com.cn/cmake/help/latest/prop_tgt/C_STANDARD.html#prop_tgt:C_STANDARD)，指定构建目标时所请求的 `C` 标准特性
+| [`CMAKE_C_COMPILER`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_COMPILER.html)                          | 指定 C 编译器的完整路径
+| [`CMAKE_C_COMPILER_ID`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_COMPILER_ID.html)                    | 指定 C 编译器标识字符串
+| [`CMAKE_C_STANDARD`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_C_STANDARD.html)                             | 用于设置 [`C_STANDARD`](https://cmake.com.cn/cmake/help/latest/prop_tgt/C_STANDARD.html#prop_tgt:C_STANDARD)，指定构建目标时所请求的 C 标准特性
 | [`CMAKE_C_STANDARD_REQUIRED`](https://cmake.com.cn/cmake/help/latest/prop_tgt/C_STANDARD_REQUIRED.html#prop_tgt:C_STANDARD_REQUIRED) | 布尔值，描述 [`C_STANDARD`](https://cmake.com.cn/cmake/help/latest/prop_tgt/C_STANDARD.html#prop_tgt:C_STANDARD) 的值是否为强制要求
-| [`CMAKE_C_FLAGS`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS.html)                                | 指定 `C` 语言编译选项
-| [`CMAKE_C_FLAGS_DEBUG`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_DEBUG.html)                    | `C` 语言在 `Debug` 配置下构建时使用的编译选项
-| [`CMAKE_C_FLAGS_RELEASE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_RELEASE.html)                | `C` 语言在 `Release` 配置下构建时使用的编译选项
-| [`CMAKE_C_FLAGS_RELWITHDEBINFO`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_RELWITHDEBINFO.html)  | `C` 语言在 `RelWithDebInfo` 配置下构建时使用的编译选项
-| [`CMAKE_C_FLAGS_MINSIZEREL`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_MINSIZEREL.html)          | `C` 语言在 `MinSizeRel` 配置下构建时使用的编译选项
-| [`CMAKE_CXX_COMPILER`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_COMPILER.html)                        | `CXX` 编译器的完整路径
-| [`CMAKE_CXX_COMPILER_ID`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_COMPILER_ID.html)                  | 指定 `CXX` 编译器标识字符串
-| [`CMAKE_CXX_STANDARD`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_CXX_STANDARD.html)                         | 用于设置 [`CXX_STANDARD`](https://cmake.com.cn/cmake/help/latest/prop_tgt/CXX_STANDARD.html#prop_tgt:CXX_STANDARD)，指定构建目标时所请求的 `CXX` 标准特性
+| [`CMAKE_C_FLAGS`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS.html)                                | 指定 C 语言编译选项
+| [`CMAKE_C_FLAGS_DEBUG`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_DEBUG.html)                    | C 语言在 `Debug` 配置下构建时使用的编译选项
+| [`CMAKE_C_FLAGS_RELEASE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_RELEASE.html)                | C 语言在 `Release` 配置下构建时使用的编译选项
+| [`CMAKE_C_FLAGS_RELWITHDEBINFO`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_RELWITHDEBINFO.html)  | C 语言在 `RelWithDebInfo` 配置下构建时使用的编译选项
+| [`CMAKE_C_FLAGS_MINSIZEREL`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_MINSIZEREL.html)          | C 语言在 `MinSizeRel` 配置下构建时使用的编译选项
+| [`CMAKE_CXX_COMPILER`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_COMPILER.html)                        | CXX 编译器的完整路径
+| [`CMAKE_CXX_COMPILER_ID`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_COMPILER_ID.html)                  | 指定 CXX 编译器标识字符串
+| [`CMAKE_CXX_STANDARD`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_CXX_STANDARD.html)                         | 用于设置 [`CXX_STANDARD`](https://cmake.com.cn/cmake/help/latest/prop_tgt/CXX_STANDARD.html#prop_tgt:CXX_STANDARD)，指定构建目标时所请求的 CXX 标准特性
 | [`CMAKE_CXX_STANDARD_REQUIRED`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_CXX_STANDARD_REQUIRED.html)       | 布尔值，描述 [`CXX_STANDARD`](https://cmake.com.cn/cmake/help/latest/prop_tgt/CXX_STANDARD.html#prop_tgt:CXX_STANDARD) 的值是否为强制要求
-| [`CMAKE_CXX_FLAGS`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS.html)                              | 指定 `CXX` 语言编译选项
-| [`CMAKE_CXX_FLAGS_DEBUG`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_DEBUG.html)                  | `CXX` 语言在 `Debug` 配置下构建时使用的编译选项
-| [`CMAKE_CXX_FLAGS_RELEASE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_RELEASE.html)              | `CXX` 语言在 `Release` 配置下构建时使用的编译选项
-| [`CMAKE_CXX_FLAGS_RELWITHDEBINFO`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_RELWITHDEBINFO.html) | `CXX` 语言在 `RelWithDebInfo` 配置下构建时使用的编译选项
-| [`CMAKE_CXX_FLAGS_MINSIZEREL`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_MINSIZEREL.html)        | `CXX` 语言在 `MinSizeRel` 配置下构建时使用的编译选项
+| [`CMAKE_CXX_FLAGS`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS.html)                              | 指定 CXX 语言编译选项
+| [`CMAKE_CXX_FLAGS_DEBUG`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_DEBUG.html)                  | CXX 语言在 `Debug` 配置下构建时使用的编译选项
+| [`CMAKE_CXX_FLAGS_RELEASE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_RELEASE.html)              | CXX 语言在 `Release` 配置下构建时使用的编译选项
+| [`CMAKE_CXX_FLAGS_RELWITHDEBINFO`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_RELWITHDEBINFO.html) | CXX 语言在 `RelWithDebInfo` 配置下构建时使用的编译选项
+| [`CMAKE_CXX_FLAGS_MINSIZEREL`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_LANG_FLAGS_MINSIZEREL.html)        | CXX 语言在 `MinSizeRel` 配置下构建时使用的编译选项
 
 ##### 4.2.1.2 环境变量 
 
@@ -272,44 +274,46 @@ CMake 内置了五种类别的变量，分别是提供信息、改变行为、�
 
   | 环境变量                | 作用                                   
   | ---                    | ---                               
-  | [`CMAKE_INCLUDE_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_INCLUDE_PATH.html)  | 供 find_file() 和 find_path() 命令搜索。
-  | [`CMAKE_LIBRARY_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_LIBRARY_PATH.html)  | 供 find_library() 命令在其中进行搜索。
-  | [`CMAKE_PROGRAM_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_PROGRAM_PATH.html)  | 供 find_program() 命令搜索。
+  | [`CMAKE_INCLUDE_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_INCLUDE_PATH.html)  | 供 [`find_file()`](https://cmake.com.cn/cmake/help/latest/command/find_file.html#command:find_file) 和 [`find_path()`](https://cmake.com.cn/cmake/help/latest/command/find_path.html#command:find_path) 命令搜索。
+  | [`CMAKE_LIBRARY_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_LIBRARY_PATH.html)  | 供 [`find_library()`](https://cmake.com.cn/cmake/help/latest/command/find_library.html#command:find_library) 命令在其中进行搜索。
+  | [`CMAKE_PROGRAM_PATH`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_PROGRAM_PATH.html)  | 供 [`find_program()`](https://cmake.com.cn/cmake/help/latest/command/find_program.html#command:find_program) 命令搜索。
 
-  这些路径类型环境变量可以被设置为单个目录，或在 UNIX 上用 : 分隔，在 Windows 上用 ; 分隔的目录列表。
+  这些环境变量的值可以是单个目录，也可以是目录列表；列表中的目录在 Unix 上以冒号 `:` 分隔，在 Windows 上以分号 `;` 分隔。
 
 * 控制构建的环境变量
 
-  | 环境变量                | 作用                        | 说明                                
-  | ---                    | ---                         | --- 
-  | [`CMAKE_BUILD_TYPE`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_BUILD_TYPE.html) | 首次构建时为 CMAKE_BUILD_TYPE 变量提供默认值
-  | [`CMAKE_GENERATOR`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_GENERATOR.html)   | 未使用 `-G` 指定生成器时，作为 CMake 默认生成器 | 传入无效值则使用 CMake 内置默认，无论如何最终生效值存入 CMAKE_GENERATOR 变量
-  | [`CMAKE_INSTALL_PREFIX`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_INSTALL_PREFIX.html) | 覆盖 CMake 默认安装前缀    | 指定目录值必须是绝对路径
-  | [`CMAKE_TOOLCHAIN_FILE`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_TOOLCHAIN_FILE.html) | 首次构建时指定默认工具链文件  | 
-  | [`DESTDIR`](https://cmake.com.cn/cmake/help/latest/envvar/DESTDIR.html)                           | 在 UNIX 系统上重定向安装路径  | 例如：make DESTDIR=/package/stage install
-  | [`VERBOSE`](https://cmake.com.cn/cmake/help/latest/envvar/VERBOSE.html)                           | 开启 CMake 与底层构建工具的详细日志输出 |
-  | [`CMAKE_NO_VERBOSE`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_NO_VERBOSE.html)         | 禁用来自 CMake 的详细输出   |
+  | 环境变量                | 作用                                    
+  | ---                    | ---              
+  | [`CMAKE_BUILD_TYPE`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_BUILD_TYPE.html)         | 首次构建时为 CMAKE_BUILD_TYPE 变量提供默认值
+  | [`CMAKE_GENERATOR`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_GENERATOR.html)           | 未通过 `-G` 指定生成器时，作为默认生成器
+  | [`CMAKE_INSTALL_PREFIX`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_INSTALL_PREFIX.html) | 覆盖 CMake 默认安装前缀，指定目录值必须是绝对路径
+  | [`CMAKE_TOOLCHAIN_FILE`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_TOOLCHAIN_FILE.html) | 首次构建时指定默认工具链文件
+  | [`DESTDIR`](https://cmake.com.cn/cmake/help/latest/envvar/DESTDIR.html)                           | 在 UNIX 系统上重定向安装路径，如：`make DESTDIR=/package/stage install`
+  | [`VERBOSE`](https://cmake.com.cn/cmake/help/latest/envvar/VERBOSE.html)                           | 开启 CMake 与底层构建工具的详细日志输出 
+  | [`CMAKE_NO_VERBOSE`](https://cmake.com.cn/cmake/help/latest/envvar/CMAKE_NO_VERBOSE.html)         | 禁用来自 CMake 的详细输出   
 
 * 针对编程语言的环境变量
 
-  | 环境变量                | 作用                        | 说明                                          
-  | ---                    | ---                         | ---   
-  | [`CC`](https://cmake.com.cn/cmake/help/latest/envvar/CC.html)             | 指定 C 语言编译器               | 仅在首次配置生效，之后将存入 CMAKE_C_COMPILER 缓存；对于任何配置运行（包括首次），如果定义了 CMAKE_C_COMPILER 变量则该环境变量将被忽略
-  | [`CFLAGS`](https://cmake.com.cn/cmake/help/latest/envvar/CFLAGS.html)     | 添加编译 C 文件时使用的编译选项  | 仅在首次配置生效；对于任何配置运行（包括首次），如果定义了 CMAKE_C_FLAGS 变量，则该环境变量将被忽略。
-  | [`CXX`](https://cmake.com.cn/cmake/help/latest/envvar/CXX.html)           | 指定 CXX 语言编译器             | 仅在首次配置生效，之后将存入 CMAKE_CXX_COMPILER 缓存；对于任何配置运行（包括首次），如果定义了 CMAKE_CXX_COMPILER 变量则该环境变量将被忽略
-  | [`CXXFLAGS`](https://cmake.com.cn/cmake/help/latest/envvar/CXXFLAGS.html) | 添加编译 C 文件时使用的编译选项   | 仅在首次配置生效；对于任何配置运行（包括首次），如果定义了 CMAKE_CXX_FLAGS 变量，则该环境变量将被忽略。
+  首次为相应语言配置构建树时，若对应的 CMake 变量尚未定义，CMake 会用这些环境变量初始化相应的缓存项；变量已定义时，环境变量会被忽略。后续配置使用缓存值。
+
+  | 环境变量                | 用途                         | 对应的 CMake 缓存变量
+  | ---                    | ---                          | ---
+  | [`CC`](https://cmake.com.cn/cmake/help/latest/envvar/CC.html)             | 指定 C 编译器                 | `CMAKE_C_COMPILER`
+  | [`CFLAGS`](https://cmake.com.cn/cmake/help/latest/envvar/CFLAGS.html)     | 提供 C 源文件的默认编译选项    | `CMAKE_C_FLAGS`
+  | [`CXX`](https://cmake.com.cn/cmake/help/latest/envvar/CXX.html)           | 指定 C++ 编译器               | `CMAKE_CXX_COMPILER`
+  | [`CXXFLAGS`](https://cmake.com.cn/cmake/help/latest/envvar/CXXFLAGS.html) | 提供 C++ 源文件的默认编译选项  | `CMAKE_CXX_FLAGS`
 
 ##### 4.2.1.3 缓存变量
 
-由 `-D` 标志和 [`option()`](https://cmake.com.cn/cmake/help/latest/command/option.html#command:option) 命令创建的是缓存（cache）变量。通常保存在 `CMakeCache.txt` 文件中。缓存变量是全局可见的变量，且具有“粘性”，一旦设置后就很难改变。如果一个缓存变量被设置了一次，它将一直保留，直到被另一个 `-D` 标志覆盖。[`set()`](https://cmake.com.cn/cmake/help/latest/command/set.html#command:set) 也可以用来操作缓存变量，但不会改变已经创建的变量。
+缓存变量可通过命令行参数 `-D` 设置，也可在 CMake 代码中使用 [`option()`](https://cmake.com.cn/cmake/help/latest/command/option.html#command:option) 或 [`set(... CACHE ...)`](https://cmake.com.cn/cmake/help/latest/command/set.html#command:set) 定义。它们通常保存在构建目录的 CMakeCache.txt 中。缓存变量是全局可见的变量，通常会在后续配置中保留其值，直到用户或项目显式修改、删除该项，或清除构建目录中的缓存。对于已经存在的缓存项，使用 [`set(... CACHE ...)`](https://cmake.com.cn/cmake/help/latest/command/set.html#command:set) 时默认不会覆盖其值，需要显式覆盖时可使用 `FORCE`。
 
-<iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:55,endLineNumber:4,positionColumn:55,positionLineNumber:4,selectionStartColumn:55,selectionStartLineNumber:4,startColumn:55,startLineNumber:4),source:'set(StickyCacheVariable+%22I+will+not+change%22+CACHE+STRING+%22%22)%0Aset(StickyCacheVariable+%22Overwrite+StickyCache%22+CACHE+STRING+%22%22)%0A%0Amessage(%22StickyCacheVariable:+$%7BStickyCacheVariable%7D%22)'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'1',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,options:'',source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
+<iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:55,endLineNumber:8,positionColumn:55,positionLineNumber:8,selectionStartColumn:55,selectionStartLineNumber:8,startColumn:55,startLineNumber:8),source:'set(StickyCacheVariable+%22I+will+not+change%22+CACHE+STRING+%22%22)%0Aset(StickyCacheVariable+%22Overwrite+StickyCache%22+CACHE+STRING+%22%22)%0A%0Amessage(%22StickyCacheVariable:+$%7BStickyCacheVariable%7D%22)%0A%0Aset(StickyCacheVariable+%22Overwrite+StickyCache%22+CACHE+STRING+%22%22+FORCE)%0A%0Amessage(%22StickyCacheVariable:+$%7BStickyCacheVariable%7D%22)'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'1',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,libs:!(),options:'',overrides:!(),runtimeTools:!(),source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
 
-由于 `-D` 标志在任何项目命令之前处理，因此它们在设置缓存变量的值时具有优先权。
+当使用命令行参数 `-D` 设置缓存项时，命令行参数 -D 会在项目命令执行前设置缓存项。项目随后调用 [`set(... CACHE ...)`](https://cmake.com.cn/cmake/help/latest/command/set.html#command:set) 时，如果同名缓存项已存在，默认保留其值；若指定 `FORCE`，则会用 [`set(... CACHE ... FORCE)`](https://cmake.com.cn/cmake/help/latest/command/set.html#command:set) 提供的值覆盖现有缓存值。
 
-<iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:55,endLineNumber:4,positionColumn:55,positionLineNumber:4,selectionStartColumn:55,selectionStartLineNumber:4,startColumn:55,startLineNumber:4),source:'set(StickyCacheVariable+%22I+will+not+change%22+CACHE+STRING+%22%22)%0Aset(StickyCacheVariable+%22Overwrite+StickyCache%22+CACHE+STRING+%22%22)%0A%0Amessage(%22StickyCacheVariable:+$%7BStickyCacheVariable%7D%22)'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'0',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'-DStickyCacheVariable%3D%22Commandline+always+wins%22',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,libs:!(),options:'',overrides:!(),runtimeTools:!(),source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
+<iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:55,endLineNumber:7,positionColumn:55,positionLineNumber:7,selectionStartColumn:55,selectionStartLineNumber:7,startColumn:55,startLineNumber:7),source:'set(StickyCacheVariable+%22I+will+not+change%22+CACHE+STRING+%22%22)%0A%0Amessage(%22StickyCacheVariable:+$%7BStickyCacheVariable%7D%22)%0A%0Aset(StickyCacheVariable+%22Force+Overwrite+StickyCache%22+CACHE+STRING+%22%22+FORCE)%0A%0Amessage(%22StickyCacheVariable:+$%7BStickyCacheVariable%7D%22)'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'0',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'-DStickyCacheVariable%3D%22Commandline+always+wins%22',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,libs:!(),options:'',overrides:!(),runtimeTools:!(),source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
 
-虽然缓存变量通常无法更改，但它们可以被普通变量隐藏（shadowed）。我们可以通过使用 set() 设置一个与缓存变量同名的变量，然后使用 unset() 删除该普通变量来观察这一点。
+同名普通变量可以遮蔽缓存变量。我们可以通过使用 [`set()`](https://cmake.com.cn/cmake/help/latest/command/set.html#command:set) 设置一个与缓存变量同名的变量，然后使用 [`unset()`](https://cmake.com.cn/cmake/help/latest/command/unset.html#command:unset) 删除该普通变量来观察这一点。
 
 <iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:45,endLineNumber:6,positionColumn:45,positionLineNumber:6,selectionStartColumn:45,selectionStartLineNumber:6,startColumn:45,startLineNumber:6),source:'set(ShadowVariable+%22In+the+shadows%22+CACHE+STRING+%22%22)%0Aset(ShadowVariable+%22Hiding+the+cache+variable%22)%0Amessage(%22ShadowVariable:+$%7BShadowVariable%7D%22)%0A%0Aunset(ShadowVariable)%0Amessage(%22ShadowVariable:+$%7BShadowVariable%7D%22)'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'1',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,libs:!(),options:'',overrides:!(),runtimeTools:!(),source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
 
@@ -700,6 +704,8 @@ endwhile()
 ## 5. CMake 构建系统
 
 基于 CMake 的构建系统组织为一组高层级的逻辑目标。每个目标对应一个可执行文件或库，或者是一个包含自定义命令的自定义目标。目标之间的依赖关系在构建系统中进行表达，以确定构建顺序以及在发生变更时进行重新生成的规则。
+
+<iframe style="display:block;width:100%;height:clamp(480px,80vh,800px);margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#z:OYLghAFBqd5TKALEAXATgU0wGgJYgQBGArngDYAmAygJ4DOqmAtiAMbMCGA1rqRTQZNmAQXTB6hDj0wgA5AFoAIgGEAsiIDSAUQD6AIQCqASQAyS3QBUAmgAVtAUgDMSgEqZyAdTyokSzETGAHYAZgD2cgCUONK8YhLyyupaekZmFjb2zm4e3r7%2BgaERMWHMAA4UmOimnEHAJJzAmMaU7A4ATPod%2BjEkjKUA8iSoZcMAYpVBnMyyvpi6mAAemGzDnETkuCGVkrCYlD5h6C0gAGw425snAIwALBeT07JceEEAdGxlZTigcnL49GCbHIJEo%2B3kAAZ/nh6GpOK9qGESOg2LI5NdofQBmVMEFIf9yLVgCc/tEIPtDsdWtcHldqQBWWm4p4gdQyUww1D0N6oRaoH7yMroMIAKxWqAg9CQnBx9EiDghIgVIli82YrzwzBIzF0WAAjmQsJQIAA1bSuajGAYAOQA1E43vT5YrlZxKJQFstVqh1ptJdLZQbOFhlbaw7apTLMPQAPRsPAozYfL6h8OR2UxrBsH11JOfMqpsMvd7551KxU%2B8SYVC6civbi1vBEdDBvDR/1R%2BhBkOK8O2kLMVCUMuYoEgsGtORQgFwhFIlFo6cw7G4/E4Ql1E6qskU1BHE7tJk3c6XZkzEBYejz1GxpAechhHl8gVyZUACXvYRwtoA7kcqGAYDKsqCigQoyqWHetraEElDKqOQTAqC4JTpis5BIiyKovIGIAiueKoeuRJbt03Q7gce5UiAThHtSACcTJTOeeCPvmL4IUhE5rjC6GYQuOGYvha4bsSk5RDg5IUfurT3KeB4QoxLIsW8SDsQCY7IZOS6wvCGHXmiuHLjiBHTiJJJRNEMJsrwtjCmK2ZriKIA0kEmA/hMdIgO01zROQ8j0v8Jn/GE8iWFgmC2h0Ti4ag%2BKRNE3BeRCjq3AA7HRtz0u0EL0mlGW5eu8i3P8rCnO0bzXO09JOLcOV0fl9IQk45xBTgIV/DgkgKbFqFkogEAoEsKzDEc%2BCEMGEi2LUHjUEgYQ/gRuFsKUFSEqgLFBFNrnkLN82Lf8y3lJU6AgMA1xZSUR2bOg1osh1h2rVUQyoLtC0CTgQ1sPEkiXvpt6fk%2B/KfdQQ6vPI/zhEEL1sJwmzObJYRQ4Y9CYLYiyOc5RF1G0nTdOuTa7FATGyAO/IAG5VPIqXXE4FltWU62I5IiiMHBLhsKRnTZbaCgDE4PMhOQe7BRT6DoHgYKE9E6AkFDmqYJYYRhOQUudaDm3TTtc1vei/wYNgmM/i2ZQCb5/mBWu7XaF6I3oLaiwABynAopy3LawBsGwtrnW87S2hAKicz0tphdgkXtNFkR63FEkoA9x1jRA8fXad52HpcTDoJIxBrkQrzBrQ7151M6C0AMRD2T1S2lDMUMDEE5CF4RYKkMAKiwyr71glwuaLv8BxZutFPM9On3DAZ0JQx4wlNi2pcqGEYJrhgmrvaLRBhCj/g98AdbY71FyEhIJptj%2BQm6xciPQ7Dsh3JfSMo2jGM0SJONdJ0%2BNEITEDEyApM4KLKmNM6ZhAZhtZmChWbZA5rjLmEIeZ8wFkLYoYRRbi0lvAaIKNNjZg2oQXElAF4gmYHia45wCEclctabURBKaVRwGUTePgNpEO1KQ84jD6DMMRpQzA1DmC0JOvQ7B4oNog2DKgVhJDnLnBEbgxG4j0CoF4fwwRzlDyMAkVI9hasJEqJoXQ9o0R9a3zNnIAKOBWrtXtk7F2bsPZex9n7CAocIpRR8tHXq0Q7xukphAMxxUcCsCcKlN4DtUq3FOPSDKEIcq3FuHRV2ljLbg06iAbqcUErUQdLE%2Bk1UyHVRqnRVKh4/JyFpskwi7VPFQj6vAOAsA46L0wNoKS6BE6nl/sWZM3xIbXzhnfPpyNUbo0Ik5c4r8YHvx6HIxmeJySwW0ZjChrw%2BEGJOg7BhTC5lLJpJw7hQR9ECMpps2ZYjKySOVmwzGZyFEXKOWo05Fzdm6KUQ8k5WD9LyCiq8TibinAqFJnGI4mAVLOEcC6F0Edfnjjce0doykkAdHaMBRUrxUC2mLP4yKqUui9nDKTEAIAhToogMijyEVlpTyhpIBw9IVBBAcLiplShkXfiaDWSgnAfT%2BPlE4PFSpUqssVOJMpFirEgG6WxHqtTY7sGaa0ykHTHjnmspgDkjBuS8n5H06gMMBkIwfiMjGNJJlcF4J1DwojEb4MWVc6RNIVlUPWc5PZ2yWH2tIVsrhcz3lCJpLcjCzzPU3KtfIoNejVmqLoQG4NxCvWaLeVGl11wfKdS%2BXIVUuh1RBE1NqXUmADQJn2Kac0lobT2kdGWZUQpRTig7LKatio3QejHj6DYmAIBzE9MNdtmxCy2mUvmAdUqvhNpEJWDljYggNjrM2Vs7Zu1tt9JgAdpNhzwTMeKlJaqNVckBjgGV4kBryrBIqyiyrNi/1%2BlhaMMY7zkAfAe3V%2Brb6GtQMMp%2BYyvJY1AFMvGgbbWEJDY62CfqzjeoOS8/Zvrk3HJOrIsNczFGXPjaGnByH7lwbUbIuN1zY2RudfBs4nzb3fMVB%2BR9X5fz/koIBVFIgwLgUVJBCKME4Iiq3RbKpF5ox/XvQDbVh6Y4nuWmetpl6zyyCHV8e%2B/S31yc/aM6cTkX5EjfgBpDeCFnAbQ6Byg4GGIwY9XpyDsGiNqIYoGlDLzrNYYs5TKzeGHWvOUdhxzpH%2BKvmhYhWFkUAUhEYFgaY4LgI%2Bb%2Bf5lQQXXjAFC5CkQrMiXRbqO7asuguU8siDigVfZEsgDwIF/W0xB2BbJfCm9C5/pUcBsivlOXwx9Bi7aYwGLsgRiHESzkwWBEkBCLoHwVRuVHGcCoNg0p0Chf5QOrAqBkRBHa60EAyXgAQBaxAArcpvxrfis4AVLLN2FXMdx6cIUZPfCPWSJp4mlUEAgJ0pSj5VIvpvvDRTj9lP/CcvcSZQdLUYe0wQl5Tq1nEaM%2B6xG0HweHPcydKzWm7laJA3961Eak0Odh652z9mQeWc89hbzTgCuwUwCEW0YwBgDF0G%2BMLTgwTbFcmTinVOGM/N88hSLy24vlgSx1pbK8UtToy5wfxu2WcRwIQVg7YrjvBXy494TXicA%2BLBCdfxOBEq3Adm8eJOvdd68O4E0q5VKrVVqtEhqTUWopI6pIGkF2JL9RQEiEYwwOlXz1S9wZV8lPP0PeFCWhtjam0O9unjchnqjAxWEUnjtnau3dp7b29Jfb%2BwXldKo4cnBOCjgr2p3jMC%2BNVwEkq1FQnhMidE2qcSElJIlTb9Jue6aJVOKcN49V4mnAdjVFvjV2ibLKRUuvNS6ZlPaDLtqqSLvRFFlwm1twgA"></iframe>
 
 ### 5.1 二进制目标
 
@@ -1131,4 +1137,3 @@ add_custom_target(finish ALL DEPENDS printout)
 
 > [Modern CMake](https://cliutils.gitlab.io/modern-cmake/)
 {: .hover-card }
-
