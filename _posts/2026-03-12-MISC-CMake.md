@@ -320,15 +320,15 @@ CMake 内置了五种类别的变量，分别是提供信息、改变行为、�
 #### 4.2.2 变量引用
 
 普通变量
-: 引用形式为 `${<variable>}`，并在 带引号参数 或 不带引号参数 中进行评估。变量引用将被指定变量或缓存条目的值替换，如果两者都未设置，则替换为空字符串。变量引用可以嵌套，并从内向外评估，例如：`${outer_${inner_variable}_variable}`。
+: 引用形式为 `${<variable>}`，会在引号参数或无引号参数中展开。CMake 优先使用同名普通变量的值；如果普通变量未定义，则使用同名缓存变量的值。两者都未定义时，引用会展开为空字符串。变量引用可以嵌套，并从内向外求值，例如：`${outer_${inner_variable}_variable}`。
 
-环境变量 
-: 引用形式为 `$ENV{<variable>}`。
+环境变量
+: 引用形式为 `$ENV{<variable>}`。如果该环境变量未设置，引用会展开为空字符串。
 
 缓存变量
-: 引用形式为 `$CACHE{<variable>}`，它会被指定缓存条目的值替换，而无需检查同名的常规变量。如果缓存条目不存在，则替换为空字符串。
+: 引用形式为 `$CACHE{<variable>}`，用于读取指定缓存条目的值，不受同名普通变量影响。如果缓存条目不存在，引用会展开为空字符串。
 
-> 注意：`if()` 命令具有特殊条件语法，允许使用 `<variable>` 的短形式而不是 `${<variable>}` 进行变量引用。但是，环境变量始终需要引用为 `$ENV{<variable>}`。
+> 注意：[`if()`](https://cmake.com.cn/cmake/help/latest/command/if.html#command:if) 命令使用特殊的条件语法，可以直接写变量名（如 `if(<variable>)`），而不必写成 `${<variable>}`。但引用环境变量时，仍须使用 `$ENV{<variable>}`。
 {: .prompt-warning }
 
 #### 4.2.3 变量作用域
@@ -336,18 +336,18 @@ CMake 内置了五种类别的变量，分别是提供信息、改变行为、�
 变量具有动态作用域。
 
 块作用域
-: [`block()`](https://cmake.com.cn/cmake/help/latest/command/block.html#command:block) 命令可以为变量绑定创建新的作用域。
+: [`block()`](https://cmake.com.cn/cmake/help/latest/command/block.html#command:block) 命令会创建新的变量作用域。
 
 函数作用域
-: [`function()`](https://cmake.com.cn/cmake/help/latest/command/function.html#command:function) 命令可以为变量绑定创建新的作用域。
+: [`function()`](https://cmake.com.cn/cmake/help/latest/command/function.html#command:function) 命令会创建新的变量作用域。函数中查找变量时，也会沿调用链查找外层作用域中的变量。
 
 目录作用域
-: 不在函数调用内部的 “设置” 或 “取消设置” 操作会绑定到当前目录作用域。源码树中的每个目录都有其自己的变量绑定。在处理目录的 CMakeLists.txt 文件之前，CMake 会复制父目录中当前定义的所有变量绑定（如果有），以初始化新的目录作用域。
+: 在函数调用之外设置或取消设置变量时，操作会作用于当前目录作用域。处理子目录的 `CMakeLists.txt` 之前，CMake 会将父目录当前定义的变量绑定复制到新的目录作用域中，作为其初始值。
 
-持久化缓存
-: CMake 存储了一组独立的“缓存”变量或“缓存条目”，其值在项目构建树的多次运行中保持不变。缓存条目具有独立的绑定作用域，仅通过显式请求进行修改，例如使用 set() 和 unset() 命令的 CACHE 选项。
+缓存
+: CMake 将缓存条目保存在构建目录的 `CMakeCache.txt` 中，因此在同一构建树中多次运行 CMake 时，其值通常会保留。缓存条目独立于普通变量的作用域，仅可以通过 `set(... CACHE ...)` 或 `unset(... CACHE)` 等显式方式修改或删除。
 
-> 提示：环境变量在 CMake 进程中具有全局作用域，它们永远不会被缓存。
+> 提示：环境变量属于 CMake 进程的环境，不受普通变量作用域影响，也不会自动写入缓存。
 {: .prompt-info }
 
 ### 4.3 列表
@@ -360,21 +360,21 @@ message(${srcs}) # the output is "a.c b.c c.c"
 ```
 列表子命令分为三类，包括读取（GET、LENGTH、SUBLIST）、搜索（FIND）和修改（APPEND、PREPEND、INSERT、REMOVE_ITEM、REMOVE_AT、REMOVE_DUPLICATES、REVERSE、SORT、TRANSFORM）。
 
-| 子命令            | 作用                                    | 示例
-| ---               | ---                                    | ---
-| GET	              | 返回列表中指定索引对应的元素列表         | [`list(GET <list> <element index> [<index> ...] <out-var>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#get)
-| LENGTH            | 获取列表元素个数                        | [`list(LENGTH <list> <output variable>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#length)
-| SUBLIST	          | 截取一段子列表	                        | [`list(SUBLIST <list> <begin> <length> <out-var>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#sublist)
-| FIND              | 查找元素，返回索引；找不到返回-1          | [`list(FIND <list> <value> <out-var>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#find)
-| APPEND            | 追加元素到列表尾部	                    | [`list(APPEND <list> [<element>...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#append)
-| PREPEND	          | 插入到列表头部                          | [`list(PREPEND <list> [<element>...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#prepend)
-| INSERT            | 在指定索引位置插入元素	                | [`list(INSERT <list> <element_index> <element> [<element> ...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#insert)
-| REMOVE_ITEM       | 从列表中移除指定项目的所有实例            | [`list(REMOVE_ITEM <list> <value> [<value> ...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#remove-item)
-| REMOVE_AT         | 移除列表中给定索引处的项目               | [`list(REMOVE_AT <list> <index> [<index> ...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#remove-at)
-| REMOVE_DUPLICATES | 移除列表中的重复项目                     | [`list(REMOVE_DUPLICATES <list>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#remove-duplicates)
-| REVERSE	          | 反转列表                                | [`list(REVERSE <list>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#reverse)
-| SORT	            | 按字母顺序原地排序列表                  | [`list(SORT <list> [...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#sort)
-| TRANSFORM	        | 将 `<ACTION>` 应用于所有元素	          | [`list(TRANSFORM <list> <ACTION> [...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#remove-duplicates)
+| 子命令            | 说明                               
+| ---               | ---                                  
+| GET	              | 返回列表中指定索引对应的元素列表         <br> 格式：[`list(GET <list> <element index> [<index> ...] <out-var>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#get)
+| LENGTH            | 获取列表元素个数                        <br> 格式：[`list(LENGTH <list> <output variable>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#length)
+| SUBLIST	          | 截取一段子列表	                        <br> 格式：[`list(SUBLIST <list> <begin> <length> <out-var>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#sublist)
+| FIND              | 查找元素，返回索引；找不到返回 `-1`          <br> 格式：[`list(FIND <list> <value> <out-var>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#find)
+| APPEND            | 追加元素到列表尾部	                    <br> 格式：[`list(APPEND <list> [<element>...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#append)
+| PREPEND	          | 插入到列表头部                          <br> 格式：[`list(PREPEND <list> [<element>...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#prepend)
+| INSERT            | 在指定索引位置插入元素	                <br> 格式：[`list(INSERT <list> <element_index> <element> [<element> ...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#insert)
+| REMOVE_ITEM       | 从列表中移除指定项目的所有实例            <br> 格式：[`list(REMOVE_ITEM <list> <value> [<value> ...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#remove-item)
+| REMOVE_AT         | 移除列表中给定索引处的项目               <br> 格式：[`list(REMOVE_AT <list> <index> [<index> ...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#remove-at)
+| REMOVE_DUPLICATES | 移除列表中的重复项目                     <br> 格式：[`list(REMOVE_DUPLICATES <list>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#remove-duplicates)
+| REVERSE	          | 反转列表                                <br> 格式：[`list(REVERSE <list>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#reverse)
+| SORT	            | 按字母顺序原地排序列表                  <br> 格式：[`list(SORT <list> [...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#sort)
+| TRANSFORM	        | 将 `<ACTION>` 应用于所有元素	          <br> 格式：[`list(TRANSFORM <list> <ACTION> [...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#remove-duplicates)
 
 ### 4.3 命令
 
