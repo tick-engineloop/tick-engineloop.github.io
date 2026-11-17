@@ -358,23 +358,23 @@ CMake 中的列表是一组用 `;` 分隔的字符串。CMake 中没有数组，
 set(srcs a.c b.c c.c) # sets "srcs" to "a.c;b.c;c.c"
 message(${srcs}) # the output is "a.c b.c c.c"
 ```
-列表子命令分为三类，包括读取（GET、LENGTH、SUBLIST）、搜索（FIND）和修改（APPEND、PREPEND、INSERT、REMOVE_ITEM、REMOVE_AT、REMOVE_DUPLICATES、REVERSE、SORT、TRANSFORM）。
+列表子命令分为三类，包括读取（`GET`、`LENGTH`、`SUBLIST`）、搜索（`FIND`）和修改（`APPEND`、`PREPEND`、`INSERT`、`REMOVE_ITEM`、`REMOVE_AT`、`REMOVE_DUPLICATES`、`REVERSE`、`SORT`、`TRANSFORM`）。
 
 | 子命令            | 说明                               
 | ---               | ---                                  
-| GET	              | 返回列表中指定索引对应的元素列表         <br> 格式：[`list(GET <list> <element index> [<index> ...] <out-var>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#get)
-| LENGTH            | 获取列表元素个数                        <br> 格式：[`list(LENGTH <list> <output variable>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#length)
-| SUBLIST	          | 截取一段子列表	                        <br> 格式：[`list(SUBLIST <list> <begin> <length> <out-var>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#sublist)
-| FIND              | 查找元素，返回索引；找不到返回 `-1`          <br> 格式：[`list(FIND <list> <value> <out-var>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#find)
-| APPEND            | 追加元素到列表尾部	                    <br> 格式：[`list(APPEND <list> [<element>...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#append)
-| PREPEND	          | 插入到列表头部                          <br> 格式：[`list(PREPEND <list> [<element>...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#prepend)
-| INSERT            | 在指定索引位置插入元素	                <br> 格式：[`list(INSERT <list> <element_index> <element> [<element> ...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#insert)
-| REMOVE_ITEM       | 从列表中移除指定项目的所有实例            <br> 格式：[`list(REMOVE_ITEM <list> <value> [<value> ...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#remove-item)
-| REMOVE_AT         | 移除列表中给定索引处的项目               <br> 格式：[`list(REMOVE_AT <list> <index> [<index> ...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#remove-at)
-| REMOVE_DUPLICATES | 移除列表中的重复项目                     <br> 格式：[`list(REMOVE_DUPLICATES <list>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#remove-duplicates)
-| REVERSE	          | 反转列表                                <br> 格式：[`list(REVERSE <list>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#reverse)
-| SORT	            | 按字母顺序原地排序列表                  <br> 格式：[`list(SORT <list> [...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#sort)
-| TRANSFORM	        | 将 `<ACTION>` 应用于所有元素	          <br> 格式：[`list(TRANSFORM <list> <ACTION> [...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#remove-duplicates)
+| `GET`	              | 返回列表中指定索引对应的元素列表         <br> 格式：[`list(GET <list> <element index> [<index> ...] <out-var>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#get)
+| `LENGTH`            | 获取列表元素个数                        <br> 格式：[`list(LENGTH <list> <output variable>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#length)
+| `SUBLIST`	          | 截取一段子列表	                        <br> 格式：[`list(SUBLIST <list> <begin> <length> <out-var>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#sublist)
+| `FIND`              | 查找元素，返回索引；找不到返回 `-1`          <br> 格式：[`list(FIND <list> <value> <out-var>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#find)
+| `APPEND`            | 追加元素到列表尾部	                    <br> 格式：[`list(APPEND <list> [<element>...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#append)
+| `PREPEND`	          | 插入到列表头部                          <br> 格式：[`list(PREPEND <list> [<element>...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#prepend)
+| `INSERT`            | 在指定索引位置插入元素	                <br> 格式：[`list(INSERT <list> <element_index> <element> [<element> ...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#insert)
+| `REMOVE_ITEM`       | 从列表中移除指定项目的所有实例            <br> 格式：[`list(REMOVE_ITEM <list> <value> [<value> ...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#remove-item)
+| `REMOVE_AT`         | 移除列表中给定索引处的项目               <br> 格式：[`list(REMOVE_AT <list> <index> [<index> ...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#remove-at)
+| `REMOVE_DUPLICATES` | 移除列表中的重复项目                     <br> 格式：[`list(REMOVE_DUPLICATES <list>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#remove-duplicates)
+| `REVERSE`	          | 反转列表                                <br> 格式：[`list(REVERSE <list>)`](https://cmake.com.cn/cmake/help/latest/command/list.html#reverse)
+| `SORT`	            | 按字母顺序原地排序列表                  <br> 格式：[`list(SORT <list> [...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#sort)
+| `TRANSFORM`	        | 将 `<ACTION>` 应用于所有元素	          <br> 格式：[`list(TRANSFORM <list> <ACTION> [...])`](https://cmake.com.cn/cmake/help/latest/command/list.html#remove-duplicates)
 
 ### 4.3 命令
 
@@ -382,13 +382,13 @@ CMake 命令分为 [脚本命令](https://cmake.com.cn/cmake/help/latest/manual/
 
 #### 4.3.1 命令参数
 
-命令调用中有三种类型的参数：括号参数、引号参数和无引号参数。
+命令调用中有三种类型的参数：括号参数、带引号参数和无引号参数。
 
 ##### 4.3.1.1 括号参数
 
-将内容括在等长的左右“括号”之间。左括号的写法是 `[` 后跟零个或多个 `=`，再后跟 `[`。对应的右括号写法是 `]` 后跟相同数量的 `=`，再后跟 `]`。括号不能嵌套。
+括号参数由一对方括号分隔符界定。起始分隔符由 `[`、零个或多个 `=` 和 `[` 组成；结束分隔符由 `]`、相同数量的 `=` 和 `]` 组成。例如，`[[...]]` 和 `[=[...]=]` 分别使用零个和一个等号。分隔符中的等号数量决定匹配关系，括号参数本身不支持嵌套。
 
-括号参数的内容包含左右括号之间的所有文本，但紧跟在左括号后的换行符（如果有）会被忽略。不对括起来的内容进行任何求值（如 转义序列 或 变量引用）。括号参数始终作为一个单一参数传递给命令调用。
+括号参数的内容是起始分隔符与匹配的结束分隔符之间的文本；若起始分隔符后紧接换行符，该换行符会被忽略。内容按字面值传递，不进行转义序列或变量引用求值。括号参数始终作为一个单一参数传递给命令调用。
 
 ```cmake
 message([=[
@@ -402,7 +402,7 @@ It does end in a closing bracket of length 1.
 
 ##### 4.3.1.2 带引号参数
 
-引号参数将内容括在左右双引号字符之间。引号参数的内容包含左右引号之间的所有文本。转义序列 和 变量引用 都会被求值。引号参数始终作为一个单一参数传递给命令调用。
+带引号参数由一对双引号（`"`）界定。两引号之间的内容构成参数内容，其中的转义序列和变量引用会被求值。带引号参数在命令调用中始终作为一个参数传递，即使内容包含空格或分号也不会因此拆分。
 
 ```cmake
 message("This is a quoted argument containing multiple lines.
@@ -413,7 +413,7 @@ It does end in an unescaped double quote.
 ")
 ```
 
-在任何以奇数个反斜杠结尾的行上，最后的 `\` 会被视为续行符，并与紧随其后的换行符一起被忽略。例如：
+若某行以奇数个连续反斜杠结尾，则最后一个反斜杠及其后的换行符会被忽略，使下一行内容紧接在本行内容之后，最后一个反斜杠之前成对出现的反斜杠则为转义反斜杠。例如：
 
 ```cmake
 message("\
@@ -423,9 +423,9 @@ the source code uses line continuation.\
 ")
 ```
 
-##### 4.3.1.3 不带引号参数
+##### 4.3.1.3 无引号参数
 
-无引号参数不被任何引号语法括起来。它不能包含任何空格、`(`、`)`、`#`、`"` 或 `\`，除非这些字符被反斜杠转义。无引号参数的内容由连续的允许字符或转义字符块组成。转义序列 和 变量引用 都会被求值。生成的值会按照 列表 分割元素的方式进行拆分。每个非空元素都被作为一个参数传递给命令调用。因此，一个无引号参数可能作为零个或多个参数传递给命令调用。
+无引号参数不由引号界定，其内容由允许的普通字符、转义序列和变量引用组成。空白字符、`(`、`)`、`#`、`"` 和 `\` 不能直接出现在其中；若要包含这些字符，必须按 CMake 的转义规则书写。转义序列和变量引用会被求值，所得内容再按 CMake 列表规则拆分。拆分后，每个非空元素分别作为一个参数传递给命令调用。因此，一个无引号参数最终可能产生零个或多个命令参数。
 
 ```cmake
 foreach(arg
