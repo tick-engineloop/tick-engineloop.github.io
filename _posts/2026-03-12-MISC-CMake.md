@@ -402,7 +402,7 @@ It does end in a closing bracket of length 1.
 
 ##### 4.3.1.2 带引号参数
 
-带引号参数由一对双引号（`"`）界定。两引号之间的内容构成参数内容，其中的转义序列和变量引用会被求值。带引号参数在命令调用中始终作为一个参数传递，即使内容包含空格或分号也不会因此拆分。
+带引号参数由一对双引号（`"`）界定。两引号之间的内容构成参数内容，其中的转义序列和变量引用会被求值。带引号参数在命令调用中始终作为一个参数传递，即使内容包含空白字符或分号也不会因此拆分。
 
 ```cmake
 message("This is a quoted argument containing multiple lines.
@@ -425,7 +425,7 @@ the source code uses line continuation.\
 
 ##### 4.3.1.3 无引号参数
 
-无引号参数不由引号界定，其内容由允许的普通字符、转义序列和变量引用组成。空格、`(`、`)`、`#`、`"` 和 `\` 不能直接出现在其中；若要包含这些字符，必须按 CMake 的转义规则书写。转义序列和变量引用会被求值，所得内容再按 CMake 列表规则拆分。拆分后，每个非空元素分别作为一个参数传递给命令调用。因此，一个无引号参数最终可能产生零个或多个命令参数。
+无引号参数不由引号界定，其内容由允许的普通字符、转义序列和变量引用组成。其中不能直接出现空白字符（空格、制表符、换行）以及 `(`、`)`、`#`、`"` 和 `\`：未转义的空白会终止当前参数，其余字符同样需转义后才能成为参数内容的一部分，例如下文示例中的 `Escaped\ Space` 即表示含一个空格的内容。转义序列和变量引用会被求值，所得内容再按 CMake 列表规则拆分。拆分后，每个非空元素分别作为一个参数传递给命令调用。因此，一个无引号参数最终可能产生零个或多个命令参数。
 
 ```cmake
 foreach(arg
@@ -542,7 +542,7 @@ add_executable(hello world.c)
 
 #### 4.5.1 条件块
 
-有条件地执行一组命令，由 [`if()`](https://cmake.com.cn/cmake/help/latest/command/if.html#command:if) 命令组织。
+[`if() ... elseif() ... else() ... endif()`](https://cmake.com.cn/cmake/help/latest/command/if.html#command:if) 根据条件选择要执行的命令块：
 
 ```cmake
 if(<condition>)
@@ -554,18 +554,18 @@ else()              # optional block
 endif()
 ```
 
-根据下文描述的 条件语法 评估 if 子句的 condition 参数。如果结果为真，则执行 if 块中的 commands。否则，将以相同方式处理可选的 elseif 块。最后，如果没有任何 condition 为真，则执行可选的 else 块中的 commands。
+[`if()`](https://cmake.com.cn/cmake/help/latest/command/if.html#command:if) 按照下文所述的条件语法对条件进行求值。条件为真时执行 [`if()`](https://cmake.com.cn/cmake/help/latest/command/if.html#command:if) 块中的命令；否则依次检查可选的 [`elseif()`](https://cmake.com.cn/cmake/help/latest/command/elseif.html) 条件。若都不为真，则执行可选的 [`else()`](https://cmake.com.cn/cmake/help/latest/command/else.html) 块。
 
 ##### 4.5.1.1 基础表达式
 
 `if(<constant>)`
-: 如果常量为 1、ON、YES、TRUE、Y 或非零数字（包括浮点数），则为真。如果常量为 0、OFF、NO、FALSE、N、IGNORE、NOTFOUND、空字符串或以 -NOTFOUND 后缀结尾，则为假。布尔常量不区分大小写。如果参数不是这些特定常量之一，它将被视为变量或字符串（请参阅下文的 变量展开），并适用以下两种形式之一。
+: 参数为 `1`、`ON`、`YES`、`TRUE`、`Y` 或非零数字（包括浮点数）时为真；为 `0`、`OFF`、`NO`、`FALSE`、`N`、`IGNORE`、`NOTFOUND`、空字符串，或以 `-NOTFOUND` 结尾时为假。布尔常量不区分大小写。如果参数不是这些特定常量，将按变量名或字符串处理（见下文“变量展开”）。
 
 `if(<variable>)`
-: 如果给定的变量定义为非假常量的某个值，则为真。否则为假，包括变量未定义的情况。注意，宏参数不是变量。环境变量 也不能以这种方式测试，例如 if(ENV{some_var}) 的求值结果永远为假。
+: 如果该变量已定义，且其值不是上述假值，则为真；变量未定义时为假。宏参数不是变量。不能用这种形式判断环境变量的值，例如 `if(ENV{some_var})` 始终为假。可用 `if(DEFINED ENV{some_var})` 检查环境变量是否已定义；若需判断其值，应显式展开 `$ENV{some_var}` 后进行比较。
 
 `if(<string>)`
-: 引号括起来的字符串总是被判定为假，除非字符串的值是真常量之一。
+: 引号括起来的字符串通常为假，除非其值是上述真值之一。
 
 `if()`
 : 如果未提供参数，则为假。
@@ -582,74 +582,75 @@ endif()
 : 如果两个条件中任一条件被视为真，则为真。
 
 `if((condition) AND (condition OR (condition)))`
-: 圆括号内的条件首先被求值，然后剩余的条件按其他示例中的方式求值。如果存在嵌套的圆括号，最内层的圆括号会作为评估包含它们的条件的一部分进行求值。
+: 先对圆括号内的条件求值，再按运算符优先级处理其余部分；嵌套时先处理最内层的圆括号。逻辑运算符的优先级依次为 `NOT`、`AND`、`OR`；同级的 `AND` 和 `OR` 从左向右求值，且不会短路。
 
 ##### 4.5.1.3 存在性检查
 
 `if(COMMAND <command-name>)`
-: 如果给定名称是可调用的命令、宏或函数，则为真。
+: 如果给定名称对应一个可调用的命令、宏或函数，则为真。
 
 `if(TARGET <target-name>)`
-: 如果给定名称是一个已存在的逻辑目标名称，且已通过调用 add_executable()、add_library() 或 add_custom_target() 命令（在任何目录中）创建，则为真。
+: 如果给定名称对应一个已创建的逻辑目标，则为真。目标须已由 `add_executable()`、`add_library()` 或 `add_custom_target()` 创建。
 
 `if(TEST <test-name>)`
-: 如果给定名称是由 add_test() 命令创建的现有测试名称，则为真。
+: 如果给定名称对应一个已由 `add_test()` 创建的测试，则为真。
 
-`if(DEFINED <name>|CACHE{<name>}|ENV{<name>})`
-: 如果定义了具有给定 <name> 的变量、缓存变量或环境变量，则为真。变量的值无关紧要。注意以下注意事项：
+`if(DEFINED <name>)`、`if(DEFINED CACHE{<name>})`、`if(DEFINED ENV{<name>})`
+: 如果指定名称的普通变量、缓存变量或环境变量已定义，则为真，与变量的值无关。注意：
   * 宏参数不是变量。
-  * 无法直接测试 <name> 是否为非缓存变量。如果缓存变量或非缓存变量 someName 存在，表达式 if(DEFINED someName) 将为真。相比之下，表达式 if(DEFINED CACHE{someName}) 仅在缓存变量 someName 存在时才为真。如果您需要了解非缓存变量是否存在，则必须测试这两个表达式：if(DEFINED someName AND NOT DEFINED CACHE{someName})。
+  * `if(DEFINED someName)` 在同名普通变量或缓存变量存在时都会为真；`if(DEFINED CACHE{someName})` 则只检查缓存变量。若要确认普通变量存在而缓存变量不存在，可使用 `if(DEFINED someName AND NOT DEFINED CACHE{someName})`。
+  * `CACHE{<name>}` 形式从 CMake 3.14 起可用。
 
 `if(<variable|string> IN_LIST <variable>)`
-: 如果给定的元素包含在命名的列表变量中，则为真。
+: 如果左侧的值是右侧命名列表变量中的一个元素，则为真。
 
 ##### 4.5.1.4 文件操作
 
 `if(EXISTS <path-to-file-or-directory>)`
-: 如果命名文件或目录存在且可读，则为真。行为仅对明确的完整路径定义良好（路径开头的 ~/ 不会展开为主目录，并被视为相对路径）。解析符号链接，即如果命名文件或目录是符号链接，则在符号链接的目标存在时返回真。如果给定路径为空字符串，则为假。
+: 如果指定的文件或目录存在且可读，则为真。此检查仅对明确的完整路径有明确定义；路径开头的 `~/` 不会展开为主目录，而会被视为相对路径。检查会解析符号链接：当链接目标存在时结果为真。如果给定路径为空字符串，则为假。
 
 `if(IS_READABLE <path-to-file-or-directory>)`
-: 如果命名文件或目录可读，则为真。行为仅对明确的完整路径定义良好。解析符号链接，即如果命名文件或目录是符号链接，则在符号链接的目标可读时返回真。如果给定路径为空字符串，则为假。
+: 如果指定的文件或目录可读，则为真。此检查仅对明确的完整路径有明确定义；路径开头的 `~/` 不会展开为主目录。检查会解析符号链接，并以链接目标是否可读为准。如果给定路径为空字符串，则为假。
 
 `if(IS_WRITABLE <path-to-file-or-directory>)`
-: 如果命名文件或目录可写，则为真。行为仅对明确的完整路径定义良好。解析符号链接，即如果命名文件或目录是符号链接，则在符号链接的目标可写时返回真。如果给定路径为空字符串，则为假。
+: 如果指定的文件或目录可写，则为真。此检查仅对明确的完整路径有明确定义；路径开头的 `~/` 不会展开为主目录。检查会解析符号链接，并以链接目标是否可写为准。如果给定路径为空字符串，则为假。
 
 `if(IS_EXECUTABLE <path-to-file-or-directory>)`
-: 如果命名文件或目录可执行，则为真。行为仅对明确的完整路径定义良好。解析符号链接，即如果命名文件或目录是符号链接，则在符号链接的目标可执行时返回真。如果给定路径为空字符串，则为假。
+: 如果指定的文件或目录可执行，则为真。此检查仅对明确的完整路径有明确定义；路径开头的 `~/` 不会展开为主目录。检查会解析符号链接，并以链接目标是否可执行为准。如果给定路径为空字符串，则为假。
 
 `if(IS_DIRECTORY <path>)`
-: 如果 path 是一个目录，则为真。行为仅对完整路径定义良好。如果给定路径为空字符串，则为假。
+: 如果指定路径是目录，则为真。此检查仅对完整路径有明确定义；如果给定路径为空字符串，则为假。
 
 `if(IS_SYMLINK <path>)`
-: 如果给定路径是符号链接，则为真。行为仅对完整路径定义良好。
+: 如果指定路径是符号链接，则为真。此检查仅对完整路径有明确定义。
 
 `if(IS_ABSOLUTE <path>)`
-: 如果给定路径是绝对路径，则为真。注意以下特殊情况：
-  * 空 path 会评估为假。
-  * 在 Windows 主机上，任何以驱动器号加冒号（例如 C:）、正斜杠或反斜杠开头的 path 都会评估为真。
-  * 在非 Windows 主机上，任何以波浪号（~）开头的 path 都会评估为真。
+: 如果指定路径是绝对路径，则为真。注意以下特殊情况：
+  * 空 path 会被视为假。
+  * 在 Windows 主机上，以驱动器号和冒号（如 `C:`）、正斜杠或反斜杠开头的路径都会被判定为绝对路径。
+  * 在非 Windows 主机上，以波浪号（`~`）开头的路径会被判定为绝对路径。
   
 `if(<file1> IS_NEWER_THAN <file2>)`
-: 如果 file1 比 file2 新，或者两个文件中的一个不存在，则为真。行为仅对完整路径定义良好。如果文件时间戳完全相同，IS_NEWER_THAN 比较将返回真，以便在平局时发生任何相关的构建操作。这包括为 file1 和 file2 传递相同文件名的情形。
+: 如果 `<file1>` 比 `<file2>` 新，或者其中一个文件不存在，则为真。此检查仅对完整路径有明确定义。若两个文件的时间戳相同，比较结果也为真，以确保时间戳相同时仍会执行相关构建操作；两侧使用相同文件名时也适用。
 
-##### 4.5.1.4 比较
+##### 4.5.1.5 比较
 
 `if(<variable|string> MATCHES <regex>)`
-: 如果给定的字符串或变量的值与给定的正则表达式匹配，则为真。
+: 如果左侧字符串（或变量的值）与给定正则表达式匹配，则为真。
 
-`if(<variable|string> LESS/GREATER/EQUAL/LESS_EQUAL/GREATER_EQUAL <variable|string>)`
-: 如果给定的字符串或变量的值被解析为实数（类似于 C 语言中的 double）且小于/大于/等于/小于等于/大于等于右侧的值，则为真。
+`if(<variable|string> LESS <variable|string>)`、`if(<variable|string> GREATER <variable|string>)`、`if(<variable|string> EQUAL <variable|string>)`、`if(<variable|string> LESS_EQUAL <variable|string>)`、`if(<variable|string> GREATER_EQUAL <variable|string>)`
+: 分别将两侧的字符串（或变量的值）解析为实数（类似于 C 语言中的 `double`），并判断左侧是否小于、大于、等于、小于等于或大于等于右侧。
 
-`if(<variable|string> STRLESS/STRGREATER/STREQUAL/STRLESS_EQUAL/STRGREATER_EQUAL <variable|string>)`
-: 如果给定的字符串或变量的值在字典序上小于/大于/等于/小于等于/大于等于右侧的字符串或变量，则为真。
+`if(<variable|string> STRLESS <variable|string>)`、`if(<variable|string> STRGREATER <variable|string>)`、`if(<variable|string> STREQUAL <variable|string>)`、`if(<variable|string> STRLESS_EQUAL <variable|string>)`、`if(<variable|string> STRGREATER_EQUAL <variable|string>)`
+: 分别按字典序判断左侧字符串（或变量的值）是否小于、大于、等于、小于等于或大于等于右侧字符串（或变量的值）。
 
 #### 4.5.2 循环
 
-CMake 提供两种循环结构：[`while()`](https://cmake.com.cn/cmake/help/latest/command/while.html#command:while) 以及更有用的 [`foreach()`](https://cmake.com.cn/cmake/help/latest/command/foreach.html#command:foreach)。
+CMake 提供 [`foreach()`](https://cmake.com.cn/cmake/help/latest/command/foreach.html#command:foreach) 和 [`while()`](https://cmake.com.cn/cmake/help/latest/command/while.html#command:while) 两种循环结构，分别用于遍历列表项和根据条件重复执行命令。
 
-##### 4.5.2.1 [`foreach`](https://cmake.com.cn/cmake/help/latest/command/foreach.html#foreach)
+##### 4.5.2.1 `foreach`
 
-针对列表中的每个值评估一组命令。
+对列表中的每一项执行一组命令。其格式如下：
 
 ```cmake
 foreach(<loop_var> <items>)
@@ -657,7 +658,7 @@ foreach(<loop_var> <items>)
 endforeach()
 ```
 
-其中 `<items>` 是由分号或空格分隔的项目列表。[`foreach`](https://cmake.com.cn/cmake/help/latest/command/foreach.html#foreach) 和对应的 [`endforeach`](https://cmake.com.cn/cmake/help/latest/command/endforeach.html#command:endforeach) 之间的所有命令都会被记录而不会立即执行。一旦评估到 `endforeach`，记录的命令列表将针对 `<items>` 中的每个项目执行一次。在每次迭代开始时，变量 `<loop_var>` 将被设置为当前项目的值。
+其中 `<items>` 是由分号或空白字符分隔的项目列表。[`foreach()`](https://cmake.com.cn/cmake/help/latest/command/foreach.html#command:foreach) 与匹配的 [`endforeach()`](https://cmake.com.cn/cmake/help/latest/command/endforeach.html) 之间的命令会先被记录，而不是立即执行，在到达 [`endforeach()`](https://cmake.com.cn/cmake/help/latest/command/endforeach.html) 时，才会针对 `<items>` 中的每一项执行一次。在每次迭代开始时，循环变量 `<loop_var>` 会被设为当前项的值。
 
 > 提示：`<loop_var>` 的作用域仅限于循环内部。
 {: .prompt-info }
@@ -665,28 +666,19 @@ endforeach()
 `foreach` 在上述标准格式基础上存在多种变体，如：
 
 `foreach(<loop_var> RANGE <stop>)`
-: 在此变体中，`foreach` 遍历从 0、1 开始直到（并包含）非负整数 `<stop>` 的数字。
+: 在此形式中，遍历从 `0` 开始，依次递增至（并包含）非负整数 `<stop>`。
 
 `foreach(<loop_var> RANGE <start> <stop> [<step>])`
-: 在此变体中，`foreach` 以 `<step>` 为步长，遍历从 `<start>` 开始到最多 `<stop>` 的数字。如果未指定 `<step>`，则步长为 1。三个参数 <`start>`、`<stop>` 和 `<step>` 都必须是非负整数，且 `<stop>` 不得小于 `<start>`，否则，将引发未定义行为。
+: 在此形式中，以 `<step>` 为步长，从 `<start>` 遍历到不超过 `<stop>` 的数值。省略 `<step>` 时步长为 `1`。三个参数都必须是非负整数，且 `<stop>` 不得小于 `<start>`；不满足这些要求时将引发未定义行为。
 
 `foreach(<loop_var> IN [LISTS [<lists>]] [ITEMS [<items>]])`
-: 在此变体中，`<lists>` 是由空格或分号分隔的列表变量列表。`foreach` 命令遍历每个给定列表中的每一项。`ITEMS` 关键字后面的 `<items>` 将按照 `foreach` 命令的第一种变体进行处理。格式 `LISTS A` 和 `ITEMS ${A}` 是等效的。如果没有提供 `<lists>` 或 `<items>`，则循环体永远不会被执行（即被处理为空）。
+: 在此形式中，`<lists>` 是由空白字符或分号分隔的列表变量名；循环会依次遍历这些变量中的每一项。`ITEMS` 后的 `<items>` 按标准形式中的列表项处理。因此，`LISTS A` 与 `ITEMS ${A}` 等效。若未提供 `<lists>` 和 `<items>`，循环体不会执行。
 
   <iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:11,endLineNumber:1,positionColumn:11,positionLineNumber:1,selectionStartColumn:11,selectionStartLineNumber:1,startColumn:11,startLineNumber:1),source:'set(A+0%3B1)%0Aset(B+2+3)%0Aset(C+%224+5%22)%0Aset(D+6%3B7+8)%0Aset(E+%22%22)%0Aforeach(X+IN+LISTS+A+B+C+D+E)%0A++++message(STATUS+%22X%3D$%7BX%7D%22)%0Aendforeach()'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'1',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,libs:!(),options:'',overrides:!(),runtimeTools:!(),source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
 
-`foreach(<loop_var>... IN ZIP_LISTS <lists>)`
-: 在此变体中，`<lists>` 是由空格或分号分隔的列表变量列表。`foreach` 命令同时遍历每个列表，并按如下方式设置迭代变量：
-  * 如果只给定一个 loop_var，则它会设置一系列 loop_var_N 变量为对应列表中的当前项；
-  * 如果传递了多个变量名，则它会将每个变量设置为对应列表中的当前项。迭代变量的数量必须与列表变量的数量相匹配。
+##### 4.5.2.2 `while`
 
-  如果没有提供 <lists>，则循环体永远不会被执行（即被处理为空）。
-
-  <iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:13,endLineNumber:10,positionColumn:13,positionLineNumber:10,selectionStartColumn:13,selectionStartLineNumber:10,startColumn:13,startLineNumber:10),source:'list(APPEND+English+one+two+three+four)%0Alist(APPEND+Bahasa+satu+dua+tiga)%0A%0Aforeach(num+IN+ZIP_LISTS+English+Bahasa)%0A++++message(STATUS+%22num_0%3D$%7Bnum_0%7D,+num_1%3D$%7Bnum_1%7D%22)%0Aendforeach()%0A%0Aforeach(en+ba+IN+ZIP_LISTS+English+Bahasa)%0A++++message(STATUS+%22en%3D$%7Ben%7D,+ba%3D$%7Bba%7D%22)%0Aendforeach()'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'1',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,libs:!(),options:'',overrides:!(),runtimeTools:!(),source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
-
-##### 4.5.2.2 [`while`](https://cmake.com.cn/cmake/help/latest/command/while.html#command:while)
-
-在条件为真时执行一组命令
+只要条件为真，就重复执行一组命令。其格式如下：
 
 ```cmake
 while(<condition>)
@@ -694,13 +686,13 @@ while(<condition>)
 endwhile()
 ```
 
-[`while`](https://cmake.com.cn/cmake/help/latest/command/while.html#command:while) 与匹配的 [`endwhile()`](https://cmake.com.cn/cmake/help/latest/command/endwhile.html#command:endwhile) 之间的所有命令都会被记录而不会立即执行。一旦 endwhile() 被求值，只要 `<condition>` 为真，记录的命令列表就会被执行。
+执行到 [`while()`](https://cmake.com.cn/cmake/help/latest/command/while.html#command:while) 时，CMake 会先记录 [`while()`](https://cmake.com.cn/cmake/help/latest/command/while.html#command:while) 与匹配的 [`endwhile()`](https://cmake.com.cn/cmake/help/latest/command/endwhile.html) 之间的命令块，不会立即运行。直到执行到 [`endwhile()`](https://cmake.com.cn/cmake/help/latest/command/endwhile.html)，才开始循环：每轮迭代前重新计算 `<condition>`，为真则执行该命令块，为假则结束循环。因此条件一开始就为假时，循环体一次也不会执行；而命令块中的变量引用会在每轮迭代时重新求值。
 
-`<condition>` 的语法与求值逻辑与 `if()` 命令中详细描述的内容一致。
+`<condition>` 的语法和求值规则与 [`if()`](https://cmake.com.cn/cmake/help/latest/command/if.html#command:if) 相同。
 
 ##### 4.5.2.3 跳出控制流
 
-命令 [`break()`](https://cmake.com.cn/cmake/help/latest/command/break.html#command:break) 和 [`continue()`](https://cmake.com.cn/cmake/help/latest/command/continue.html#command:continue) 提供了跳出正常控制流的手段。break() 命令从外层的 foreach 或 while 循环中跳出。continue() 命令中止 foreach() 或 while() 循环当前迭代的剩余部分，并从下一次迭代的顶部开始。
+[`break()`](https://cmake.com.cn/cmake/help/latest/command/break.html#command:break) 和 [`continue()`](https://cmake.com.cn/cmake/help/latest/command/continue.html#command:continue) 可用于改变循环控制流。[`break()`](https://cmake.com.cn/cmake/help/latest/command/break.html#command:break) 退出当前最内层的 [`foreach()`](https://cmake.com.cn/cmake/help/latest/command/foreach.html#command:foreach) 或 [`while()`](https://cmake.com.cn/cmake/help/latest/command/while.html#command:while) 循环；[`continue()`](https://cmake.com.cn/cmake/help/latest/command/continue.html#command:continue) 跳过当前迭代剩余的命令，并开始下一次迭代。
 
 ## 5. CMake 构建系统
 
