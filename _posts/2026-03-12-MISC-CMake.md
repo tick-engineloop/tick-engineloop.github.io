@@ -425,7 +425,7 @@ the source code uses line continuation.\
 
 ##### 4.3.1.3 无引号参数
 
-无引号参数不由引号界定，其内容由允许的普通字符、转义序列和变量引用组成。空白字符、`(`、`)`、`#`、`"` 和 `\` 不能直接出现在其中；若要包含这些字符，必须按 CMake 的转义规则书写。转义序列和变量引用会被求值，所得内容再按 CMake 列表规则拆分。拆分后，每个非空元素分别作为一个参数传递给命令调用。因此，一个无引号参数最终可能产生零个或多个命令参数。
+无引号参数不由引号界定，其内容由允许的普通字符、转义序列和变量引用组成。空格、`(`、`)`、`#`、`"` 和 `\` 不能直接出现在其中；若要包含这些字符，必须按 CMake 的转义规则书写。转义序列和变量引用会被求值，所得内容再按 CMake 列表规则拆分。拆分后，每个非空元素分别作为一个参数传递给命令调用。因此，一个无引号参数最终可能产生零个或多个命令参数。
 
 ```cmake
 foreach(arg
@@ -440,11 +440,12 @@ endforeach()
 
 #### 4.3.2 命令调用
 
-命令调用是一个名称，后跟括号括起来的由空格分隔的参数。例如：
+命令调用由命令名和圆括号括起的参数列表构成，参数之间以空白字符分隔。参数可采用括号参数、带引号参数或无引号参数的形式。例如：
 
 ```cmake
 add_executable(hello world.c)
 ```
+
 命令名称不区分大小写。
 
 #### 4.3.3 命令分类
@@ -458,7 +459,7 @@ add_executable(hello world.c)
 | [`cmake_host_system_information`](https://cmake.com.cn/cmake/help/latest/command/cmake_host_system_information.html) | 查询各类主机系统信息
 | [`cmake_minimum_required`](https://cmake.com.cn/cmake/help/latest/command/cmake_minimum_required.html) | 设置项目的 CMake 最低要求版本
 | [`cmake_parse_arguments`](https://cmake.com.cn/cmake/help/latest/command/cmake_parse_arguments.html) | 解析函数或宏的参数
-| [`cmake_path`](https://cmake.com.cn/cmake/help/latest/command/cmake_path.html) | 路径操作
+| [`cmake_path`](https://cmake.com.cn/cmake/help/latest/command/cmake_path.html) | 对路径进行解析、查询、转换和修改，不访问文件系统
 | [`cmake_pkg_config`](https://cmake.com.cn/cmake/help/latest/command/cmake_pkg_config.html) | 处理 pkg-config 格式的包文件
 | [`configure_file`](https://cmake.com.cn/cmake/help/latest/command/configure_file.html) | 将文件复制到另一个位置并修改其内容
 | [`block`](https://cmake.com.cn/cmake/help/latest/command/block.html) / [`endblock`](https://cmake.com.cn/cmake/help/latest/command/endblock.html) | 在一个专用的变量和/或策略作用域内执行一组命令
@@ -466,7 +467,7 @@ add_executable(hello world.c)
 | [`continue`](https://cmake.com.cn/cmake/help/latest/command/continue.html) | 继续执行外层 foreach 或 while 循环的顶部
 | [`if`](https://cmake.com.cn/cmake/help/latest/command/if.html) / [`elseif`](https://cmake.com.cn/cmake/help/latest/command/elseif.html) / [`else`](https://cmake.com.cn/cmake/help/latest/command/else.html) / [`endif`](https://cmake.com.cn/cmake/help/latest/command/endif.html) | 有条件地执行一组命令
 | [`execute_process`](https://cmake.com.cn/cmake/help/latest/command/execute_process.html) | 执行一个或多个子进程
-| [`file`](https://cmake.com.cn/cmake/help/latest/command/file.html) | 文件操作
+| [`file`](https://cmake.com.cn/cmake/help/latest/command/file.html) | 专用于需要访问文件系统的文件和路径操作
 | [`find_file`](https://cmake.com.cn/cmake/help/latest/command/find_file.html) | 查找指定文件的完整路径
 | [`find_library`](https://cmake.com.cn/cmake/help/latest/command/find_library.html) | 查找库
 | [`find_package`](https://cmake.com.cn/cmake/help/latest/command/find_package.html) | 查找包
@@ -493,7 +494,7 @@ add_executable(hello world.c)
 
 ##### 4.3.3.2 项目命令
 
-只能在项目模式中使用，不能在脚本模式中使用的命令为项目命令，常用的项目命令列举如下：
+仅在项目模式下可用（不能在脚本模式中使用）的命令称为项目命令，常用的项目命令列举如下：
 
 | 类型             | 作用                                          
 | ---             | --- 
@@ -531,11 +532,11 @@ add_executable(hello world.c)
 
 ### 4.4 函数和宏
 
-通过将相同或相似的功能进行抽象形成宏或函数，可避免在文件中出现大量重复相似的命令集，这可以借助 [`function()`](https://cmake.com.cn/cmake/help/latest/command/function.html#command:function) 和 [`macro()`](https://cmake.com.cn/cmake/help/latest/command/macro.html#command:macro) 来实现。
+可以将重复使用的一组 CMake 命令封装为函数或宏，以减少重复代码并提高可复用性，这可以借助 [`function()`](https://cmake.com.cn/cmake/help/latest/command/function.html#command:function) 和 [`macro()`](https://cmake.com.cn/cmake/help/latest/command/macro.html#command:macro) 来实现。
 
 <iframe style="display:block;width:100%;max-width:800px;height:400px;margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,selection:(endColumn:14,endLineNumber:7,positionColumn:14,positionLineNumber:7,selectionStartColumn:14,selectionStartLineNumber:7,startColumn:14,startLineNumber:7),source:'macro(MyMacro+MacroArgument)%0A++message(%22$%7BMacroArgument%7D%5Cn%5Ct%5CtFrom+Macro%22)%0Aendmacro()%0A%0Afunction(MyFunc+FuncArgument)%0A++MyMacro(%22$%7BFuncArgument%7D%5Cn%5CtFrom+Function%22)%0Aendfunction()%0A%0AMyFunc(%22From+TopLevel%22)'),l:'5',n:'0',o:'CMakeScript+source+%231',t:'0')),k:100,l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:executor,i:(argsPanelShown:'1',compilationPanelShown:'1',compiler:cmake-3_31_5,compilerName:'',compilerOutShown:'1',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:cmakescript,libs:!(),options:'',overrides:!(),runtimeTools:!(),source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+cmake+3.31.5+(CMakeScript,+Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0')),l:'3',n:'0',o:'',t:'0')),version:4"></iframe>
 
-与许多语言一样，函数和宏的区别在于作用域。`macro()` 在语义上类似于文本替换，类似于 C/C++ 宏，因此宏产生的任何副作用在调用它的上下文中都是可见的。如果我们宏中创建或更改一个变量，调用者将会看到该更改。`function()` 会创建自己的变量作用域，因此副作用对调用者不可见。为了将更改传播给调用该函数的父级，我们必须使用 `set(<var> <value> PARENT_SCOPE)`，它的工作方式与 `set()` 相同，但仅针对属于调用者上下文的变量。
+函数和宏的一个重要区别在于变量作用域。`macro()` 不创建新的变量作用域，其主体在调用处展开执行，因此宏中对普通变量的赋值会影响调用者当前作用域。`function()` 则创建新的变量作用域，函数内对普通变量的赋值默认仅在该函数作用域内可见；若需将变量值传回调用者的父作用域，可使用 `set(<var> <value> PARENT_SCOPE)`，它的工作方式与 `set()` 相同，但仅针对属于调用者上下文的变量。
 
 ### 4.5 控制结构
 
