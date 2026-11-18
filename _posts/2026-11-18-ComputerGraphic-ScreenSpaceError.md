@@ -8,17 +8,19 @@ math: true
 mermaid: true
 ---
 
+## 1. 概述
+
 渲染大范围地形时，近处地形需要较高精度以避免细节粗糙；远处地形则可适当降低精度，因为其几何误差投影到屏幕后往往难以察觉。若所有地形块都采用最高精度，会产生不必要的三角形开销；若都采用低精度，又会损害近处画质。LOD（Level of Detail）通过为同一对象准备不同精度的模型，并根据观察情况选择合适的层级，以平衡画面质量和渲染开销。
 
 选择层级时，只看物体与相机的距离并不够。不同地形块的几何误差可能不同，而相同的误差在不同视距和视口下也会产生不同的视觉影响。因此，需要衡量当前简化造成的误差投影到屏幕上有多大。**Screen Space Error（SSE，屏幕空间误差）**就是将几何近似误差换算为像素尺度的度量。渲染器根据 SSE 判断是否继续使用当前层级，或切换到更精细的层级。SSE 常用于地形瓦片、网格简化、HLOD 和大场景流式加载。
 
-## 1. 从世界空间误差到像素误差
+## 2. 屏幕空间误差的计算
 
-LOD 节点通常保存一个几何误差 $e$，表示当前简化模型相对于更精细参考模型的最大偏差估计。渲染时，SSE 将这个世界空间误差通过当前相机的投影关系换算成屏幕上的像素尺度。它衡量的是简化误差可能造成多大屏幕偏差，并非逐像素比较简化图像与参考图像的结果。
+LOD 节点通常保存一个几何误差 $e$，表示当前简化模型相对于更精细参考模型的最大偏差估计。渲染时，SSE 将这个世界空间误差通过当前相机的投影关系换算成屏幕上的像素尺度。它衡量的是简化误差可能造成多大屏幕偏差，并非逐像素比较简化图像与参考图像的结果。下面分别介绍在透视投影和正交投影情况下，从世界空间误差到屏幕空间像素误差的计算过程。
+
+### 透视投影
 
 在透视投影下，物体离相机越远，同样大小的世界空间偏差投影到屏幕上就越小；视口分辨率越高，或纵向视场角越窄，同样的偏差则会占据更多像素。因此，SSE 综合了节点误差、相机距离和投影设置。LOD 系统再将 SSE 与以像素为单位的目标误差阈值比较：SSE 较大时细化节点，SSE 足够小时保留当前层级。
-
-### 透视投影下的计算
 
 设相机的纵向视场角为 $\theta$，渲染视口高度为 $H$ 像素。透视投影的纵向焦距换算到像素空间后为：
 
@@ -26,50 +28,42 @@ $$
 f_{\text{px}} = \frac{H}{2\tan(\theta/2)}
 $$
 
-在距离相机约为 $d$ 的位置，将大小为 $e$ 的几何偏差近似看作垂直于视线方向的偏移，其投影约为 $e/d$ 倍焦距。因此，常用的 SSE 近似公式为：
+若将几何偏差 $e$ 近似为垂直于视线方向的位移，那么在距相机 $d$ 处，它对应的视角约为 $e/d$（弧度，小角度近似）。再乘以像素焦距 $f_{\text{px}}$，即可得到屏幕空间误差的近似值：
 
 $$
 \operatorname{SSE}
-\approx \frac{e}{d} f_{\text{px}}
+\approx \frac{e}{d} \cdot f_{\text{px}}
 = \frac{e}{d} \cdot \frac{H}{2\tan(\theta/2)}
 \quad \text{pixels}
 $$
 
-由公式可知，几何误差 $e$ 或视口高度 $H$ 增大时，SSE 增大；相机距离 $d$ 或纵向视场角 $\theta$ 增大时，SSE 减小。也就是说，更大的模型误差和更高的像素密度会要求更精细的 LOD，而更远的视距和更宽的视野会让同一误差在屏幕上显得更小。
-
-也可以把相机与视口的影响合并为投影尺度 $K$：
-
-$$
-K = \frac{H}{2\tan(\theta/2)}, \qquad
-\operatorname{SSE} \approx \frac{eK}{d}
-$$
-
-当视场角和视口高度固定时，$K$ 可预先计算；相机距离或节点误差变化时，再据此计算 SSE。实际相机与视口设置变化时，$K$ 也需要更新。
-
-公式中的变量和单位如下：
+由公式可知，几何误差 $e$ 或视口高度 $H$ 增大时，SSE 增大；相机距离 $d$ 或纵向视场角 $\theta$ 增大时，SSE 减小。也就是说，更大的模型误差和更高的像素密度会要求更精细的 LOD，而更远的视距和更宽的视野会让同一误差在屏幕上显得更小。公式中的变量和单位如下：
 
 - $e$：当前 LOD 节点相对于更精细参考几何的几何误差估计，单位为世界空间单位（例如米）。通常离线计算，例如对简化网格采样，求采样点到参考几何的最大偏差，或由简化算法给出误差上界，并将结果保存为节点元数据。
-- $d$：相机到节点的距离估计，单位必须与 $e$ 相同。常用相机到节点包围球或包围盒的最近距离，避免只用节点中心距离而低估近处误差。若相机进入包围体附近，应限制距离的最小值或采用其他规则，避免分母接近零导致 SSE 过大。距离估计越近，通常越早细分；估计越远，则可能导致可见细节不足。对于深度范围较大的节点，单个距离和误差值只能提供近似结果。
-- $\theta$：相机的纵向视场角（vertical FOV），单位为角度（例如度或弧度），从相机投影设置读取；计算三角函数时，角度单位需符合所用数学库的要求。
+- $d$：相机到节点包围球或包围盒的最短欧式距离，单位为世界空间单位（例如米），单位必须与 $e$ 相同。避免只用节点中心距离而低估近处误差。若相机进入包围体附近，应限制距离的最小值或采用其他规则，避免分母接近零导致 SSE 过大。距离估计越近，通常越早细分；估计越远，则可能导致可见细节不足。对于深度范围较大的节点，单个距离和误差值只能提供近似结果。
+- $\theta$：相机的纵向视场角（vertical FOV），单位为角度弧度，从相机投影设置读取。
 - $H$：实际渲染视口的像素高度，单位为像素（px），从当前渲染视口读取，不一定等于窗口或显示器的高度。
-- $f_{\text{px}}$：纵向焦距对应的像素尺度，单位为像素（px），由 $H/(2\tan(\theta/2))$ 计算。
-- $K$：合并视口高度与视场角后的投影尺度，单位为像素（px），且 $K=f_{\text{px}}$。视口高度和视场角固定时可预先计算。
-- $\operatorname{SSE}$：屏幕空间误差估计，单位为像素（px），由 $eK/d$ 计算。$e$ 和 $d$ 使用相同单位，因此比值无量纲。
-- $T$：允许的目标屏幕空间误差阈值，单位为像素（px），由渲染系统或应用设定；当 $\operatorname{SSE}>T$ 时通常继续细化。
+- $f_{\text{px}}$：纵向焦距对应的像素尺度，单位为像素（px）。
 
-该公式将三维几何误差简化为一个标量，并用距离和投影尺度估算其像素影响；它是常用近似，而非对所有误差方向和投影位置都精确的逐点投影。不同引擎对几何误差上界和距离估计的定义可能不同。
-
-### 正交投影下的计算
-
-正交投影不会产生透视缩小，因此相机距离不会改变物体的投影尺寸。设正交视野的垂直世界空间范围为 $S$，则 SSE 可估算为：
+假定渲染系统或应用将允许的最大屏幕空间误差设为阈值 $T$，单位为像素（px）。当
 
 $$
-\operatorname{SSE}_{\text{ortho}} \approx \frac{e \cdot H}{S}
+\operatorname{SSE}>T
+$$ 
+
+时，通常需要继续细化当前 LOD 节点。
+
+### 正交投影
+
+正交投影不会产生透视缩小，因此相机距离不会改变物体的投影尺寸。SSE 可估算为：
+
+$$
+\operatorname{SSE}_{\text{ortho}} \approx e \cdot \frac{H}{S} \quad \text{pixels}
 $$
 
 其中，$S$ 表示正交视野垂直方向覆盖的世界空间距离，单位与 $e$ 相同（例如米）；$H$ 沿用前文定义，表示视口高度，单位为像素（px）。比例 $H/S$ 表示每个世界空间单位对应的像素数，因此 SSE 的单位仍为像素。在正交视图中，改变相机距离不会改变同一物体的 SSE；改变视野范围或视口分辨率才会改变误差对应的像素尺度。
 
-## 2. 一次计算：同一块地形为什么会换 LOD
+## 3. SSE 数值示例及其对 LOD 选择的影响
 
 假设某个地形块的几何误差为 $e=1$ 米，相机纵向视场角为 $60^\circ$，视口高度为 $1080$ 像素：
 
@@ -80,7 +74,7 @@ $$
 
 因此，LOD 不宜只根据固定距离切换。即使距离相同，视口高度增加或视场角减小，误差投影到屏幕上的像素数也会增加。SSE 将这些因素纳入同一个像素尺度进行比较。
 
-## 3. 每帧如何用 SSE 选择层级
+## 4. 基于 SSE 的 LOD 选择流程
 
 每帧渲染时，渲染器从可见的粗层级节点开始遍历，并根据当前相机和视口计算节点的 SSE。如果 SSE 超过目标阈值，就继续访问该节点的子节点；否则绘制当前节点。如果子节点尚未加载，可以先绘制父节点，待子节点加载完成后再替换。
 
@@ -115,7 +109,42 @@ select(node):
 
 阈值决定了细节层级的选择。阈值越小，允许的像素误差越低，通常会选择更精细的层级，同时增加绘制、内存和流式加载开销；阈值越大则相反。阈值并不能保证所有像素误差都不超过该值，实际结果还会受到误差元数据、距离估计和节点加载状态的影响。
 
-## 4. SSE 解决什么，又不解决什么
+以 Cesium-1.0 版本中地形瓦片的屏幕空间误差计算为例，展示实际工程中的 SSE 计算过程：
+
+```javascript
+    function screenSpaceError(primitive, context, frameState, tile) {       // 透视投影
+        if (frameState.mode === SceneMode.SCENE2D) {
+            return screenSpaceError2D(primitive, context, frameState, tile);
+        }
+
+        var maxGeometricError = primitive._tileProvider.getLevelMaximumGeometricError(tile.level);
+
+        var distance = primitive._tileProvider.computeDistanceToTile(tile, frameState);
+        tile._distance = distance;
+
+        var height = context.drawingBufferHeight;
+
+        var camera = frameState.camera;
+        var frustum = camera.frustum;
+        var fovy = frustum.fovy;
+
+        // PERFORMANCE_IDEA: factor out stuff that's constant across tiles.
+        return (maxGeometricError * height) / (2 * distance * Math.tan(0.5 * fovy));
+    }
+
+    function screenSpaceError2D(primitive, context, frameState, tile) {     // 正交投影
+        var camera = frameState.camera;
+        var frustum = camera.frustum;
+        var width = context.drawingBufferWidth;
+        var height = context.drawingBufferHeight;
+
+        var maxGeometricError = primitive._tileProvider.getLevelMaximumGeometricError(tile.level);
+        var pixelSize = Math.max(frustum.top - frustum.bottom, frustum.right - frustum.left) / Math.max(width, height);
+        return maxGeometricError / pixelSize;
+    }
+```
+
+## 5. SSE 的作用与局限
 
 - **根据视点选择细节**：渲染器可以根据当前相机、视场角和视口，使用同一套误差数据动态选择 LOD。
 - **不负责判断可见性**：遮挡剔除和视锥剔除仍需单独处理。被遮挡的节点即使 SSE 很高，也不一定需要加载。
