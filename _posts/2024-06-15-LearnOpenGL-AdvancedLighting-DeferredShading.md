@@ -2,7 +2,7 @@
 title: Deferred Shading
 description: 延迟着色是基于将大多数繁重的渲染（如光照）延迟或推迟到稍后的阶段中这样一种想法。延迟着色由两个通道组成：在第一个通道（称为几何通道）中，我们渲染一次场景，并获取对象的各种几何信息（例如位置向量、颜色向量、法线向量和/或镜面反射值），将其存储在称为 G-buffer 的纹理集合中。在称为光照通道的第二通道中使用 G-buffer 的纹理，在该通道中，我们渲染一个填充屏幕的四边形，并使用存储在 G-buffer 中的几何信息计算每个片段的场景光照（我们逐个像素地遍历 G-buffer）。
 date: 2024-06-15 00:00:00 +0800
-categories: [Computer Grahics, LearnOpenGL, AdvancedLighting]
+categories: [Computer Graphics, LearnOpenGL, AdvancedLighting]
 tags: [computergraphics, learnopengl, postprocess, deferredshading]     # TAG names should always be lowercase
 math: true
 ---

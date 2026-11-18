@@ -2,7 +2,7 @@
 title: Coordinate Systems
 description: world space、camera space、clip space. etc
 date: 2024-06-16 00:00:00 +0800
-categories: [Computer Grahics, LearnOpenGL, Basics]
+categories: [Computer Graphics, LearnOpenGL, Basics]
 tags: [computergraphics, learnopengl, coordinatesystem]     # TAG names should always be lowercase
 math: true
 ---

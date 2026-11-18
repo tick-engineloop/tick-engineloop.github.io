@@ -2,7 +2,7 @@
 title: PBR --- Lighting
 description: 在本章中，我们将专注于把之前讨论的理论转化为实际的渲染器实现。
 date: 2024-06-17 00:00:00 +0800
-categories: [Computer Grahics, LearnOpenGL, PBR]
+categories: [Computer Graphics, LearnOpenGL, PBR]
 tags: [computergraphics, learnopengl, pbr]     # TAG names should always be lowercase
 math: true
 ---

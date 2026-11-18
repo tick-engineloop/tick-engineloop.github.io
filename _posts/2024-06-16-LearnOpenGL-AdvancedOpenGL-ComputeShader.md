@@ -2,7 +2,7 @@
 title: Compute Shader
 description: 计算着色器是一种完全用于计算任意信息的着色器阶段。虽然它可以进行渲染，但一般用于与绘制三角形和像素没有直接关系的任务。
 date: 2024-06-16 00:00:00 +0800
-categories: [Computer Grahics, LearnOpenGL, AdvancedOpenGL]
+categories: [Computer Graphics, LearnOpenGL, AdvancedOpenGL]
 tags: [computergraphics, learnopengl, computeshader]     # TAG names should always be lowercase
 ---
 

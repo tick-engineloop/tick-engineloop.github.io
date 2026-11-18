@@ -2,7 +2,7 @@
 title: 蒙太奇分段
 description: 在 UE5.4.4 中为蒙太奇创建分段
 date: 2024-11-09 00:00:00 +0800
-categories: [Computer Grahics, UE5, Animation]
+categories: [Computer Graphics, UE5, Animation]
 tags: [ue, animation, montage]     # TAG names should always be lowercase
 ---
 

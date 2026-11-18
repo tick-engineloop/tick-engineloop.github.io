@@ -2,7 +2,7 @@
 title: Learn OpenGL Summary
 description: 对 LearnOpenGL 下的内容进行一个总结
 date: 2024-10-27 00:00:00 +0800
-categories: [Computer Grahics, LearnOpenGL]
+categories: [Computer Graphics, LearnOpenGL]
 tags: [computergraphics, learnopengl]     # TAG names should always be lowercase
 ---
 

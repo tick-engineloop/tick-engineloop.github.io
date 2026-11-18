@@ -2,7 +2,7 @@
 title: 在动画中添加 AnimNotify 时的注意事项
 description: 在动画中添加 AnimNotify 时需要注意，如果太靠近动画结尾，则不会触发某些事件，导致你的程序逻辑没有完全执行
 date: 2024-11-13 00:00:00 +0800
-categories: [Computer Grahics, UE5, Animation]
+categories: [Computer Graphics, UE5, Animation]
 tags: [ue, animation, notify]     # TAG names should always be lowercase
 ---
 

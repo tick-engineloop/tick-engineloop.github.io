@@ -2,7 +2,7 @@
 title: PBR --- IBL Diffuse Irradiance
 description: PBR(Physically Based Rendering)，是一系列基于物理的渲染技术的统称，这些渲染技术都在不同程度上基于相同的更符合物理世界规律的基础理论。
 date: 2024-06-18 00:00:00 +0800
-categories: [Computer Grahics, LearnOpenGL, PBR, IBL]
+categories: [Computer Graphics, LearnOpenGL, PBR, IBL]
 tags: [computergraphics, learnopengl, pbr, ibl]     # TAG names should always be lowercase
 math: true
 ---

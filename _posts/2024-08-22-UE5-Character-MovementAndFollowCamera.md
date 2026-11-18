@@ -2,7 +2,7 @@
 title: Character's Camera Controls and Movement Settings
 description: 设置角色的相机控制和移动，使其与官方第三人称示例保持一致。
 date: 2024-08-22 00:00:00 +0800
-categories: [Computer Grahics, UE5, Character]
+categories: [Computer Graphics, UE5, Character]
 tags: [ue5, character]     # TAG names should always be lowercase
 ---
 

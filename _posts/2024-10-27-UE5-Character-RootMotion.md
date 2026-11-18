@@ -2,7 +2,7 @@
 title: Root Motion
 description: 通过根运动（Root Motion）动画，你可以用动画数据驱动角色的动作，从而在关卡中创建更真实的动作。
 date: 2024-10-27 00:00:00 +0800
-categories: [Computer Grahics, UE5, Character]
+categories: [Computer Graphics, UE5, Character]
 tags: [ue5, character]     # TAG names should always be lowercase
 ---
 

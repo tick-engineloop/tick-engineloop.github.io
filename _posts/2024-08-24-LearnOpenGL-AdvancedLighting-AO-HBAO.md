@@ -2,7 +2,7 @@
 title: HBAO
 description: 图像空间水平基准环境光遮蔽(Image-Space Horizon-Based Ambient Occlusion)是一种环境光遮蔽技术，用于增强实时渲染场景中的光照效果和深度感。
 date: 2024-08-24 00:00:00 +0800
-categories: [Computer Grahics, LearnOpenGL, AdvancedLighting, AO]
+categories: [Computer Graphics, LearnOpenGL, AdvancedLighting, AO]
 tags: [computergraphics, learnopengl, postprocess, ao]     # TAG names should always be lowercase
 ---
 

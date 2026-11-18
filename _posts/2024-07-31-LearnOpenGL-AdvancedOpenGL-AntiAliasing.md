@@ -2,7 +2,7 @@
 title: Anti Aliasing
 description: 抗锯齿（Anti-Aliasing，简称AA）是一种图形处理技术，用于减少图像中出现的锯齿状边缘。锯齿通常因为光栅化而产生，可通过 SSAA、MSAA、FXAA 等方法减少、柔化或消除。
 date: 2024-07-31 00:00:00 +0800
-categories: [Computer Grahics, LearnOpenGL, AdvancedOpenGL]
+categories: [Computer Graphics, LearnOpenGL, AdvancedOpenGL]
 tags: [anti-aliasing, learnopengl]     # TAG names should always be lowercase
 ---
 

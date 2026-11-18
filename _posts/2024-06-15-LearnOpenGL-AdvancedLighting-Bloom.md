@@ -2,7 +2,7 @@
 title: Bloom
 description: 泛光（Bloom）是一种常用的渲染技术，用于给光源加上辉光效果，在视觉上增强光源的亮度。
 date: 2024-06-15 00:00:00 +0800
-categories: [Computer Grahics, LearnOpenGL, AdvancedLighting]
+categories: [Computer Graphics, LearnOpenGL, AdvancedLighting]
 tags: [computergraphics, learnopengl, postprocess, bloom]     # TAG names should always be lowercase
 math: true
 ---

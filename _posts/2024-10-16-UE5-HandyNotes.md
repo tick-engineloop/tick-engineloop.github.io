@@ -2,7 +2,7 @@
 title: UE5 Handy Notes
 description: 记录 UE5 中一些容易混淆的概念，方便记忆
 date: 2024-10-16 00:00:00 +0800
-categories: [Computer Grahics, UE5]
+categories: [Computer Graphics, UE5]
 tags: [ue5]     # TAG names should always be lowercase
 ---
 
