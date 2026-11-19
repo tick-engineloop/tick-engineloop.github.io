@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="970" viewBox="0 0 1000 970" role="img" aria-labelledby="title desc">
+  <title id="title">SSE 驱动的 LOD 节点选择流程</title>
+  <desc id="desc">从当前相机和渲染视口开始，遍历可见 LOD 节点，估算屏幕空间误差，并根据阈值和子节点加载状态选择绘制当前节点或细化到子节点。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#687983"/>
+    </marker>
+    <style>
+      .stage { fill: #fcfcfe; stroke: #a8acb8; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .stage-title { fill: #35465a; font: 700 18px Arial, "Microsoft YaHei", sans-serif; }
+      .node-label { fill: #283444; font: 16px Arial, "Microsoft YaHei", sans-serif; text-anchor: middle; dominant-baseline: middle; }
+      .branch-no { fill: #9a6f45; font: 600 14px Arial, "Microsoft YaHei", sans-serif; text-anchor: middle; }
+      .branch-yes { fill: #59836a; font: 600 14px Arial, "Microsoft YaHei", sans-serif; text-anchor: middle; }
+      .connector { fill: none; stroke: #687983; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; marker-end: url(#arrow); }
+      .merge-line { fill: none; stroke: #687983; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+      .card { stroke-width: 1.6; }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="998" height="968" rx="18" fill="#fff" stroke="#e1e5e9"/>
+
+  <rect class="stage" x="35" y="45" width="930" height="330" rx="18"/>
+  <text class="stage-title" x="60" y="82">① 节点评估与屏幕空间误差计算</text>
+
+  <rect class="card" x="70" y="145" width="180" height="74" rx="14" fill="#e4edf6" stroke="#7896b4"/>
+  <text class="node-label" x="160" y="182">
+    <tspan x="160" dy="-10">当前帧相机</tspan>
+    <tspan x="160" dy="22">与渲染视口</tspan>
+  </text>
+
+  <rect class="card" x="290" y="145" width="180" height="74" rx="14" fill="#e9e2f3" stroke="#8f82b8"/>
+  <text class="node-label" x="380" y="182">
+    <tspan x="380" dy="-10">遍历可见的</tspan>
+    <tspan x="380" dy="22">LOD 节点</tspan>
+  </text>
+
+  <rect class="card" x="510" y="145" width="180" height="74" rx="14" fill="#e4efe4" stroke="#7fa082"/>
+  <text class="node-label" x="600" y="182">
+    <tspan x="600" dy="-10">读取节点误差 e</tspan>
+    <tspan x="600" dy="22">与包围体</tspan>
+  </text>
+
+  <rect class="card" x="730" y="145" width="180" height="74" rx="14" fill="#e4efe4" stroke="#7fa082"/>
+  <text class="node-label" x="820" y="182">
+    <tspan x="820" dy="-10">估算相机到节点</tspan>
+    <tspan x="820" dy="22">的距离 d</tspan>
+  </text>
+
+  <rect class="card" x="395" y="285" width="210" height="65" rx="14" fill="#fbf0c5" stroke="#c4a253"/>
+  <text class="node-label" x="500" y="317">
+    <tspan x="500" dy="-10">结合 e、d 与视口参数</tspan>
+    <tspan x="500" dy="22">计算 SSE（像素）</tspan>
+  </text>
+
+  <path class="connector" d="M 250 182 H 290"/>
+  <path class="connector" d="M 470 182 H 510"/>
+  <path class="connector" d="M 690 182 H 730"/>
+  <path class="connector" d="M 820 219 V 260 H 500 V 285"/>
+
+  <rect class="stage" x="35" y="400" width="930" height="550" rx="18"/>
+  <text class="stage-title" x="60" y="430">② 阈值判断与 LOD 选择</text>
+
+  <path class="connector" d="M 500 350 V 450"/>
+  <polygon class="card" points="500,450 625,500 500,550 375,500" fill="#ebe5f4" stroke="#8f82b8" stroke-width="1.8"/>
+  <text class="node-label" x="500" y="500">SSE &gt; 目标阈值 T？</text>
+
+  <path class="connector" d="M 375 500 H 205 V 550"/>
+  <text class="branch-no" x="278" y="486">否：误差可接受</text>
+  <path class="connector" d="M 625 500 H 700 V 560"/>
+  <text class="branch-yes" x="660" y="486">是：需要更多细节</text>
+
+  <rect class="card" x="80" y="550" width="250" height="82" rx="14" fill="#e4efe4" stroke="#7fa082"/>
+  <text class="node-label" x="205" y="591">
+    <tspan x="205" dy="-10">绘制当前节点</tspan>
+    <tspan x="205" dy="22">误差满足阈值</tspan>
+  </text>
+
+  <polygon class="card" points="700,560 800,610 700,660 600,610" fill="#f3e7ed" stroke="#bd8c9a" stroke-width="1.8"/>
+  <text class="node-label" x="700" y="610">
+    <tspan x="700" dy="-10">更细子节点</tspan>
+    <tspan x="700" dy="22">可用？</tspan>
+  </text>
+
+  <path class="connector" d="M 600 610 H 420 V 685"/>
+  <text class="branch-no" x="510" y="596">否：尚未就绪</text>
+  <path class="connector" d="M 800 610 V 685"/>
+  <text class="branch-yes" x="830" y="670">是</text>
+
+  <rect class="card" x="300" y="685" width="240" height="80" rx="14" fill="#fbf0dc" stroke="#c9a36a"/>
+  <text class="node-label" x="420" y="725">
+    <tspan x="420" dy="-10">请求子节点</tspan>
+    <tspan x="420" dy="22">暂时绘制当前节点</tspan>
+  </text>
+
+  <rect class="card" x="675" y="685" width="250" height="70" rx="14" fill="#e3eff2" stroke="#7fa5b0"/>
+  <text class="node-label" x="800" y="720">
+    <tspan x="800" dy="-10">遍历已就绪的</tspan>
+    <tspan x="800" dy="22">更细子节点</tspan>
+  </text>
+
+  <path class="connector" d="M 800 755 V 785"/>
+  <rect class="card" x="675" y="785" width="250" height="60" rx="14" fill="#e3eff2" stroke="#7fa5b0"/>
+  <text class="node-label" x="800" y="815">
+    <tspan x="800" dy="-10">以已就绪子节点</tspan>
+    <tspan x="800" dy="22">替换当前父节点</tspan>
+  </text>
+
+  <path class="merge-line" d="M 205 632 V 875"/>
+  <path class="merge-line" d="M 420 765 V 875"/>
+  <path class="merge-line" d="M 800 845 V 875"/>
+  <path class="merge-line" d="M 205 875 H 800"/>
+  <path class="connector" d="M 500 875 V 900"/>
+
+  <rect class="card" x="380" y="900" width="240" height="40" rx="20" fill="#edf0f4" stroke="#8995a2"/>
+  <text class="node-label" x="500" y="920">完成本帧 LOD 选择</text>
+</svg>
