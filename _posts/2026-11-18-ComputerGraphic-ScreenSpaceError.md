@@ -1,5 +1,5 @@
 ---
-title: Screen Space Error：把几何误差变成像素
+title: Screen Space Error
 description: 介绍几何误差的含义与度量，推导透视和正交投影下的 SSE 计算，并通过动画、数值示例、LOD 流程图及 Cesium 1.51 源码说明 SSE 如何驱动细节选择及其适用边界。
 date: 2026-11-18 00:00:00 +0800
 categories: [Computer Graphics]
