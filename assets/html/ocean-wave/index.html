@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FFT 海浪模拟</title>
+  <link rel="stylesheet" href="ocean-wave.css">
+</head>
+<body>
+  <main class="demo">
+    <header class="intro">
+      <div>
+        <p class="eyebrow">FOURIER OCEAN · 2D INVERSE FFT</p>
+        <h1>海浪模拟</h1>
+      </div>
+      <p class="formula">h(k,t) = h₀(k)e<sup>iωt</sup> + h₀*(−k)e<sup>−iωt</sup></p>
+    </header>
+
+    <section class="scene" aria-label="海面高度场可视化">
+      <canvas id="ocean" tabindex="0" aria-label="由二维逆 FFT 生成的动态海面，点击后可漫游"></canvas>
+      <div class="scene-caption"><span class="live-dot"></span>深水色散关系 · 周期性海面</div>
+      <div class="scene-stats"><span id="time">t = 0.0 s</span><span id="frame">—</span></div>
+      <div class="navigation-hint">拖动转向 · WASD / 方向键移动 · 滚轮缩放 · Q / E 升降</div>
+      <div id="position" class="scene-position">相机 0, 0</div>
+    </section>
+
+    <section class="controls" aria-label="海浪参数">
+      <div class="control">
+        <label for="wind-speed">风速 <output id="wind-speed-value">12 m/s</output></label>
+        <input id="wind-speed" type="range" min="4" max="24" step="1" value="12">
+      </div>
+      <div class="control">
+        <label for="wind-direction">风向 <output id="wind-direction-value">25°</output></label>
+        <input id="wind-direction" type="range" min="0" max="359" step="1" value="25">
+      </div>
+      <div class="control">
+        <label for="amplitude">波幅 <output id="amplitude-value">1.0×</output></label>
+        <input id="amplitude" type="range" min="0.2" max="2.5" step="0.1" value="1">
+      </div>
+      <div class="control">
+        <label for="resolution">网格分辨率 <output id="resolution-value">64 × 64</output></label>
+        <select id="resolution">
+          <option value="32">32 × 32</option>
+          <option value="64" selected>64 × 64</option>
+          <option value="128">128 × 128</option>
+        </select>
+      </div>
+      <div class="control">
+        <label for="speed">时间速度 <output id="speed-value">1.0×</output></label>
+        <input id="speed" type="range" min="0.2" max="2.5" step="0.1" value="1">
+      </div>
+      <div class="actions">
+        <button id="toggle" type="button" aria-pressed="true">❚❚ 暂停</button>
+        <button id="reset" type="button">↻ 新随机海面</button>
+      </div>
+    </section>
+    <p id="error" class="error" role="alert" hidden></p>
+  </main>
+  <script src="ocean-wave.js"></script>
+</body>
+</html>
