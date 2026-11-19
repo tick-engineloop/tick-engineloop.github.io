@@ -177,24 +177,27 @@ $$
 水面在 $x$ 和 $z$ 两个水平方向上都以 $L$ 为周期。在 $x$ 方向上，单个波形分量必须满足 $e^{ik_x(x+L)}=e^{ik_xx}$，因此 $k_xL=n \times 2\pi$，其中 $n$ 为整数；$z$ 方向同理，也必须满足 $e^{ik_z(z+L)}=e^{ik_zz}$，因此 $k_zL=m \times 2\pi$，其中 $m$ 为整数。因此波矢向量 $\vec{k}$ 为：
 
 $$
-\vec{k} = (k_x, k_z) = \left(\frac{2\pi n}{L}, \frac{2\pi m}{L}\right) \qquad
+\vec{k} = (k_x, k_z) = \left(n \times \frac{2\pi}{L}, m \times \frac{2\pi}{L}\right) \qquad
 n,m \in \left\{-\frac{N}{2},\ldots,\frac{N}{2}-1\right\}.
 $$
 
-其中，$(n,m)$ 就是波数网格的索引，分别标记 $x$ 和 $z$ 方向的波数，直观地说，$n$ 和 $m$ 表示波在长度为 $L$ 的周期区域内分别沿 $x$ 和 $z$ 方向变化多少个周期。类似地，用整数索引 $(a,b)$ 标记空间采样网格中的采样点：$a$ 和 $b$ 分别表示采样点在 $x$ 和 $z$ 方向上的序号，取值为 $0,\ldots,N-1$。第 $(a,b)$ 个采样点的位置向量为：
+其中，$n$ 和 $m$ 表示在一块边长为 $L$ 的方形海面中，这个波分别沿 $x$ 和 $z$ 方向变化多少个周期。
+
+如本节开始所述，边长为 $L$ 的周期水面沿 $x$ 和 $z$ 方向被均匀划分为 $N$ 个采样区间，得到了 $N \times N$ 个采样点。当我们用整数索引 $(u,v)$ 表示采样点，其中 $u$ 是 $x$ 方向的序号，$v$ 是 $z$ 方向的序号，且 $u,v\in\{0,\ldots,N-1\}$。那么第 $(u,v)$ 个采样点的位置向量为：
 
 $$
-\vec{p} = (x_a,z_b) = \left(\frac{aL}{N},\frac{bL}{N}\right).
+\vec{p} = (x_u,z_v) = \left(u \times \frac{L}{N},v \times \frac{L}{N}\right).
 $$
 
-将 $\vec{k}$ 与 $\vec{p}$ 代入高度场函数：
+将上面获得的 $\vec{k}$ 与 $\vec{p}$ 代入高度场函数：
 
 $$
 \begin{aligned}
-H(\vec{p}, t)
+H(\vec{p}, t) 
 &= \sum_{\vec{k}} h(\vec{k}, t) e^{i (\vec{k} \cdot \vec{p})}\\
-&= \sum_{n=-N/2}^{N/2-1}\sum_{m=-N/2}^{N/2-1}h(\vec{k},t)e^{i(k_xx_a+k_zz_b)}\\
-&= \sum_{n=-N/2}^{N/2-1}\sum_{m=-N/2}^{N/2-1}h(\vec{k},t)e^{2\pi i(na+mb)/N}
+&= \sum_{n=-N/2}^{N/2-1}\sum_{m=-N/2}^{N/2-1}h(\vec{k},t)e^{i(k_xx_u+k_zz_v)}\\
+&= \sum_{n=-N/2}^{N/2-1}\sum_{m=-N/2}^{N/2-1}h(\vec{k},t)e^{2\pi i(nu+mv)/N}\\
+&= H(x_u,z_v,t)
 \end{aligned}
 $$
 
@@ -222,39 +225,37 @@ $$
 
 $$
 \begin{aligned}
-H(x_a,z_b,t)
-&= \sum_{n'=0}^{N-1}\sum_{m'=0}^{N-1}
-h(\vec{k},t)e^{2\pi i((n'-N/2)a+(m'-N/2)b)/N}\\
-&= (-1)^{a+b}\sum_{n'=0}^{N-1}\sum_{m'=0}^{N-1}
-h(\vec{k},t)e^{2\pi i(n'a+m'b)/N}.
+H(x_u,z_v,t)
+&= \sum_{n'=0}^{N-1}\sum_{m'=0}^{N-1} h(\vec{k},t)e^{2\pi i((n'-N/2)u+(m'-N/2)v)/N}\\
+&= (-1)^{u+v}\sum_{n'=0}^{N-1}\sum_{m'=0}^{N-1} h(\vec{k},t)e^{2\pi i(n'u+m'v)/N}
 \end{aligned}
 $$
 
 其中波矢为
 
 $$
-\vec{k} = \left(\frac{2\pi(n'-N/2)}{L},\frac{2\pi(m'-N/2)}{L}\right).
+\vec{k} = \left(\frac{2\pi(n'-N/2)}{L},\frac{2\pi(m'-N/2)}{L}\right)
 $$
 
 等号右侧的求和是带正指数的二维逆 DFT 求和。若采用常见的归一化定义，
 
 $$
-\operatorname{IFFT2}(h)_{a,b}
+\operatorname{IFFT2}(h)_{u,v}
 = \frac{1}{N^2}\sum_{n'=0}^{N-1}\sum_{m'=0}^{N-1}
-h(\vec{k},t)e^{2\pi i(n'a+m'b)/N},
+h(\vec{k},t)e^{2\pi i(n'u+m'v)/N}
 $$
 
-则高度场为 $H(x_a,z_b,t)=(-1)^{a+b}N^2\operatorname{IFFT2}(h)_{a,b}$。这里的 $(-1)^{a+b}$ 来自频率索引平移 $N/2$，是只依赖输出网格索引的棋盘格因子。这样一来，就能借助 FFT 在 $O(N^2\log N)$ 的时间内求出整张网格的高度，而不必按原始定义做 $O(N^4)$ 的二重求和。
+则高度场为 $H(x_u,z_v,t)=(-1)^{u+v}N^2\operatorname{IFFT2}(h)_{u,v}$。这里的 $(-1)^{u+v}$ 来自频率索引平移 $N/2$，是只依赖输出网格索引的棋盘格因子。这样一来，就能借助 FFT 在 $O(N^2\log N)$ 的时间内求出整张网格的高度，而不必按原始定义做 $O(N^4)$ 的二重求和。
 
 实现时还要注意频谱数组的下标顺序。FFT 程序通常使用自然顺序：下标 $0,\ldots,N/2-1$ 对应频率 $0,\ldots,N/2-1$，下标 $N/2,\ldots,N-1$ 对应频率 $-N/2,\ldots,-1$。若先将中心化频谱重排为这种自然顺序，再执行逆 FFT，就不需要额外乘棋盘格因子；若直接对上式的中心化数组执行逆 FFT，则需将结果乘以 $(-1)^{a+b}$。两种做法等价。两种情况下，若逆 FFT 自带 $1/N^2$ 归一化，都需再乘 $N^2$ 才与本文的傅里叶级数定义一致。
 
-### 初始化与逐帧更新
+### 4.1 初始化与逐帧更新
 
 综合以上推导，基于 FFT 的海浪模拟可以分为两步：
 
 1. **初始化**（只执行一次）：对每一个波矢 $\vec{k}$，用独立的标准正态随机数 $\xi_r$、$\xi_i$ 与 Phillips 波谱 $P_h(\vec{k})$ 计算初始随机振幅 $A(\vec{k}) = \frac{1}{\sqrt{2}}(\xi_r + i \xi_i) \sqrt{P_h(\vec{k})}$，并预计算色散关系 $\omega(k) = \sqrt{gk}$。
 
-2. **逐帧更新**（每帧执行）：用 $h(\vec{k}, t) = A(\vec{k}) e^{i \omega(k) t} + A^*(-\vec{k}) e^{-i \omega(k) t}$ 更新频谱，再对其做一次二维逆 FFT；根据 FFT 库的归一化约定恢复傅里叶级数的尺度，取实部即可得到当前时刻高度场 $H(x_a, z_b, t)$ 的全部网格点高度。
+2. **逐帧更新**（每帧执行）：用 $h(\vec{k}, t) = A(\vec{k}) e^{i \omega(k) t} + A^*(-\vec{k}) e^{-i \omega(k) t}$ 更新频谱，再对其做一次二维逆 FFT；根据 FFT 库的归一化约定恢复傅里叶级数的尺度，取实部即可得到当前时刻高度场 $H(x_u, z_v, t)$ 的全部网格点高度。
 
 ```c++
 // N 为偶数网格边长，L 为水面尺寸，G 为重力加速度
@@ -288,7 +289,7 @@ for (int n = 0; n < N; ++n)
 
 若所用 FFT 库的逆变换不带 $1/N^2$ 归一化，则不应再乘 $N^2$。实际代码应按所用库的归一化约定选择其中一种。
 
-### 网格分辨率与 Nyquist 频率
+### 4.2 网格分辨率与 Nyquist 频率
 
 高度场定义在一块 $L \times L$ 的方形网格上，网格间距为 $\Delta = L / N$。每个坐标轴上的波数受 Nyquist 上限约束：
 
@@ -296,14 +297,14 @@ $$
 k_{\mathrm{Nyquist}} = \frac{\pi}{\Delta} = \frac{\pi N}{L}, \qquad \lambda_{\mathrm{axis,min}} = \frac{2 \pi}{k_{\mathrm{Nyquist}}} = 2\Delta = \frac{2L}{N}.
 $$
 
-- 二维网格可表示的波数区域是 $|k_x|, |k_z| \le k_{\mathrm{Nyquist}}$ 的方形，而不是以 $k_{\mathrm{Nyquist}}$ 为半径的圆。沿坐标轴方向最短可表示波长为 $2\Delta$；方形角落处的径向波数可达 $\sqrt{2}\,k_{\mathrm{Nyquist}}$。
+- 二维网格可表示的波数区域是方形 $-k_{\mathrm{Nyquist}} \le k_x \le k_{\mathrm{Nyquist}}$、$-k_{\mathrm{Nyquist}} \le k_z \le k_{\mathrm{Nyquist}}$，而不是以 $k_{\mathrm{Nyquist}}$ 为半径的圆。沿坐标轴方向最短可表示波长为 $2\Delta$；方形角落处的径向波数可达 $\sqrt{2}\,k_{\mathrm{Nyquist}}$。
 - $\Delta$ 决定网格能表示的最小空间尺度。超出上述方形 Nyquist 区域的频率不能被网格正确表示，会被丢弃或产生混叠，所以 $N$ 不能取得太小。
 - $L$ 决定海面的空间重复周期。水面在水平方向上是循环重复的，$L$ 取大一些可以减弱「一眼就看出在平铺」的感觉。
 - $N$ 决定计算量。二维逆 FFT 的复杂度是 $O(N^2 \log N)$，$N$ 翻倍时计算量约变为原来的 4 倍多。
 
 离散化时，波数落在方形 Nyquist 区域之外的谱分量无法表示。若实现中另行按径向波数进行圆形截断，才可以说所有 $k > k_{\mathrm{cutoff}}$ 的分量都会被舍弃。实际波高还可通过 Phillips 谱中的常量 $C$ 整体缩放。
 
-### 数值实现中的注意事项
+### 4.3 数值实现注意事项
 
 实现时还有几个容易踩的坑：
 
