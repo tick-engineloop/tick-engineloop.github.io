@@ -2,8 +2,8 @@
 title: 使用 FFT 模拟海浪
 description: 基于 Phillips 波谱与二维逆 FFT 的海浪建模及交互演示
 date: 2024-07-09 00:00:00 +0800
-categories: [Math]
-tags: [math, fft, ocean, wave]     # TAG names should always be lowercase
+categories: [Computer Graphics]
+tags: [computergraphics, fft, ocean wave]     # TAG names should always be lowercase
 math: true
 ---
 
@@ -69,13 +69,13 @@ $$
 
 ![Multi Sin](/assets/img/post/SimulatingOceanWave-MultiSin.gif)
 
-根据欧拉公式 $e^{ix} = \cos x + i \sin x$，令简单子波的相位为 $\theta = \vec{k} \cdot \vec{p} + \omega t + \phi$，则它的复数形式可写为：
+首先来看简单子波形的一般表示方式，令简单子波的相位为 $\theta = \vec{k} \cdot \vec{p} + \omega t + \phi$，则它的复数形式可写为：
 
 $$
-A \big( \cos \theta + i \sin \theta \big)
+A \big( \cos \theta + i \sin \theta \big) = A \big( \cos (\vec{k} \cdot \vec{p} + \omega t + \phi) + i \sin (\vec{k} \cdot \vec{p} + \omega t + \phi) \big)
 $$
 
-因此，该子波也可简写为：
+根据欧拉公式，复数的指数表示形式和三角表示形式之间存在 $e^{ix} = \cos x + i \sin x$ 这样的关系，因此，该子波也可写为：
 
 $$
 A e^{i\theta} = A e^{i(\vec{k} \cdot \vec{p} + \omega t + \phi)}
@@ -226,7 +226,11 @@ $$
 $$
 \begin{aligned}
 H(x_u,z_v,t)
-&= \sum_{n'=0}^{N-1}\sum_{m'=0}^{N-1} h(\vec{k},t)e^{2\pi i((n'-N/2)u+(m'-N/2)v)/N}\\
+&= \sum_{n'=0}^{N-1}\sum_{m'=0}^{N-1} h(\vec{k},t)e^{2\pi i\big((n'-N/2)u+(m'-N/2)v\big)/N}\\
+&= \sum_{n'=0}^{N-1}\sum_{m'=0}^{N-1} h(\vec{k},t)e^{2\pi i\big((n'u+m'v)-(u+v)N/2\big)/N}\\
+&= \sum_{n'=0}^{N-1}\sum_{m'=0}^{N-1} h(\vec{k},t)e^{2\pi i(n'u+m'v)/N-\pi i(u+v)}\\
+&= \sum_{n'=0}^{N-1}\sum_{m'=0}^{N-1} h(\vec{k},t)e^{2\pi i(n'u+m'v)/N}e^{-\pi i(u+v)}\\
+&= e^{-\pi i(u+v)}\sum_{n'=0}^{N-1}\sum_{m'=0}^{N-1} h(\vec{k},t)e^{2\pi i(n'u+m'v)/N}\\
 &= (-1)^{u+v}\sum_{n'=0}^{N-1}\sum_{m'=0}^{N-1} h(\vec{k},t)e^{2\pi i(n'u+m'v)/N}
 \end{aligned}
 $$
@@ -237,7 +241,7 @@ $$
 \vec{k} = \left(\frac{2\pi(n'-N/2)}{L},\frac{2\pi(m'-N/2)}{L}\right)
 $$
 
-等号右侧的求和是带正指数的二维逆 DFT 求和。若采用常见的归一化定义，
+等号右侧的求和是带正指数的二维逆 DFT 求和。若采用常见的归一化定义
 
 $$
 \operatorname{IFFT2}(h)_{u,v}
@@ -246,75 +250,6 @@ h(\vec{k},t)e^{2\pi i(n'u+m'v)/N}
 $$
 
 则高度场为 $H(x_u,z_v,t)=(-1)^{u+v}N^2\operatorname{IFFT2}(h)_{u,v}$。这里的 $(-1)^{u+v}$ 来自频率索引平移 $N/2$，是只依赖输出网格索引的棋盘格因子。这样一来，就能借助 FFT 在 $O(N^2\log N)$ 的时间内求出整张网格的高度，而不必按原始定义做 $O(N^4)$ 的二重求和。
-
-实现时还要注意频谱数组的下标顺序。FFT 程序通常使用自然顺序：下标 $0,\ldots,N/2-1$ 对应频率 $0,\ldots,N/2-1$，下标 $N/2,\ldots,N-1$ 对应频率 $-N/2,\ldots,-1$。若先将中心化频谱重排为这种自然顺序，再执行逆 FFT，就不需要额外乘棋盘格因子；若直接对上式的中心化数组执行逆 FFT，则需将结果乘以 $(-1)^{a+b}$。两种做法等价。两种情况下，若逆 FFT 自带 $1/N^2$ 归一化，都需再乘 $N^2$ 才与本文的傅里叶级数定义一致。
-
-### 4.1 初始化与逐帧更新
-
-综合以上推导，基于 FFT 的海浪模拟可以分为两步：
-
-1. **初始化**（只执行一次）：对每一个波矢 $\vec{k}$，用独立的标准正态随机数 $\xi_r$、$\xi_i$ 与 Phillips 波谱 $P_h(\vec{k})$ 计算初始随机振幅 $A(\vec{k}) = \frac{1}{\sqrt{2}}(\xi_r + i \xi_i) \sqrt{P_h(\vec{k})}$，并预计算色散关系 $\omega(k) = \sqrt{gk}$。
-
-2. **逐帧更新**（每帧执行）：用 $h(\vec{k}, t) = A(\vec{k}) e^{i \omega(k) t} + A^*(-\vec{k}) e^{-i \omega(k) t}$ 更新频谱，再对其做一次二维逆 FFT；根据 FFT 库的归一化约定恢复傅里叶级数的尺度，取实部即可得到当前时刻高度场 $H(x_u, z_v, t)$ 的全部网格点高度。
-
-```c++
-// N 为偶数网格边长，L 为水面尺寸，G 为重力加速度
-// 数组下标 i 对应的频率为 i（i < N/2）或 i - N（i >= N/2），即 FFT 的自然顺序
-auto freq = [N](int i) { return (i < N / 2) ? i : i - N; };
-
-// ---- 初始化：只执行一次 ----
-for (int m = 0; m < N; ++m)
-for (int n = 0; n < N; ++n) {
-    float kx = 2.0f * PI * freq(n) / L;
-    float kz = 2.0f * PI * freq(m) / L;
-    float k  = std::sqrt(kx * kx + kz * kz);
-    h0[n][m]    = {gauss(), gauss()};                  // 两个独立的标准正态随机数
-    h0[n][m]   *= std::sqrt(Phillips(kx, kz) / 2.0f);
-    omega[n][m] = std::sqrt(G * k);                    // 深水色散关系
-}
-
-// ---- 更新：每帧执行 ----
-for (int m = 0; m < N; ++m)
-for (int n = 0; n < N; ++n) {
-    auto e = std::exp(Complex{0.0f, omega[n][m] * t});
-    // 共轭项 A*(-k)：-k 对应的数组下标为 (N - n) % N 与 (N - m) % N
-    spec[n][m] = h0[n][m] * e
-               + std::conj(h0[(N - n) % N][(N - m) % N]) * std::conj(e);
-}
-IFFT2(spec);                                           // 二维逆 FFT
-for (int m = 0; m < N; ++m)
-for (int n = 0; n < N; ++n)
-    height[n][m] = spec[n][m].real() * N * N;          // 假设 IFFT 含 1/N²；取实部并恢复傅里叶级数尺度
-```
-
-若所用 FFT 库的逆变换不带 $1/N^2$ 归一化，则不应再乘 $N^2$。实际代码应按所用库的归一化约定选择其中一种。
-
-### 4.2 网格分辨率与 Nyquist 频率
-
-高度场定义在一块 $L \times L$ 的方形网格上，网格间距为 $\Delta = L / N$。每个坐标轴上的波数受 Nyquist 上限约束：
-
-$$
-k_{\mathrm{Nyquist}} = \frac{\pi}{\Delta} = \frac{\pi N}{L}, \qquad \lambda_{\mathrm{axis,min}} = \frac{2 \pi}{k_{\mathrm{Nyquist}}} = 2\Delta = \frac{2L}{N}.
-$$
-
-- 二维网格可表示的波数区域是方形 $-k_{\mathrm{Nyquist}} \le k_x \le k_{\mathrm{Nyquist}}$、$-k_{\mathrm{Nyquist}} \le k_z \le k_{\mathrm{Nyquist}}$，而不是以 $k_{\mathrm{Nyquist}}$ 为半径的圆。沿坐标轴方向最短可表示波长为 $2\Delta$；方形角落处的径向波数可达 $\sqrt{2}\,k_{\mathrm{Nyquist}}$。
-- $\Delta$ 决定网格能表示的最小空间尺度。超出上述方形 Nyquist 区域的频率不能被网格正确表示，会被丢弃或产生混叠，所以 $N$ 不能取得太小。
-- $L$ 决定海面的空间重复周期。水面在水平方向上是循环重复的，$L$ 取大一些可以减弱「一眼就看出在平铺」的感觉。
-- $N$ 决定计算量。二维逆 FFT 的复杂度是 $O(N^2 \log N)$，$N$ 翻倍时计算量约变为原来的 4 倍多。
-
-离散化时，波数落在方形 Nyquist 区域之外的谱分量无法表示。若实现中另行按径向波数进行圆形截断，才可以说所有 $k > k_{\mathrm{cutoff}}$ 的分量都会被舍弃。实际波高还可通过 Phillips 谱中的常量 $C$ 整体缩放。
-
-### 4.3 数值实现注意事项
-
-实现时还有几个容易踩的坑：
-
-1. **$\vec{k} = 0$ 处要特判**。$P_h(\vec{k})$ 在 $k \to 0$ 时的极限是 $0$（指数项 $e^{-1/(k L_{\text{wind}})^2}$ 衰减得比任何幂次都快），但直接代入会得到 $0 / 0$ 从而算出 NaN。把 $\vec{k} = 0$ 处的谱值直接置 $0$ 即可，这同时也避免了高度场出现一个常数偏移。
-
-2. **注意 FFT 库的归一化约定**。不少库的逆变换自带 $1/N^2$ 系数，也有不带系数的。若前后搞混，整片海面的波高会整体差 $N^2$ 倍——表现出来就是要么平如镜面，要么高得离谱。
-
-3. **固定随机种子即可复现同一片海**。$\xi_r$、$\xi_i$ 一般在初始化时生成一次即可；如果希望每次运行都得到完全相同的海面（例如离线烘焙法线贴图），在初始化之前固定随机数种子就行。
-
-4. **$t$ 是解析代入的，不需要时间积分**。每一帧只是把新的 $t$ 代进 $e^{\pm i \omega t}$ 重算一次频谱，而不在上一步的结果上做数值积分，因此不会累积误差，也可以任意跳帧（暂停、快进、倒放都行）。
 
 ## 5. 交互式海浪演示
 
@@ -328,7 +263,7 @@ $$
   allow="fullscreen">
 </iframe>
 
-## 参考资料
+## 6. 参考资料
 >
 > * [振幅、周期、相移和频率 - 数学乐](https://www.shuxuele.com/algebra/amplitude-period-frequency-phase-shift.html)
 >
