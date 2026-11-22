@@ -696,7 +696,7 @@ endwhile()
 
 ## 5. CMake 构建系统
 
-CMake 构建系统由一组高层级的逻辑目标组成，用于描述构建过程中的整体组织结构。每个目标可以对应一个可执行文件、一个库，或一个用于执行自定义命令的自定义目标。构建系统还描述目标之间的依赖关系，从而确定构建顺序，并规定源文件或其他输入发生变化时需要重新执行的步骤。
+CMake 构建系统由一组逻辑目标及其依赖关系、构建规范和使用要求组成，用于组织整个构建过程。逻辑目标包括可执行文件、库和自定义目标等；CMake 根据这些目标生成原生构建工具所需的规则，并利用文件级依赖关系和自定义命令的依赖信息，在源文件或其他输入发生变化时决定需要重新执行的编译、链接及其他步骤。
 
 ### 5.1 二进制目标
 
@@ -808,11 +808,15 @@ target_link_libraries(test_exe archiveObjs)
 
 ### 5.2 构建规范与使用要求
 
-每个目标的构建都由两部分设置共同决定：目标自身的构建规范，以及它所链接的依赖项传递而来的使用要求。CMake 通过一组特定于目标的命令配置这些设置。
+每个目标的构建都由两部分设置共同决定：目标自身的构建规范，以及它所链接的依赖项传递而来的使用要求。CMake 通过一组特定于目标的命令配置这些设置。下面的综合示例展示了目标命令、构建规范属性、使用要求属性以及作用域关键字的基本用法：
+
+<iframe style="display:block;width:100%;height:clamp(480px,80vh,800px);margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#z:OYLghAFBqd5TKALEAXATgU0wGgJYgQBGArngDYAmAygJ4DOqmAtiAMbMCGA1rqRTQZNmAQXTB6hDj0wgA5HICUOabzET5clQHtmABwqZ0AGU4A7YCU7BMASUrsApACYAQi9cqSjXQHkSqHoBAGKGZpzMspx6ejgAZoaSsAD6qaByqpjJzHhmeMwkzMlYAI5kWJQQAGoAogBK1La%2BAHIA1ADMAHTOAAyKjj0ieujaAFaYbKgQACqc4pioAAojekaoeJj0ACIs2q3GIs0A4gCqIkc11K0AwgAat/2DCWaUyXqcbNzWmDNIWJyUeitOo1ACKJ1sIK2jxEAxEANe5DwRHQc1oEDY2iwrUxWE6bBiMNQcxsqGS9G0JHQbE2GKxmFaizqtiqImmNRx9PxhLhxPmZMx%2BkMyUomGeeHW2jM9Dp2MWJ1cxls11aJ0ax2S118IMZzNZ7Ju2pqyVszXZdWaImMRJJC2SgoM5Cy2j0kulsoZTJZbI5AFoAOqccjkG38%2B26R1ZOKYTioKm03GehVKlVsAAeafJqFeAEYAOyh0nJXJscgkUUivBYSZYjYyxOM5PK1oAEkcedc1wAsiIANLG64nOogs3Jai%2BIfXY1bSHtrYAehLZdFhbtSLM3GSSJRczrHtapvNwREU9a0z%2BMcBIBA5/%2BgJhcIRyUwaYmAU4RCdEGielaXFy3J6KuZIUlSNIyj%2Burega/5mIBwHhkKToimKuQSngUoQTEUH6hyrgQsYM4aiIiyLAhDrCi6bpYb%2BXq4a0AYvhgnAIeum7bqi6B7pBdE%2BpyWCsbkm5URh7o8XqfEBuQOC%2Br6nD0L6ZjYKKlAPk89IfEgEDDC6B5tLY7JdlcWpdostjGNONTBKaBlNM0xm%2BKZ5nGr4izTHZDlORZyTBDUbJDpcenXMYJxbNOkI1Nc0zarYgXjpOgVKs0vbJEqrh1CIzKJaaKWue5LTUDCrStEWfJFjpqzoKg6IAG5BiQDKQW2HYVXORV/ps9DfBA1DTP5VwuM4P6dM1ritXmWyOO0WyjXVZaYHOg0wpgLxxBpbBaYoWiYJQEpYvYIA5vEhgHTmR0JE64SRCA3YyMYeCMPQnSoGmqD4PQthmKW5Y7SAqTJD071dpwuTUJS1KyHIPRaA9virGYf2pEd5DmMAB2ZMoED/ekLjtEuP2tFN1yJp0SAxFNNRwrj%2BOioT7TXBhjD/MwFNwrkqB/iDZgQIohMdlTzh43EopxKq6pHJqRpwsVjAOOwlIc0TRP8Vkc0NTzdPXMrYByI4ACs1xmDrU3uIMuMrbtcRUxN227ag%2B0OM4x1OqdTsXStESyLBgHvZ930qYjANA1zYNgZDOYw/QcMrYHyOo%2BjHgeJj2PyNTX3LgyRMk2Teis4M7Mq8kas/Lz7auK0WBxugZitAALM4Jt81stt7egB3tM7dgODmHfu1dsgkwSsQPX7GcOP9gMPcDoPgzS8gR%2B90cI/9ccWAnbhJzgWNpKngvDNYXCtFKNJs2YHOJkX9UlybLf223Di153p2P33nsgDTmDztnMS%2B%2BnP3j6kSe9Bp5mFDhDeekcl6B0BijNeDg2CJzcIoZQD1bq8GWGMCYqB5DQxwKMQ6OAlIAHdQgu27nrZQ5B5B6y0AjKGWhtDyGmFgTOgsF7YPocgnA3AQDODzN0AAbHmAAnAInoOZa4CIABx8NrlInAVC5C1y0KwPWgM6G4MYQoHAkhAYcOhpjRAEAUAvjfHffAhAST0EWOYTA5BqBIG0EQuhC8KIozdDYpS9jHHOIgToJCRgQDABzHrJ2bijDNDfto8J6B/CoAcU4lx21XxsHUJIbRpi2DUGzLkTQ8QpTxLYEGWQEj8lnxOPQTAiw0w4K0Pg1eoAEEbzcAo5ESQeY4BEpheQvpZZTS2E09wbh8wMJqkYLiop2nKHQCQM%2B%2BRMDTG0NocgUydE5LMJ4uxCTfFyHYSwghRDUR6AgZQ6htDamdPkDUFJAQsStDTFIgRvoBG1xKmwNgrQQndFaBALWzTPBnhYYTNhW0cD6KUMoJAl5AkdMUconAqj1EXK0VoXRYLalcJ4e0ZwnQBECOEWddoIiczOGEaEp2ij2jnPoZc7R4LDHwDgLAFAmJRQ1DtliCxEBX7XTQZge6j1nqvTKYU4ph0X4FIqVUmpNL6kKNRuwLgvAdGz0hpkbIaEChFFKOUHa1R6iNBaB0bofQ4Q6XGJMGYtolgrDWHWHYzA9gHGOGcC4xl7gwmeK8d4nxuq3kvECEE4IIrQipoMJ8HE0T7kHjyQYZU7SgQhvWekOE%2BIxqArya1iFIwoXFNRfc8pFTNjVKaCWWodS8QNOW40h56iWmtJmsM4TkhdPdA2StfpAzBnIhGYU0ZYzxmTXKJsqYMxZlzAWRtRYP6VmrHfPc7aR2tjLt2PsA4hwjmmGOCcdQpzJBnHUOci4/4rinWuISW5kScQXSm2tdRjynn9QCSQN4LzPrUvCSgrxMnvk/D8SC3sh4IUTeBb82EO2cwAkBs9Ape3IRFmhfN4loJ4QIkRCWJEyIwezZRV0okaKpoNIxV6qJBIbkvTuLitJkP0UTGR4SeHMJgdohJIj/ppKyXkopZSO0P1rX%2BBtbSKw9IHkMp5My3kwrWWaLZAqhovIuTch5eTEnjS%2BX8iCK4ppgqhXCiCKKMU4o7qnFcJKKU0oZSyqZnKyQ8oeXaqVLNFU1i1Svq0JqZdxqhsGMVSI9Auo2B6n1aYapgVDRiCNTzKxFrTVmlfRazhnDLVWutTaSgFFnMIcim6wNeACtQE9F6b16VbxZdoNlHL0Bcp5QPLkQ8RXUCKU6cVIqpXVIufgjusDGmIM8JUp0kxRKEAttcZZhQEbYpwBbe6SlmiFCIIEp2ehtD0HQlKUbZZmATaWyttbZgZuYDm8wBb6BeE6LsVg0S2S5ioA2%2BNkAk3%2BuXalNdqqB2jsnbO4wG7d2tsPadt9t7uRDvzcW8oEDkM07%2B0zvTb%2Bud2iU3zmfQuxcNZlwrgsKkNd66NznOlxRNCss0sYem9FnDSvywq63arYQ34fy/lyHODWmslIleUyp7XZUgEft1pw/zzsDbdMNl4v2EY5nkdN4HH3Fs4GW6tt0ovDryLl3t97oPTsA4u4Nl7fJbtjb%2B%2BLgXz3QG67V8dmXgO9ebbF/Iy3ZvPtJZVWHXe7R97AEPsfBaSPz70kvvNHmN9TlyEJxohh78T2fzh2TgxFPWWYHZdTgg3LafXUAz/NaZ9GtitKRn1AbWZW4PwRShVgyPBG%2B1wjCAI39cIydpL2b6uQB5ll7thXNezsq7dPbwJzensV9e1b%2B7mvBdXdN1LxvvfdeK4B2Phv5vTsFid%2BA3WgsP6azh3nWEq%2BI%2Ba0ZhgGMLMEenw5rBNH/Mzar%2BFmKMWpbJYgmlq0WW15MQBE1srC%2BqPS7021rrA2RtdbtCmxb7tAWx4BWxmw2xB4h7ZZp6xD0pB7wqIpE6aJ5JoolZMrIAgAKxBBvRJ4xKRLXRyAPJPIvJvIfJfLOBaC55Z7NY56Soc4F51IEL76YB4Ddw4CHLRAnIZbB7UooFyBxI4FHyizEHPKvLADvKfJ6zfK/JwZGDArtA5igroFlYBJVZ4FyGnbBKhLOxMDoCSDEB%2BJEC5BohGEmHoC0C%2BBEAWocKuK6CRBny%2BBmDkC0B%2BKiikDADXBBgrJuEsCozNY0q7Rzp4BjLpILw/pMAXLsx2J%2BKRoWGjaigXIYD5B%2BJjLoBEAraYAOr%2BG5DpAx5xAowSBVAbBEJQK7JUEFI0Gs6tYMEdYEK86l4tLbirKtrpK9LZj9KNGuAjKdJpETKbDwDg5a5C5V4i7t5HT14g7z4EKd6iSK5HSzFSjd6nZHR95ugD7zHl7rGz5TGfarFT7jFrI3bLGHTKAsGnE8HQHE7yD3KPJiFkFSEyHMLYAKFKFaDwE8GIEgBqLIFh7aJoEYrKA8JCKdDtDtA9BSKPK9BSJ5g9C1x5h6w8FUq/G0rvGAk8GUEokorR4Qo4BpGrZSjc5AA%3D"></iframe>
+
+上例中，通过 [`target_sources()`](https://cmake.com.cn/cmake/help/latest/command/target_sources.html#command:target_sources) 和 [`target_compile_definitions()`](https://cmake.com.cn/cmake/help/latest/command/target_compile_definitions.html#command:target_compile_definitions) 等目标命令设置源文件、宏定义、编译选项、语言特性、包含目录和链接选项。`core` 使用 `PUBLIC` 和 `INTERFACE` 暴露供使用方使用的宏、语言特性、包含目录和链接库，使用 `PRIVATE` 设置只用于自身构建或链接的选项和宏。最后通过 [`get_target_property()`](https://cmake.com.cn/cmake/help/latest/command/get_target_property.html) 查看由这些命令填充的目标属性。
 
 #### 5.2.1 目标命令
 
-特定于目标的命令用于设置目标自身的构建规范，并可按需设置供依赖方使用的接口属性。下表列出常用命令及其对应的目标属性：
+特定于目标的命令用于设置目标自身的构建规范和使用要求。下表列出常用命令及其对应的目标属性：
 
 | 类型                                          | 填充构建规范属性                         | 填充使用要求属性     
 | ---                                           | ---                                    | --- 
@@ -820,7 +824,7 @@ target_link_libraries(test_exe archiveObjs)
 | [`target_compile_options()`](https://cmake.com.cn/cmake/help/latest/command/target_compile_options.html#command:target_compile_options) |  [`COMPILE_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_OPTIONS.html#prop_tgt:COMPILE_OPTIONS) | `INTERFACE_COMPILE_OPTIONS`      
 | [`target_compile_features()`](https://cmake.com.cn/cmake/help/latest/command/target_compile_features.html#command:target_compile_features)  | [`COMPILE_FEATURES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_FEATURES.html#prop_tgt:COMPILE_FEATURES) | `INTERFACE_COMPILE_FEATURES` 
 | [`target_include_directories()`](https://cmake.com.cn/cmake/help/latest/command/target_include_directories.html#command:target_include_directories) | [`INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES) | `INTERFACE_INCLUDE_DIRECTORIES`
-| [`target_sources()`](https://cmake.com.cn/cmake/help/latest/command/target_sources.html#command:target_sources)| [`SOURCES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/SOURCES.html#prop_tgt:SOURCES) | `INTERFACE_SOURCES`
+| [`target_sources()`](https://cmake.com.cn/cmake/help/latest/command/target_sources.html#command:target_sources) | [`SOURCES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/SOURCES.html#prop_tgt:SOURCES) | `INTERFACE_SOURCES`
 | [`target_precompile_headers()`](https://cmake.com.cn/cmake/help/latest/command/target_precompile_headers.html#command:target_precompile_headers) | [`PRECOMPILE_HEADERS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/PRECOMPILE_HEADERS.html#prop_tgt:PRECOMPILE_HEADERS) | `INTERFACE_PRECOMPILE_HEADERS`
 | [`target_link_libraries()`](https://cmake.com.cn/cmake/help/latest/command/target_link_libraries.html#command:target_link_libraries) | [`LINK_LIBRARIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_LIBRARIES.html#prop_tgt:LINK_LIBRARIES) | `INTERFACE_LINK_LIBRARIES`
 | [`target_link_directories()`](https://cmake.com.cn/cmake/help/latest/command/target_link_directories.html#command:target_link_directories) | [`LINK_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_DIRECTORIES.html#prop_tgt:LINK_DIRECTORIES) | `INTERFACE_LINK_DIRECTORIES`
@@ -864,11 +868,10 @@ target_link_libraries(test_exe archiveObjs)
 
 #### 5.2.3 目标使用要求
 
-目标的使用要求是为正确使用该目标而需要应用到依赖方的设置。依赖方通过 `target_link_libraries()` 建立链接关系后，这些要求会沿依赖关系传递，并影响依赖方的编译或链接。
+目标的使用要求是为正确使用该目标而需要应用到使用方的编译和链接设置，包括公开头文件目录、编译宏、编译选项、编译特性、预编译头文件，以及需要传递的链接库、链接目录和链接选项等。关键字 `PRIVATE`、`PUBLIC` 和 `INTERFACE` 可用于控制使用要求是否应当用于当前目标和当前目标的使用方。
 
-使用要求不应仅用于方便地向下游传递某些选项或定义。只有当依赖方确实需要这些设置才能正确使用该目标时，才应将其作为使用要求；它们应是必要条件，而非建议。
-
-使用要求可以沿目标依赖关系传递。`target_link_libraries()` 中的 `PRIVATE`、`PUBLIC` 和 `INTERFACE` 关键字用于控制依赖关系及其使用要求是否应用于当前目标和/或继续传递给下游目标。
+> 注意：不要仅为方便向下游目标传递任意编译选项或宏定义而滥用使用要求。只有当下游目标确实需要某项设置才能正确使用该目标时，才应将其设为使用要求。
+{: .prompt-warning }
 
 ```cmake
 add_library(archive archive.cpp)
@@ -880,19 +883,16 @@ target_compile_definitions(serialization INTERFACE USING_SERIALIZATION_LIB)
 add_library(archiveExtras extras.cpp)
 target_link_libraries(archiveExtras PUBLIC archive)
 target_link_libraries(archiveExtras PRIVATE serialization)
-# archiveExtras is compiled with -DUSING_ARCHIVE_LIB
-# and -DUSING_SERIALIZATION_LIB
+# archiveExtras is compiled with -DUSING_ARCHIVE_LIB and -DUSING_SERIALIZATION_LIB
 
 add_executable(consumer consumer.cpp)
-# consumer is compiled with -DUSING_ARCHIVE_LIB
 target_link_libraries(consumer archiveExtras)
+# consumer is compiled with -DUSING_ARCHIVE_LIB
 ```
 
-`archive` 是 `archiveExtras` 的 `PUBLIC` 依赖项，因此 `archive` 的使用要求既应用于 `archiveExtras`，也会继续传递给 `consumer`。
+上例中，`archive` 是 `archiveExtras` 的 `PUBLIC` 依赖项，因此 `archive` 的使用要求既应用于 `archiveExtras`，也会继续传递给 `consumer`。`serialization` 是 `archiveExtras` 的 `PRIVATE` 依赖项，因此其使用要求应用于 `archiveExtras`，但不会通过该依赖关系继续传递给 `consumer`。
 
-`serialization` 是 `archiveExtras` 的 `PRIVATE` 依赖项，因此其使用要求应用于 `archiveExtras`，但不会通过该依赖关系继续传递给 `consumer`。
-
-通常，仅供库实现使用、而不出现在其公共头文件中的依赖项应通过 `PRIVATE` 指定。如果依赖项既供实现使用，也出现在公共头文件中（例如作为公开类的基类），则应通过 `PUBLIC` 指定。如果依赖项只供公共头文件使用，而库实现本身不需要它，则应通过 `INTERFACE` 指定。一次 `target_link_libraries()` 调用可以包含多个作用域关键字，也可以分多次调用。
+通常，仅供库实现使用、而不用于其公共头文件的依赖项应通过 `PRIVATE` 指定。如果依赖项既供库实现使用，也供公共头文件使用（例如用于公开类的基类），则应通过 `PUBLIC` 指定。如果依赖项只供公共头文件使用，而库实现本身不需要它，则应通过 `INTERFACE` 指定。一次 [`target_link_libraries()`](https://cmake.com.cn/cmake/help/latest/command/target_link_libraries.html#command:target_link_libraries) 调用可以包含多个作用域关键字，也可以分多次调用。
 
 ```cmake
 target_link_libraries(archiveExtras
@@ -901,40 +901,30 @@ target_link_libraries(archiveExtras
 )
 ```
 
-使用要求通过依赖目标的接口属性传递给当前目标。例如，依赖目标的 `INTERFACE_INCLUDE_DIRECTORIES` 会作为使用要求应用到当前目标的 `INCLUDE_DIRECTORIES`。CMake 会按相应规则维护这些属性的顺序；如果依赖关系推导出的顺序不符合实际需求，可以使用适当的目标命令显式设置属性。
+##### 5.2.3.1 传递的编译属性
 
-例如，链接库需要按 `lib1`、`lib2`、`lib3` 的顺序排列，而包含目录需要按 `lib3`、`lib1`、`lib2` 的顺序排列时，可以单独指定包含目录顺序：
+以下属性表示需要传递给使用方的编译设置：
 
-```cmake
-target_link_libraries(myExe lib1 lib2 lib3)
-target_include_directories(myExe
-  PRIVATE $<TARGET_PROPERTY:lib3,INTERFACE_INCLUDE_DIRECTORIES>)
-```
+| 类型 | 作用 |
+| --- | --- |
+| [`INTERFACE_COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_DEFINITIONS.html#prop_tgt:INTERFACE_COMPILE_DEFINITIONS) | 编译使用方目标的源文件时要使用的编译宏列表，<br>通常供目标的头文件使用。 |
+| [`INTERFACE_COMPILE_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_OPTIONS.html#prop_tgt:INTERFACE_COMPILE_OPTIONS) | 编译使用方目标的源文件时要使用的编译选项列表。 |
+| [`INTERFACE_COMPILE_FEATURES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_FEATURES.html#prop_tgt:INTERFACE_COMPILE_FEATURES) | 编译使用方目标的源文件时所需的编译特性列表。 |
+| [`INTERFACE_INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES) | 编译使用方目标的源文件时要搜索的头文件目录列表，<br>通常包含目标公开头文件所在的位置。 |
+| [`INTERFACE_SYSTEM_INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_SYSTEM_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_SYSTEM_INCLUDE_DIRECTORIES) | 编译使用方目标的源文件时应作为系统包含目录的目录列表。 |
+| [`INTERFACE_SOURCES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_SOURCES.html#prop_tgt:INTERFACE_SOURCES) | 在使用方目标中需要加入构建的源文件列表。 |
+| [`INTERFACE_PRECOMPILE_HEADERS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_PRECOMPILE_HEADERS.html#prop_tgt:INTERFACE_PRECOMPILE_HEADERS) | 编译使用方目标的源文件时要预编译并包含的头文件列表。 |
 
-##### 5.2.3.1 传递编译属性
+##### 5.2.3.2 传递的链接属性
 
-这些表示用于编译消费者的 使用要求。
+以下属性表示需要传递给使用方的链接设置：
 
-| 类型             | 作用                                          
-| ---             | ---                                    
-| [`INTERFACE_COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_DEFINITIONS.html#prop_tgt:INTERFACE_COMPILE_DEFINITIONS)	        | 用于编译目标消费者中源文件的编译定义列表。    <br> 通常这些由目标的头文件使用。
-| [`INTERFACE_COMPILE_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_OPTIONS.html#prop_tgt:INTERFACE_COMPILE_OPTIONS)	                    | 用于编译目标消费者中源文件的编译选项列表。     
-| [`INTERFACE_COMPILE_FEATURES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_FEATURES.html#prop_tgt:INTERFACE_COMPILE_FEATURES)	                  | 用于编译目标消费者中源文件所需的 编译特性 列表。  
-| [`INTERFACE_INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES)	        | 用于编译目标消费者中源文件的包含目录列表。    <br> 通常这些是目标头文件的位置。
-| [`INTERFACE_SYSTEM_INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_SYSTEM_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)	                                                                                                                    | 当指定为包含目录时，<br> 在编译目标消费者中的源文件时应被视为“系统”包含目录的目录列表。
-| [`INTERFACE_SOURCES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_SOURCES.html#prop_tgt:INTERFACE_SOURCES)  | 要与目标消费者关联的源文件列表。  
-| [`INTERFACE_PRECOMPILE_HEADERS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_PRECOMPILE_HEADERS.html#prop_tgt:INTERFACE_PRECOMPILE_HEADERS)	            | 编译目标消费者中的源文件时要预编译并包含的头文件列表。
-
-##### 5.2.3.2 传递链接属性
-
-这些表示用于链接消费者的 使用要求。
-
-| 类型             | 作用                                       
-| ---             | ---                                    
-| [`INTERFACE_LINK_LIBRARIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_LIBRARIES.html#prop_tgt:INTERFACE_LINK_LIBRARIES)	        | 用于链接目标消费者（如果是可执行文件、共享库或模块库）的链接库列表。
-| [`INTERFACE_LINK_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_DIRECTORIES.html#prop_tgt:INTERFACE_LINK_DIRECTORIES)	  | 用于链接目标消费者（如果是可执行文件、共享库或模块库）的链接目录列表。
-| [`INTERFACE_LINK_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_OPTIONS.html#prop_tgt:INTERFACE_LINK_OPTIONS)	              | 用于链接目标消费者（如果是可执行文件、共享库或模块库）的链接选项列表。
-| [`INTERFACE_LINK_DEPENDS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_DEPENDS.html#prop_tgt:INTERFACE_LINK_DEPENDS)	              | 链接目标消费者（如果是可执行文件、共享库或模块库）所依赖的文件列表。
+| 类型 | 作用 |
+| --- | --- |
+| [`INTERFACE_LINK_LIBRARIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_LIBRARIES.html#prop_tgt:INTERFACE_LINK_LIBRARIES) | 链接使用方二进制目标时要包含的库或目标列表。 |
+| [`INTERFACE_LINK_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_DIRECTORIES.html#prop_tgt:INTERFACE_LINK_DIRECTORIES) | 链接使用方二进制目标时要搜索的库目录列表。 |
+| [`INTERFACE_LINK_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_OPTIONS.html#prop_tgt:INTERFACE_LINK_OPTIONS) | 链接使用方二进制目标时要传递给链接器的选项列表。 |
+| [`INTERFACE_LINK_DEPENDS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_DEPENDS.html#prop_tgt:INTERFACE_LINK_DEPENDS) | 链接使用方二进制目标时所依赖的文件列表。 |
 
 ## 6. CMake 模块
 
