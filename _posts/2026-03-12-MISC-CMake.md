@@ -700,15 +700,15 @@ CMake 构建系统由一组逻辑目标及其依赖关系、构建规范和使�
 
 ### 5.1 二进制目标
 
-二进制目标包括可执行文件和库，可分别通过 [`add_executable()`](https://cmake.com.cn/cmake/help/latest/command/add_executable.html#command:add_executable) 和 [`add_library()`](https://cmake.com.cn/cmake/help/latest/command/add_library.html#command:add_library) 命令定义。CMake 会根据目标平台为生成的文件确定名称前缀、后缀和扩展名；目标之间的链接关系则通过 [`target_link_libraries()`](https://cmake.com.cn/cmake/help/latest/command/target_link_libraries.html#command:target_link_libraries) 命令建立。下面的示例展示了一个可执行目标及其依赖的库目标。
+二进制目标包括可执行文件和库，是逻辑目标的主要子类，可分别通过 [`add_executable()`](https://cmake.com.cn/cmake/help/latest/command/add_executable.html#command:add_executable) 和 [`add_library()`](https://cmake.com.cn/cmake/help/latest/command/add_library.html#command:add_library) 命令定义。CMake 会根据目标平台为生成的文件确定名称前缀、后缀和扩展名；目标之间的链接关系则通过 [`target_link_libraries()`](https://cmake.com.cn/cmake/help/latest/command/target_link_libraries.html#command:target_link_libraries) 命令建立。下面的示例展示了一个可执行目标及其依赖的库目标。
 
 <iframe style="display:block;width:100%;height:clamp(480px,80vh,800px);margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#z:OYLghAFBqd5TKALEAXATgU0wGgJYgQBGArngDYAmAygJ4DOqmAtiAMbMCGA1rqRTQZNmAQXTB6hDj0wgA5AFoAIgGEAsiIDSAUQD6AIQCqASQAyS3QBUAmgAVtAUgDMSgEqZyAdTyokSzETGAHYAZgD2cgCUONK8YhLyyupaekZmFjb2zm4e3r7%2BgaERMWHMAA4UmOimnEHAJJzAmMaU7A4ATPod%2BjEkjKUA8iSoZcMAYpVBnMyymAAemGzDnETkuCGVkrCYlD5h6C0gAGw4G2uHAIwALKeT07JceEEAdGxlZTigcnL49MFs5BIlB28gADD88PQ1JwntQwiR0GxZHILhD6AMypggmCfuRasBDt9ohAdnsDq0LrdzhSAKxUrH3EDqGSmSGoejPVBzVCfeRldBhABWi1QEHoSE4mPokQcoJEspEsUwumYTzwzBIzF0WAAjmQsJQIAA1bSuajGAYAOQA1E5njSZXKFZxKJRdPNFstVpgxRKpXrOFgFdaQ9bxZLMPQAPRsPCItavd7B0PhqVRrBsVD4hNvMrJkOPF65x3yuVZ8SYVC6chPbjVvBEdCBvCR30R%2BgBoNy0PWkLMVCUEto/6A4GtOTg37Q2HwxHIyeQjFYnE4PF1Q5K4mk1D7Q7temXE5nBkzEBYeizpHRpAechhTnc3lyBUACVvYRw1oA7vsqGAwAqCoKMBCgKpYN7WtoQSUAqw5BACQIghOaLTkEcIIki8ior8S7Yshq74hu3TdFuuw7uSIBOAeFIAJz0lMp54PeuZPnBCFjiukKoehc5YWiuErmuBLjlEOAkmRu6tDcx57qC9GMkxzxIKxvwjoh44LlCMJoZeyLYYumJ4ZOQmElE0SQsyvC2AKwqZiugogJSQSYF%2BEzUiA7QXNE5DyDSPxGT8YTyJYWCYNaHRONhqA4pE0TcB5oL2lcADsNFXDS7SgjSKVpdlq7yFcPysEc7TPBc7Q0k4VxZTRuU0qCTgnAFOBBd8OCSHJ0XIcSiAQCgHpLOR%2BCEIGEi2LUHjUEgYRfnh2FsKUFR4qgTFBONznkFNM1zT8C3lJU6AgMAFwZSU%2B1rOglqMm1e1LVUQyoFts18TgA3xJI566de74PjyA3UAOTzyD84RBI9bCcGsjnSWEYOGPQmC2HM9mOQRdRtJ03Srg2WxQAxsh9jyABuVTyMlFxOGZLVlCtsOSIojAwS4bDEZ0mXWgoAxOBzITkDugUk%2Bg6B4MCuPROgJBg%2BqmCWGEYTkGL7WA2tE2bdNz0oj8GDYKjX5NmUfHeb5/krq12gLIN%2BzWnMAAcRwKEcVzWsAbBsNaJ3PO01oQCorM9NaIXYOF7SRZEWsxWJKC3Qdw0QNHF1HSd%2B5nEw6CSMQK5EE8ga0C9WdTOgtADEQtldfNpQzGDAxBOQuf4cCpDACokMKy9wJcHUUP13GIp4CT9OTgNwx6RCYMeIJDZNoXKhhMCK4YOqL2C0QYQI/4HfADW6PdaceISEaLZfgJmunLD4OQ7I1yn3DCNIyjVFCRjXSdNjRC4xA%2BMgITOCC2TFNU2EGmq16YKEZtkFmmM2agg5lzHmfNihhEFsLUW8BogIzWJmVahAsSUBnoCZg2JKQ4NZM5S0moiCk0pGUVePhVp4M1IQnA1D6C0NhiQzAZDmAUMOpSdBvdYYA0DKgehBDUZ8MwQI8sqB2GcO4WIqRIjGGMCETI8hlDoja0vkbOQfkcDNVatbO2DsnYuzdh7L2EBA5hQil5cO3Vog3hdKTCA2jCo4FYE4ZKzwbbJSuEcGkaVQRZSuFcGijs9Gm2Bu1EAnUYpxUonaIJNJKoXH8U4KqNFkr7h8nISmET8KtTseCHq8A4CwCjrPTA2gJLoFjseT%2BhZEwfFBufKGV8Wnw0RsjfCDkTiPwgc/Ho4jabYhJNBRRqNiFPA4Wow6NsmE0JGRMqhizVqqK4aTeZwzVqCPQMI%2BWDCxEeH4WhKR6y5FbIUQc0RvCznTNkZstBul5ARSeOxaxTgVCExjPsTASlnCOCdE6EObzRzWPaO0RSSAOjtEAnKJ4qBrSFhceFZKXRuyhkJiAEA/IEUQBhW5MKC0x5g0kA4GkKgggODRdSpQMLPxNCrJQTgWYXEyicOi%2BUyU6VylEjk3R%2BiQCNJYl1Ypkd2CVOqWSOpdxTyWUwKyRgHIuQ8hadQCGbSYY3y6SjSk/SuC8HasciRoycETPaMlV60Fzmk0tcw1hQRzV2tWWw%2B5syQCWu2ZIoRTqjUYJGbs6RbqNmHU9Vc/B2ILVKxUcGuRyUnkYWREqFUaoNRal1PqHYxpTTmitLaT2oISwKn5EKEUbYpRFrlC6N0NZGw5wgExa01AXwiFcNoJQ1pFLFjhSIat7oLZejWCSAdWZvRIu0k0ytIhyyMvrEEOstap4tnoMOz0o61j5l7P2GCGKQxMSHNogVkT5WKvZL9HAorRJ9QlcCKVQ0CAQHqYyT6ibvrkDvOetVGrL5atQJ0u%2BPSPJo1AAMrGXrTXjOuYwqZpD3UnHtUsqDqMENrNjaTE44HA3LL9ScwNNrDoYfDYc25MbYMhuOAm3iz45RvnfR%2Bb8v5KD/h7SBUCcpwJhSgjukQfLjb5MnEFF9c430fpVReiO16Fq3pqTKtYn8u3vGvq0n9Sn/3dMnA5B%2B%2BIn5geNSM7BkGI2TOtWhw6dEUOw2wxZoI%2BGQB0Uw0Rm5OGTV4dM3Z6NezsPKL2bZmilHMLPhBfBMF4VPkhEYFgaYALAJBfeaFlQEWnjAGi0CkQjNsWJbqM7SsuhmWssiKizlPZ0sgDwOF7W0xO3hfxRCoTV4ow3jo79GF7Kiuhj6El60xhEXZDDAObFbJItcJICEXQPgqgsv2M4FQbAJToGixyzdWBUAIiCH11oIBMvAAgN1ht4XohddFLFZwnLaWwUPSbAppXmKKcvcSCp0npUPqfYxe8ykv0X2hqp2%2B6mfgORuP0v2zn9NjNwUhohJmyNyPMy6x14OFksJGb54HOzHNKL06j0jMzyP2bR/IrHDyzP%2BeRK8kI0FMAhGtGMAYAxdAvhi04YEGxnJU5p3TntrzguIXi1tlLpY0v9c2wvLLs68ucBcSdjnIccFlfO/lHRl2BPXaUuJ%2BxOBHHAkOi4nA8Urg22eCEw3Rvjfy7ccVUq5VKrVQCXVBqTVIltUkJSO7YleooHhCMYYdSz7qs%2B%2B0s%2Ban74XtCiLXW%2BtDby6PVduQD1RiIrCJT229tHbO1du7GkntvYz3OlUYO6Sw6q%2BKQ4zATiteuKKpRLxPi/EBOqsE0J4TBWO5iYXqm8UjhHGeLVEJRwbZVQ7/Vdo8ycl5Kb0UqmOT2iK8ClEu70RBYsNhiAK4QA%3D%3D%3D"></iframe>
 
-上例中，`io` 是一个 `STATIC` 类型的库目标，`executable` 是由 `main.cpp` 编译并链接而成的可执行文件。通过 [`target_link_libraries()`](https://cmake.com.cn/cmake/help/latest/command/target_link_libraries.html#command:target_link_libraries) 将 `fmtd` 和 `io` 链接到 `executable` 后，CMake 会根据目标之间的依赖关系安排构建和链接顺序，并在需要时将库中的符号用于解析可执行文件的引用。
+上例中，`io` 是一个 `SHARED` 类型的库目标，`executable` 是由 `main.cpp` 编译并链接而成的可执行文件。通过 [`target_link_libraries()`](https://cmake.com.cn/cmake/help/latest/command/target_link_libraries.html#command:target_link_libraries) 将 `fmtd` 和 `io` 链接到 `executable` 后，CMake 会根据目标之间的依赖关系安排构建和链接顺序，并在需要时将库中的符号用于解析可执行文件的引用。
 
 #### 5.1.1 可执行文件
 
-可执行文件是由链接器将一个或多个对象文件组合而成的二进制文件。其中至少一个对象文件通常包含程序入口点，例如 C++ 程序中的 `main()`。可执行目标通过 [`add_executable()`](https://cmake.com.cn/cmake/help/latest/command/add_executable.html#command:add_executable) 命令定义。
+可执行文件是由链接器将一个或多个对象文件组合而成的二进制文件。其中至少一个对象文件通常包含程序入口点，例如 C++ 程序中的 `main()`。可执行目标通过 [`add_executable()`](https://cmake.com.cn/cmake/help/latest/command/add_executable.html#command:add_executable) 命令定义：
 
 ```cmake
 add_executable(mytool mytool.cpp)
@@ -728,7 +728,7 @@ CMake 会为该目标生成构建规则，构建工具按照构建规则将源�
 add_library(archive STATIC archive.cpp zip.cpp lzma.cpp)
 ```
 
-也可以省略库类型；当 [`BUILD_SHARED_LIBS`](https://cmake.com.cn/cmake/help/latest/variable/BUILD_SHARED_LIBS.html#variable:BUILD_SHARED_LIBS) 未设置或为假时，CMake 将把目标创建为静态库。
+也可以省略库类型；当 [`BUILD_SHARED_LIBS`](https://cmake.com.cn/cmake/help/latest/variable/BUILD_SHARED_LIBS.html#variable:BUILD_SHARED_LIBS) 未设置或为假时，CMake 将把目标创建为静态库：
 
 ```cmake
 add_library(archive archive.cpp zip.cpp lzma.cpp)
@@ -748,7 +748,7 @@ CMake 会生成构建规则，构建工具按照构建规则将源文件编译�
 add_library(archive SHARED archive.cpp zip.cpp lzma.cpp)
 ```
 
-也可以省略库类型；当 `BUILD_SHARED_LIBS` 为真时，CMake 将把目标创建为共享库。
+也可以省略库类型；当 `BUILD_SHARED_LIBS` 为真时，CMake 将把目标创建为共享库：
 
 ```cmake
 add_library(archive archive.cpp zip.cpp lzma.cpp)
@@ -808,7 +808,13 @@ target_link_libraries(test_exe archiveObjs)
 
 ### 5.2 构建规范与使用要求
 
-每个目标的构建都由两部分设置共同决定：目标自身的构建规范，以及它所链接的依赖项传递而来的使用要求。CMake 通过一组特定于目标的命令配置这些设置。下面的综合示例展示了目标命令、构建规范属性、使用要求属性以及作用域关键字的基本用法：
+每个目标的构建都由两部分设置共同决定：目标自身的构建规范，以及它所链接的依赖项传递而来的使用要求。CMake 通过一组特定于目标的命令配置这些设置。
+
+构建规范描述如何构建目标自身，决定该目标在编译和链接时使用哪些设置，例如自身源文件使用的宏、编译选项、包含目录和链接选项。它们通常对应不带 `INTERFACE_` 前缀的目标属性，只作用于目标自身，不直接描述使用方应如何构建。
+
+使用要求描述该目标提供给使用方的构建约束，决定链接或依赖该目标时，使用方的编译和链接是否需要继承哪些设置，例如公开头文件所在的目录、公开宏、公开编译特性和公开链接库。使用要求通常对应名称以 `INTERFACE_` 开头的目标属性，并沿目标的依赖关系传递给使用方。
+
+下面的综合示例展示了目标命令、构建规范属性、使用要求属性以及作用域关键字的基本用法：
 
 <iframe style="display:block;width:100%;height:clamp(480px,80vh,800px);margin:0 auto;margin-top:16px;margin-bottom:16px;border:0" src="https://godbolt.org/e?hideEditorToolbars=true#z:OYLghAFBqd5TKALEAXATgU0wGgJYgQBGArngDYAmAygJ4DOqmAtiAMbMCGA1rqRTQZNmAQXTB6hDj0wgA5HICUOabzET5clQHtmABwqZ0AGU4A7YCU7BMASUrsApACYAQi9cqSjXQHkSqHoBAGKGZpzMspx6ejgAZoaSsAD6qaByqpjJzHhmeMwkzMlYAI5kWJQQAGoAogBK1La%2BAHIA1ADMAHTOAAyKjj0ieujaAFaYbKgQACqc4pioAAojekaoeJj0ACIs2q3GIs0A4gCqIkc11K0AwgAat/2DCWaUyXqcbNzWmDNIWJyUeitOo1ACKJ1sIK2jxEAxEANe5DwRHQc1oEDY2iwrUxWE6bBiMNQcxsqGS9G0JHQbE2GKxmFaizqtiqImmNRx9PxhLhxPmZMx%2BkMyUomGeeHW2jM9Dp2MWJ1cxls11aJ0ax2S118IMZzNZ7Ju2pqyVszXZdWaImMRJJC2SgoM5Cy2j0kulsoZTJZbI5AFoAOqccjkG38%2B26R1ZOKYTioKm03GehVKlVsAAeafJqFeAEYAOyh0nJXJscgkUUivBYSZYjYyxOM5PK1oAEkcedc1wAsiIANLG64nOogs3Jai%2BIfXY1bSHtrYAehLZdFhbtSLM3GSSJRczrHtapvNwREU9a0z%2BMcBIBA5/%2BgJhcIRyUwaYmAU4RCdEGielaXFy3J6KuZIUlSNIyj%2Burega/5mIBwHhkKToimKuQSngUoQTEUH6hyrgQsYM4aiIiyLAhDrCi6bpYb%2BXq4a0AYvhgnAIeum7bqi6B7pBdE%2BpyWCsbkm5URh7o8XqfEBuQOC%2Br6nD0L6ZjYKKlAPk89IfEgEDDC6B5tLY7JdlcWpdostjGNONTBKaBlNM0xm%2BKZ5nGr4izTHZDlORZyTBDUbJDpcenXMYJxbNOkI1Nc0zarYgXjpOgVKs0vbJEqrh1CIzKJaaKWue5LTUDCrStEWfJFjpqzoKg6IAG5BiQDKQW2HYVXORV/ps9DfBA1DTP5VwuM4P6dM1ritXmWyOO0WyjXVZaYHOg0wpgLxxBpbBaYoWiYJQEpYvYIA5vEhgHTmR0JE64SRCA3YyMYeCMPQnSoGmqD4PQthmKW5Y7SAqTJD071dpwuTUJS1KyHIPRaA9virGYf2pEd5DmMAB2ZMoED/ekLjtEuP2tFN1yJp0SAxFNNRwrj%2BOioT7TXBhjD/MwFNwrkqB/iDZgQIohMdlTzh43EopxKq6pHJqRpwsVjAOOwlIc0TRP8Vkc0NTzdPXMrYByI4ACs1xmDrU3uIMuMrbtcRUxN227ag%2B0OM4x1OqdTsXStESyLBgHvZ930qYjANA1zYNgZDOYw/QcMrYHyOo%2BjHgeJj2PyNTX3LgyRMk2Teis4M7Mq8kas/Lz7auK0WBxugZitAALM4Jt81stt7egB3tM7dgODmHfu1dsgkwSsQPX7GcOP9gMPcDoPgzS8gR%2B90cI/9ccWAnbhJzgWNpKngvDNYXCtFKNJs2YHOJkX9UlybLf223Di153p2P33nsgDTmDztnMS%2B%2BnP3j6kSe9Bp5mFDhDeekcl6B0BijNeDg2CJzcIoZQD1bq8GWGMCYqB5DQxwKMQ6OAlIAHdQgu27nrZQ5B5B6y0AjKGWhtDyGmFgTOgsF7YPocgnA3AQDODzN0AAbHmAAnAInoOZa4CIABx8NrlInAVC5C1y0KwPWgM6G4MYQoHAkhAYcOhpjRAEAUAvjfHffAhAST0EWOYTA5BqBIG0EQuhC8KIozdDYpS9jHHOIgToJCRgQDABzHrJ2bijDNDfto8J6B/CoAcU4lx21XxsHUJIbRpi2DUGzLkTQ8QpTxLYEGWQEj8lnxOPQTAiw0w4K0Pg1eoAEEbzcAo5ESQeY4BEpheQvpZZTS2E09wbh8wMJqkYLiop2nKHQCQM%2B%2BRMDTG0NocgUydE5LMJ4uxCTfFyHYSwghRDUR6AgZQ6htDamdPkDUFJAQsStDTFIgRvoBG1xKmwNgrQQndFaBALWzTPBnhYYTNhW0cD6KUMoJAl5AkdMUconAqj1EXK0VoXRYLalcJ4e0ZwnQBECOEWddoIiczOGEaEp2ij2jnPoZc7R4LDHwDgLAFAmJRQ1DtliCxEBX7XTQZge6j1nqvTKYU4ph0X4FIqVUmpNL6kKNRuwLgvAdGz0hpkbIaEChFFKOUHa1R6iNBaB0bofQ4Q6XGJMGYtolgrDWHWHYzA9gHGOGcC4xl7gwmeK8d4nxuq3kvECEE4IIrQipoMJ8HE0T7kHjyQYZU7SgQhvWekOE%2BIxqArya1iFIwoXFNRfc8pFTNjVKaCWWodS8QNOW40h56iWmtJmsM4TkhdPdA2StfpAzBnIhGYU0ZYzxmTXKJsqYMxZlzAWRtRYP6VmrHfPc7aR2tjLt2PsA4hwjmmGOCcdQpzJBnHUOci4/4rinWuISW5kScQXSm2tdRjynn9QCSQN4LzPrUvCSgrxMnvk/D8SC3sh4IUTeBb82EO2cwAkBs9Ape3IRFmhfN4loJ4QIkRCWJEyIwezZRV0okaKpoNIxV6qJBIbkvTuLitJkP0UTGR4SeHMJgdohJIj/ppKyXkopZSO0P1rX%2BBtbSKw9IHkMp5My3kwrWWaLZAqhovIuTch5eTEnjS%2BX8iCK4ppgqhXCiCKKMU4o7qnFcJKKU0oZSyqZnKyQ8oeXaqVLNFU1i1Svq0JqZdxqhsGMVSI9Auo2B6n1aYapgVDRiCNTzKxFrTVmlfRazhnDLVWutTaSgFFnMIcim6wNeACtQE9F6b16VbxZdoNlHL0Bcp5QPLkQ8RXUCKU6cVIqpXVIufgjusDGmIM8JUp0kxRKEAttcZZhQEbYpwBbe6SlmiFCIIEp2ehtD0HQlKUbZZmATaWyttbZgZuYDm8wBb6BeE6LsVg0S2S5ioA2%2BNkAk3%2BuXalNdqqB2jsnbO4wG7d2tsPadt9t7uRDvzcW8oEDkM07%2B0zvTb%2Bud2iU3zmfQuxcNZlwrgsKkNd66NznOlxRNCss0sYem9FnDSvywq63arYQ34fy/lyHODWmslIleUyp7XZUgEft1pw/zzsDbdMNl4v2EY5nkdN4HH3Fs4GW6tt0ovDryLl3t97oPTsA4u4Nl7fJbtjb%2B%2BLgXz3QG67V8dmXgO9ebbF/Iy3ZvPtJZVWHXe7R97AEPsfBaSPz70kvvNHmN9TlyEJxohh78T2fzh2TgxFPWWYHZdTgg3LafXUAz/NaZ9GtitKRn1AbWZW4PwRShVgyPBG%2B1wjCAI39cIydpL2b6uQB5ll7thXNezsq7dPbwJzensV9e1b%2B7mvBdXdN1LxvvfdeK4B2Phv5vTsFid%2BA3WgsP6azh3nWEq%2BI%2Ba0ZhgGMLMEenw5rBNH/Mzar%2BFmKMWpbJYgmlq0WW15MQBE1srC%2BqPS7021rrA2RtdbtCmxb7tAWx4BWxmw2xB4h7ZZp6xD0pB7wqIpE6aJ5JoolZMrIAgAKxBBvRJ4xKRLXRyAPJPIvJvIfJfLOBaC55Z7NY56Soc4F51IEL76YB4Ddw4CHLRAnIZbB7UooFyBxI4FHyizEHPKvLADvKfJ6zfK/JwZGDArtA5igroFlYBJVZ4FyGnbBKhLOxMDoCSDEB%2BJEC5BohGEmHoC0C%2BBEAWocKuK6CRBny%2BBmDkC0B%2BKiikDADXBBgrJuEsCozNY0q7Rzp4BjLpILw/pMAXLsx2J%2BKRoWGjaigXIYD5B%2BJjLoBEAraYAOr%2BG5DpAx5xAowSBVAbBEJQK7JUEFI0Gs6tYMEdYEK86l4tLbirKtrpK9LZj9KNGuAjKdJpETKbDwDg5a5C5V4i7t5HT14g7z4EKd6iSK5HSzFSjd6nZHR95ugD7zHl7rGz5TGfarFT7jFrI3bLGHTKAsGnE8HQHE7yD3KPJiFkFSEyHMLYAKFKFaDwE8GIEgBqLIFh7aJoEYrKA8JCKdDtDtA9BSKPK9BSJ5g9C1x5h6w8FUq/G0rvGAk8GUEokorR4Qo4BpGrZSjc5AA%3D"></iframe>
 
@@ -820,15 +826,15 @@ target_link_libraries(test_exe archiveObjs)
 
 | 类型                                          | 填充构建规范属性                         | 填充使用要求属性     
 | ---                                           | ---                                    | --- 
-| [`target_compile_definitions()`](https://cmake.com.cn/cmake/help/latest/command/target_compile_definitions.html#command:target_compile_definitions) |  [`COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS) | `INTERFACE_COMPILE_DEFINITIONS`     
-| [`target_compile_options()`](https://cmake.com.cn/cmake/help/latest/command/target_compile_options.html#command:target_compile_options) |  [`COMPILE_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_OPTIONS.html#prop_tgt:COMPILE_OPTIONS) | `INTERFACE_COMPILE_OPTIONS`      
-| [`target_compile_features()`](https://cmake.com.cn/cmake/help/latest/command/target_compile_features.html#command:target_compile_features)  | [`COMPILE_FEATURES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_FEATURES.html#prop_tgt:COMPILE_FEATURES) | `INTERFACE_COMPILE_FEATURES` 
-| [`target_include_directories()`](https://cmake.com.cn/cmake/help/latest/command/target_include_directories.html#command:target_include_directories) | [`INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES) | `INTERFACE_INCLUDE_DIRECTORIES`
-| [`target_sources()`](https://cmake.com.cn/cmake/help/latest/command/target_sources.html#command:target_sources) | [`SOURCES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/SOURCES.html#prop_tgt:SOURCES) | `INTERFACE_SOURCES`
-| [`target_precompile_headers()`](https://cmake.com.cn/cmake/help/latest/command/target_precompile_headers.html#command:target_precompile_headers) | [`PRECOMPILE_HEADERS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/PRECOMPILE_HEADERS.html#prop_tgt:PRECOMPILE_HEADERS) | `INTERFACE_PRECOMPILE_HEADERS`
-| [`target_link_libraries()`](https://cmake.com.cn/cmake/help/latest/command/target_link_libraries.html#command:target_link_libraries) | [`LINK_LIBRARIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_LIBRARIES.html#prop_tgt:LINK_LIBRARIES) | `INTERFACE_LINK_LIBRARIES`
-| [`target_link_directories()`](https://cmake.com.cn/cmake/help/latest/command/target_link_directories.html#command:target_link_directories) | [`LINK_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_DIRECTORIES.html#prop_tgt:LINK_DIRECTORIES) | `INTERFACE_LINK_DIRECTORIES`
-| [`target_link_options()`](https://cmake.com.cn/cmake/help/latest/command/target_link_options.html#command:target_link_options) | [`LINK_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_OPTIONS.html#prop_tgt:LINK_OPTIONS) | `INTERFACE_LINK_OPTIONS`
+| [`target_compile_definitions()`](https://cmake.com.cn/cmake/help/latest/command/target_compile_definitions.html#command:target_compile_definitions) |  [`COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS) | [`INTERFACE_COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_DEFINITIONS.html#prop_tgt:INTERFACE_COMPILE_DEFINITIONS)     
+| [`target_compile_options()`](https://cmake.com.cn/cmake/help/latest/command/target_compile_options.html#command:target_compile_options) |  [`COMPILE_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_OPTIONS.html#prop_tgt:COMPILE_OPTIONS) | [`INTERFACE_COMPILE_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_OPTIONS.html#prop_tgt:INTERFACE_COMPILE_OPTIONS)      
+| [`target_compile_features()`](https://cmake.com.cn/cmake/help/latest/command/target_compile_features.html#command:target_compile_features)  | [`COMPILE_FEATURES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_FEATURES.html#prop_tgt:COMPILE_FEATURES) | [`INTERFACE_COMPILE_FEATURES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_FEATURES.html#prop_tgt:INTERFACE_COMPILE_FEATURES)
+| [`target_include_directories()`](https://cmake.com.cn/cmake/help/latest/command/target_include_directories.html#command:target_include_directories) | [`INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INCLUDE_DIRECTORIES.html#prop_tgt:INCLUDE_DIRECTORIES) | [`INTERFACE_INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_INCLUDE_DIRECTORIES.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES)
+| [`target_sources()`](https://cmake.com.cn/cmake/help/latest/command/target_sources.html#command:target_sources) | [`SOURCES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/SOURCES.html#prop_tgt:SOURCES) | [`INTERFACE_SOURCES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_SOURCES.html#prop_tgt:INTERFACE_SOURCES)
+| [`target_precompile_headers()`](https://cmake.com.cn/cmake/help/latest/command/target_precompile_headers.html#command:target_precompile_headers) | [`PRECOMPILE_HEADERS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/PRECOMPILE_HEADERS.html#prop_tgt:PRECOMPILE_HEADERS) | [`INTERFACE_PRECOMPILE_HEADERS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_PRECOMPILE_HEADERS.html#prop_tgt:INTERFACE_PRECOMPILE_HEADERS)
+| [`target_link_libraries()`](https://cmake.com.cn/cmake/help/latest/command/target_link_libraries.html#command:target_link_libraries) | [`LINK_LIBRARIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_LIBRARIES.html#prop_tgt:LINK_LIBRARIES) | [`INTERFACE_LINK_LIBRARIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_LIBRARIES.html#prop_tgt:INTERFACE_LINK_LIBRARIES)
+| [`target_link_directories()`](https://cmake.com.cn/cmake/help/latest/command/target_link_directories.html#command:target_link_directories) | [`LINK_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_DIRECTORIES.html#prop_tgt:LINK_DIRECTORIES) | [`INTERFACE_LINK_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_DIRECTORIES.html#prop_tgt:INTERFACE_LINK_DIRECTORIES)
+| [`target_link_options()`](https://cmake.com.cn/cmake/help/latest/command/target_link_options.html#command:target_link_options) | [`LINK_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LINK_OPTIONS.html#prop_tgt:LINK_OPTIONS) | [`INTERFACE_LINK_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_LINK_OPTIONS.html#prop_tgt:INTERFACE_LINK_OPTIONS)
 
 这些命令使用作用域关键字来指定设置的适用范围：仅当前目标、仅使用该目标的目标，或两者。每个关键字之后的参数都按该范围处理：
 
@@ -837,6 +843,38 @@ target_link_libraries(test_exe archiveObjs)
 | `PUBLIC`    | 同时设置当前目标自身的构建属性和供使用方使用的接口属性。 |
 | `PRIVATE`   | 仅设置当前目标自身的构建属性。 |
 | `INTERFACE` | 仅设置供使用方使用的接口属性。 |
+
+目标构建规范属性和使用要求属性既可以通过对应的目标命令设置，也可以通过通用属性命令直接设置。如：
+
+```cmake
+target_compile_definitions(mylib
+  PUBLIC MYLIB_FEATURE=1
+)
+```
+
+等价于：
+
+```cmake
+set_property(TARGET mylib
+  APPEND PROPERTY COMPILE_DEFINITIONS MYLIB_FEATURE=1
+)
+
+set_property(TARGET mylib
+  APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS MYLIB_FEATURE=1
+)
+```
+
+或等价于：
+
+```cmake
+set_target_properties(mylib PROPERTIES
+  COMPILE_DEFINITIONS "MYLIB_FEATURE=1"
+  INTERFACE_COMPILE_DEFINITIONS "MYLIB_FEATURE=1"
+)
+```
+
+> 提示：对于有相应目标命令的属性在设置时，通常推荐优先使用对应的目标命令，而非选择通用的属性设置方法，如在设置 [`COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS) 和 [`INTERFACE_COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_DEFINITIONS.html#prop_tgt:INTERFACE_COMPILE_DEFINITIONS) 时更推荐使用 [`target_compile_definitions()`](https://cmake.com.cn/cmake/help/latest/command/target_compile_definitions.html)，而非使用 [`set_property()`](https://cmake.com.cn/cmake/help/latest/command/set_property.html) 和 [`set_target_properties()`](https://cmake.com.cn/cmake/help/latest/command/set_target_properties.html)。[`set_property()`](https://cmake.com.cn/cmake/help/latest/command/set_property.html) 和 [`set_target_properties()`](https://cmake.com.cn/cmake/help/latest/command/set_target_properties.html) 是通用的属性设置方式。<br><br>目标命令相比于通用属性设置方法能直接表达设置的语义，并通过 `PRIVATE`、`PUBLIC`、`INTERFACE` 明确区分自身属性和传递给使用方的接口属性，因而是日常 CMake 项目中最常用的写法。例如，使用目标命令 [`target_compile_definitions()`](https://cmake.com.cn/cmake/help/latest/command/target_compile_definitions.html) 设置编译定义时会同时维护当前目标的 [`COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/COMPILE_DEFINITIONS.html#prop_tgt:COMPILE_DEFINITIONS) 和供使用方读取的 [`INTERFACE_COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/INTERFACE_COMPILE_DEFINITIONS.html#prop_tgt:INTERFACE_COMPILE_DEFINITIONS) 属性；而通用属性设置命令则需要直接写出目标属性名及其预期作用，适合设置没有专用目标命令的属性，或一次性集中设置多个属性。
+{: .prompt-tip }
 
 #### 5.2.2 目标构建规范
 
