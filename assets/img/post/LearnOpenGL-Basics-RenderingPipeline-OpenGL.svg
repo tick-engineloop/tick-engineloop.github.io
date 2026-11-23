@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1680" viewBox="0 0 1100 1680" role="img" aria-labelledby="title desc">
+  <title id="title">OpenGL Render Pipeline</title>
+  <desc id="desc">OpenGL rendering flow from vertex input through vertex processing, vertex post-processing, rasterization, fragment shader, and per-sample processing. Optional tessellation and geometry shader stages are dashed; transform feedback is a side output.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#687983"/>
+    </marker>
+    <style>
+      .stage { fill: #fcfcfe; stroke: #a8acb8; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .stage-title { fill: #35465a; font: 700 18px Arial, sans-serif; }
+      .node-label { fill: #283444; font: 16px Arial, sans-serif; text-anchor: middle; dominant-baseline: middle; }
+      .sample-label { fill: #283444; font: 16px Arial, sans-serif; text-anchor: middle; dominant-baseline: central; }
+      .small-label { fill: #526579; font: 13px Arial, sans-serif; text-anchor: middle; }
+      .connector { fill: none; stroke: #687983; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; marker-end: url(#arrow); }
+      .merge-line { fill: none; stroke: #687983; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+      .card { stroke-width: 1.6; }
+      .optional { fill: #fcfcfe; stroke: #8f82b8; stroke-width: 1.6; stroke-dasharray: 7 5; }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="1098" height="1678" rx="18" fill="#fff" stroke="#e1e5e9"/>
+
+  <rect class="stage" x="35" y="35" width="1030" height="145" rx="18"/>
+  <text class="stage-title" x="60" y="68">① Vertex Input</text>
+  <rect class="card" x="80" y="92" width="220" height="62" rx="14" fill="#e4edf6" stroke="#7896b4"/>
+  <text class="node-label" x="190" y="123">Vertex Attributes / Indices</text>
+
+  <rect class="stage" x="35" y="205" width="1030" height="300" rx="18"/>
+  <text class="stage-title" x="60" y="475">② Vertex Processing</text>
+  <rect class="card" x="80" y="316" width="220" height="74" rx="14" fill="#e9e2f3" stroke="#8f82b8"/>
+  <text class="node-label" x="190" y="353">Vertex Shader</text>
+
+  <rect class="optional" x="330" y="270" width="490" height="150" rx="16"/>
+  <text class="small-label" x="575" y="292">Optional Tessellation</text>
+  <rect class="card" x="350" y="320" width="125" height="66" rx="12" fill="#e9e2f3" stroke="#8f82b8"/>
+  <text class="node-label" x="412.5" y="353">
+    <tspan x="412.5" dy="-9">Tessellation</tspan>
+    <tspan x="412.5" dy="21">Control (TCS)</tspan>
+  </text>
+  <rect class="card" x="510" y="320" width="125" height="66" rx="12" fill="#e4efe4" stroke="#7fa082"/>
+  <text class="node-label" x="572.5" y="353">Tessellator</text>
+  <rect class="card" x="670" y="320" width="125" height="66" rx="12" fill="#e9e2f3" stroke="#8f82b8"/>
+  <text class="node-label" x="732.5" y="353">
+    <tspan x="732.5" dy="-9">Tessellation</tspan>
+    <tspan x="732.5" dy="21">Evaluation (TES)</tspan>
+  </text>
+
+  <rect class="optional" x="845" y="295" width="195" height="105" rx="16"/>
+  <text class="small-label" x="942" y="317">Optional</text>
+  <rect class="card" x="865" y="330" width="155" height="55" rx="12" fill="#e9e2f3" stroke="#8f82b8"/>
+  <text class="node-label" x="942" y="357">Geometry Shader</text>
+
+  <rect class="stage" x="35" y="525" width="1030" height="435" rx="18"/>
+  <text class="stage-title" x="60" y="558">③ Vertex Post-Processing</text>
+  <rect class="card" x="365" y="595" width="370" height="60" rx="14" fill="#e4efe4" stroke="#7fa082"/>
+  <text class="node-label" x="550" y="625">Primitive Assembly</text>
+
+  <rect class="card" x="790" y="595" width="225" height="60" rx="14" fill="#fbf0dc" stroke="#c9a36a"/>
+  <text class="node-label" x="902" y="625">Transform Feedback</text>
+
+  <rect class="card" x="365" y="685" width="370" height="54" rx="14" fill="#e4efe4" stroke="#7fa082"/>
+  <text class="node-label" x="550" y="712">Clipping</text>
+
+  <rect class="card" x="365" y="769" width="370" height="54" rx="14" fill="#e4efe4" stroke="#7fa082"/>
+  <text class="node-label" x="550" y="796">Perspective Divide</text>
+
+  <rect class="card" x="365" y="853" width="370" height="54" rx="14" fill="#e4efe4" stroke="#7fa082"/>
+  <text class="node-label" x="550" y="880">Viewport Transform</text>
+
+  <rect class="stage" x="35" y="985" width="1030" height="140" rx="18"/>
+  <text class="stage-title" x="60" y="1018">④ Rasterization</text>
+  <rect class="card" x="365" y="1037" width="370" height="62" rx="14" fill="#e4efe4" stroke="#7fa082"/>
+  <text class="node-label" x="550" y="1068">Primitives → Fragments</text>
+
+  <rect class="stage" x="35" y="1155" width="1030" height="140" rx="18"/>
+  <text class="stage-title" x="60" y="1188">⑤ Fragment Shader</text>
+  <rect class="card" x="365" y="1207" width="370" height="62" rx="14" fill="#e9e2f3" stroke="#8f82b8"/>
+  <text class="node-label" x="550" y="1238">Fragment Shader</text>
+
+  <rect class="stage" x="35" y="1325" width="1030" height="320" rx="18"/>
+  <text class="stage-title" x="60" y="1358">⑥ Per-Sample Processing</text>
+  <rect class="card" x="365" y="1380" width="370" height="24" rx="10" fill="#fbf0c5" stroke="#c4a253"/>
+  <text class="sample-label" x="550" y="1392">Scissor Test</text>
+  <rect class="card" x="365" y="1424" width="370" height="24" rx="10" fill="#fbf0c5" stroke="#c4a253"/>
+  <text class="sample-label" x="550" y="1436">Stencil Test</text>
+  <rect class="card" x="365" y="1468" width="370" height="24" rx="10" fill="#fbf0c5" stroke="#c4a253"/>
+  <text class="sample-label" x="550" y="1480">Depth Test</text>
+  <rect class="card" x="365" y="1512" width="370" height="24" rx="10" fill="#fbf0c5" stroke="#c4a253"/>
+  <text class="sample-label" x="550" y="1524">Blending</text>
+  <rect class="card" x="365" y="1556" width="370" height="24" rx="10" fill="#fbf0c5" stroke="#c4a253"/>
+  <text class="sample-label" x="550" y="1568">Logical Operation</text>
+  <rect class="card" x="365" y="1600" width="370" height="24" rx="10" fill="#fbf0c5" stroke="#c4a253"/>
+  <text class="sample-label" x="550" y="1612">Write Masks</text>
+  <g aria-label="Pipeline connectors">
+    <path class="connector" d="M 190 154 V 316"/>
+
+    <path class="connector" d="M 300 353 H 350"/>
+    <path class="connector" d="M 475 353 H 510"/>
+    <path class="connector" d="M 635 353 H 670"/>
+    <path class="connector" d="M 795 353 H 865"/>
+
+    <path class="merge-line" d="M 942 385 V 565 H 902"/>
+    <circle cx="902" cy="565" r="3.5" fill="#687983"/>
+    <path class="connector" d="M 902 565 H 550 V 595"/>
+    <path class="connector" d="M 902 565 V 595"/>
+    <path class="connector" d="M 550 655 V 685"/>
+    <path class="connector" d="M 550 739 V 769"/>
+    <path class="connector" d="M 550 823 V 853"/>
+
+    <path class="connector" d="M 550 907 V 1037"/>
+    <path class="connector" d="M 550 1099 V 1207"/>
+    <path class="connector" d="M 550 1269 V 1380"/>
+    <path class="connector" d="M 550 1404 V 1424"/>
+    <path class="connector" d="M 550 1448 V 1468"/>
+    <path class="connector" d="M 550 1492 V 1512"/>
+    <path class="connector" d="M 550 1536 V 1556"/>
+    <path class="connector" d="M 550 1580 V 1600"/>
+  </g>
+</svg>

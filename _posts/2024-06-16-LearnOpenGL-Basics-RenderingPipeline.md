@@ -2,48 +2,21 @@
 title: Rendering Pipeline
 description: The Rendering Pipeline is the sequence of steps that OpenGL takes when rendering objects.
 date: 2024-06-16 00:00:00 +0800
-categories: [Computer Grahics, LearnOpenGL, Basics]
+categories: [Computer Graphics, LearnOpenGL, Basics]
 tags: [computergraphics, learnopengl, renderingpipeline]     # TAG names should always be lowercase
 math: true
 mermaid: true
 ---
 
 
-# OpenGL
+## OpenGL
 
-OpenGL 渲染管线执行流程（标准版）：
+图中按 Vertex Input、Vertex Processing、Vertex Post-Processing、Rasterization、Fragment Shader 和 Per-Sample Processing 展示 OpenGL 渲染管线的主要数据流。蓝色表示顶点输入，紫色表示可编程着色器阶段，绿色表示固定功能处理，黄色表示逐样本操作及变换反馈输出。灰色虚线框用于区分主要阶段，紫色虚线框标出可选阶段。
 
-```mermaid
-  flowchart TB
-  
-    subgraph VertexProcessing[Vertex Processing]
-      direction LR
-      VertexShader(Vertex Shader) --> TessellationShader(Tessellation Shader) --> GeometryShader(Geometry Shader)
-    end
-    
-    subgraph VertexPost-Processing[Vertex Post-Processing]
-      direction TB
-      TransformFeedback(Transform Feedback) --> PrimitiveAssembly(Primitive Assembly) --> Clipping(Clipping) --> PerspectiveDivide(Perspective Divide) --> ViewportTransform(Viewport Transform) --> FaceCulling(Face culling)
-    end
-    
-    Rasterization
-    
-    FragmentShader(Fragment Shader)
-    
-    subgraph Per-SampleOperations[Per-Sample Operations]
-      direction TB
-      ScissorTest(Scissor Test) --> StencilTest(Stencil Test) --> DepthTest(Depth Test) --> Blending(Blending) --> LogicalOperation(Logical Operation) --> WriteMask(Write Mask)
-    end
-    
-    VertexSpecification(Vertex Specification) --> VertexProcessing --> VertexPost-Processing --> Rasterization --> FragmentShader --> PerFragmentOperations(Per-Fragment Operations)
+细分控制着色器、细分计算着色器和几何着色器都是可选阶段。变换反馈从顶点处理输出分支捕获数据，不是通往光栅化的必经节点。逐样本操作按常见逻辑顺序排列；满足条件时，深度和模板等测试也可能提前到片段着色器之前执行。
 
-    style VertexShader fill:#bbf,stroke:#f66,stroke-width:2px,color:#fff,stroke-dasharray: 5 5
-    style TessellationShader fill:#bbf,stroke:#f66,stroke-width:2px,color:#fff,stroke-dasharray: 5 5
-    style GeometryShader fill:#bbf,stroke:#f66,stroke-width:2px,color:#fff,stroke-dasharray: 5 5
-    style FragmentShader fill:#bbf,stroke:#f66,stroke-width:2px,color:#fff,stroke-dasharray: 5 5
-```
-
-上图中紫色虚框阶段是可编程阶段，其余阶段是固定功能阶段。
+![OpenGL Render Pipeline 流程图](/assets/img/post/LearnOpenGL-Basics-RenderingPipeline-OpenGL.svg)
+_箭头表示主要数据流；变换反馈是顶点处理输出的旁路，紫色虚线框标出可选阶段。_
 
 ### Vertex Post-Processing
 
