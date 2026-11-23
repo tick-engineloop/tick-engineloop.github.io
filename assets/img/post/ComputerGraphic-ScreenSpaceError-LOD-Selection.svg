@@ -64,32 +64,29 @@
   <polygon class="card" points="500,450 625,500 500,550 375,500" fill="#ebe5f4" stroke="#8f82b8" stroke-width="1.8"/>
   <text class="node-label" x="500" y="500">SSE &gt; 目标阈值 T？</text>
 
-  <path class="connector" d="M 375 500 H 205 V 550"/>
+  <path class="connector" d="M 375 500 H 205 V 570"/>
   <text class="branch-no" x="278" y="486">否：误差可接受</text>
-  <path class="connector" d="M 625 500 H 700 V 560"/>
+  <path class="connector" d="M 625 500 H 800 V 560"/>
   <text class="branch-yes" x="660" y="486">是：需要更多细节</text>
 
-  <rect class="card" x="80" y="550" width="250" height="82" rx="14" fill="#e4efe4" stroke="#7fa082"/>
-  <text class="node-label" x="205" y="591">
-    <tspan x="205" dy="-10">绘制当前节点</tspan>
-    <tspan x="205" dy="22">误差满足阈值</tspan>
+  <rect class="card" x="80" y="570" width="250" height="82" rx="14" fill="#e4efe4" stroke="#7fa082"/>
+  <text class="node-label" x="205" y="611">绘制当前节点</text>
+
+  <polygon class="card" points="800,560 900,610 800,660 700,610" fill="#f3e7ed" stroke="#bd8c9a" stroke-width="1.8"/>
+  <text class="node-label" x="800" y="610">
+    <tspan x="800" dy="-10">更细子节点</tspan>
+    <tspan x="800" dy="22">可用？</tspan>
   </text>
 
-  <polygon class="card" points="700,560 800,610 700,660 600,610" fill="#f3e7ed" stroke="#bd8c9a" stroke-width="1.8"/>
-  <text class="node-label" x="700" y="610">
-    <tspan x="700" dy="-10">更细子节点</tspan>
-    <tspan x="700" dy="22">可用？</tspan>
-  </text>
-
-  <path class="connector" d="M 600 610 H 420 V 685"/>
-  <text class="branch-no" x="510" y="596">否：尚未就绪</text>
-  <path class="connector" d="M 800 610 V 685"/>
+  <path class="connector" d="M 700 610 H 500 V 685"/>
+  <text class="branch-no" x="600" y="596">否：尚未就绪</text>
+  <path class="connector" d="M 800 660 V 685"/>
   <text class="branch-yes" x="830" y="670">是</text>
 
-  <rect class="card" x="300" y="685" width="240" height="80" rx="14" fill="#fbf0dc" stroke="#c9a36a"/>
-  <text class="node-label" x="420" y="725">
-    <tspan x="420" dy="-10">请求子节点</tspan>
-    <tspan x="420" dy="22">暂时绘制当前节点</tspan>
+  <rect class="card" x="380" y="685" width="240" height="80" rx="14" fill="#fbf0dc" stroke="#c9a36a"/>
+  <text class="node-label" x="500" y="725">
+    <tspan x="500" dy="-10">请求子节点</tspan>
+    <tspan x="500" dy="22">暂时绘制当前节点</tspan>
   </text>
 
   <rect class="card" x="675" y="685" width="250" height="70" rx="14" fill="#e3eff2" stroke="#7fa5b0"/>
@@ -105,8 +102,8 @@
     <tspan x="800" dy="22">替换当前父节点</tspan>
   </text>
 
-  <path class="merge-line" d="M 205 632 V 875"/>
-  <path class="merge-line" d="M 420 765 V 875"/>
+  <path class="merge-line" d="M 205 652 V 875"/>
+  <path class="merge-line" d="M 500 765 V 875"/>
   <path class="merge-line" d="M 800 845 V 875"/>
   <path class="merge-line" d="M 205 875 H 800"/>
   <path class="connector" d="M 500 875 V 900"/>
