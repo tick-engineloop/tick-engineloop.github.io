@@ -10,67 +10,48 @@ mermaid: true
 
 ## OpenGL
 
-**渲染管线（Rendering Pipeline）**是 OpenGL 在渲染物体时所执行的一系列步骤。本概述将从宏观层面介绍该管线中的各个步骤。
-
-当执行一次渲染操作时，OpenGL 渲染管线便会启动。渲染操作以一个正确定义的顶点数组对象作为输入，并拥有一个已链接的程序对象（Program Object），后者用于为可编程管线阶段提供着色器。管线启动后，将按照以下顺序运行：
+**渲染管线（Rendering Pipeline）**是 OpenGL 在渲染物体时所执行的一系列步骤。本文将从宏观层面介绍该管线中的各个步骤，下图概括了这一流程中的主要阶段及其关系：
 
 ![OpenGL Render Pipeline 流程图](/assets/img/post/LearnOpenGL-Basics-RenderingPipeline-OpenGL.svg)
 _OpenGL 渲染管线框图_
 
-图中按 Vertex Input、Vertex Processing、Vertex Post-Processing、Rasterization、Fragment Shader 和 Per-Sample Processing 展示 OpenGL 渲染管线的主要步骤阶段。蓝色表示顶点输入，紫色表示可编程着色器阶段，绿色表示固定功能处理，黄色表示逐样本操作及变换反馈输出。灰色虚线框用于区分主要阶段，紫色虚线框标出可选阶段。
+图中概括了 OpenGL 渲染管线的主要阶段：Vertex Input、Vertex Processing、Vertex Post-Processing、Rasterization、Fragment Shader 和 Per-Sample Processing。紫色框表示可编程着色器阶段，绿色框表示固定功能阶段。
 
-细分控制着色器、细分计算着色器和几何着色器都是可选阶段。变换反馈从顶点处理输出分支捕获数据，不是通往光栅化的必经节点。逐样本操作按常见逻辑顺序排列；满足条件时，深度和模板等测试也可能提前到片段着色器之前执行。
+细分控制着色器（Tessellation Control Shader）、细分求值着色器（Tessellation Evaluation Shader）和几何着色器（Geometry Shader）均为可选阶段。变换反馈（Transform Feedback）可在顶点处理后捕获图元数据，但并非进入光栅化的必经阶段。满足条件时，深度和模板测试可在片段着色器执行前进行；具体时机取决于着色器行为和实现。
 
 ### Vertex Processing
 
-顶点处理（[Vertex Processing](https://www.khronos.org/opengl/wiki/Vertex_Processing)）负责使用程序中的着色器阶段处理图元的顶点，并生成供顶点后处理和光栅化使用的顶点数据。顶点处理由顶点着色器开始，随后可以执行可选的细分着色器和几何着色器。
+顶点处理（[Vertex Processing](https://www.khronos.org/opengl/wiki/Vertex_Processing)）负责执行顶点相关的可编程处理，并将结果传递给顶点后处理阶段。处理从顶点着色器开始；根据管线配置，还可以依次经过细分阶段和几何着色器。细分阶段仅用于以 `GL_PATCHES` 绘制的图元，几何着色器则处理完整图元。
 
-顶点处理中的顶点着色器或细分计算着色器可以使用以下内置变量：
+顶点着色器可读取若干内置输入变量，例如 `gl_VertexID` 和 `gl_InstanceID`。GLSL 4.60 还定义了 `gl_DrawID`、`gl_BaseVertex` 和 `gl_BaseInstance`。这些变量由 GLSL 预先定义，无须在着色器中自行声明。`gl_VertexID` 表示当前顶点的索引；对于带基础顶点偏移的索引绘制，其值包含该偏移。`gl_InstanceID` 表示当前实例的索引，从 0 开始，且不包含基础实例偏移。`gl_DrawID` 表示多绘制命令中当前绘制项的零基索引，普通绘制时为 0；`gl_BaseVertex` 和 `gl_BaseInstance` 分别表示当前绘制命令指定的基础顶点和基础实例偏移，未指定时为 0。
 
-```glsl
-// 顶点着色器的输入
-in int gl_VertexID;
-in int gl_InstanceID;
-in int gl_DrawID;
-in int gl_BaseVertex;
-in int gl_BaseInstance;
-
-// 顶点着色器或细分计算着色器的输出
-out gl_PerVertex
-{
-  vec4 gl_Position;
-  float gl_PointSize;
-  float gl_ClipDistance[];
-};
-```
-
-其中，gl_VertexID 是顶点在当前绘制命令中的索引，gl_InstanceID 是顶点所在实例的索引。gl_VertexID 不包括 gl_BaseVertex，而 gl_InstanceID 不包括 gl_BaseInstance。
+顶点着色器的输出内置变量包括预定义接口块 `gl_PerVertex` 中的 `gl_Position`、`gl_PointSize` 和 `gl_ClipDistance[]`。其中，`gl_Position` 用于输出顶点的裁切空间位置，供后续阶段处理。
 
 #### Vertex Shader
 
-顶点着色器（Vertex Shader）是顶点处理中的强制着色器阶段。渲染操作会为图元中的每个顶点执行一次顶点着色器。顶点着色器的典型用途包括顶点变换、为片段着色器生成插值数据，以及执行逐顶点光照。
+顶点着色器（Vertex Shader）是可编程渲染管线中必需的着色器阶段。绘制命令处理顶点时，OpenGL 会对顶点执行顶点着色器。其典型用途包括变换顶点位置、生成供后续阶段使用的数据，以及执行逐顶点光照。
 
-顶点着色器接收顶点属性作为输入，并通常将裁切空间位置写入 gl_Position。顶点着色器还可以声明任意用户自定义输出变量，这些变量会由后续着色器阶段使用或在光栅化过程中进行插值。
+顶点着色器通常从顶点属性中读取数据，并将裁切空间位置写入 `gl_Position`。它也可以输出用户自定义变量：若后续还有着色器阶段，这些变量可作为该阶段的输入；否则，光栅化阶段会根据插值限定符对其进行插值，供片段着色器读取。
 
 #### Tessellation
 
-细分（Tessellation）是可选的顶点处理阶段，可将较少的顶点所描述的简单图元拆分为更多更小的图元。细分处理由细分控制着色器、固定功能的细分原语生成器和细分计算着色器组成。
+细分（Tessellation）是可选的顶点处理阶段，可将一个由控制顶点定义的图元细分为更小的图元。该阶段由细分控制着色器（可选）、固定功能的细分原语生成器和细分求值着色器组成；细分求值着色器是启用细分阶段所必需的。
 
-细分控制着色器（Tessellation Control Shader，TCS）以图元的控制顶点为输入，并定义细分级别以及输出的控制顶点。细分原语生成器会根据这些细分级别生成一组新的顶点及其重心坐标。
+细分控制着色器（Tessellation Control Shader，TCS）处理输入图元的控制顶点，并输出供后续阶段使用的控制顶点及细分级别。细分原语生成器根据细分级别和细分模式生成图元及其参数化坐标。
 
-细分计算着色器（Tessellation Evaluation Shader，TES）读取细分控制着色器输出的控制顶点，并使用细分原语生成器提供的坐标计算每个新顶点的位置及其他数据。它通常负责计算细分后的顶点位置，因此可用于地形细分、曲面细分和位移贴图。
+细分求值着色器（Tessellation Evaluation Shader，TES）读取控制顶点和细分原语生成器提供的坐标，为生成的顶点计算位置及其他属性。它常用于地形或曲面细分，也可用于实现位移效果。
 
-细分控制着色器和细分计算着色器也可以单独使用。两者都启用时，细分控制着色器先执行，固定功能的细分原语生成器随后对图元进行细分，最后由细分计算着色器处理生成的顶点。
+使用细分阶段时，必须启用 TES；TCS 则可以省略。省略 TCS 时，顶点着色器的输出直接作为控制顶点传递给细分原语生成器和 TES。启用 TCS 时，处理顺序为 TCS、细分原语生成器、TES。
 
 #### Geometry Shader
 
-几何着色器（Geometry Shader）是可选的顶点处理阶段。它以一个完整图元及其顶点为输入，并可以输出零个、一个或多个新图元。几何着色器可以改变图元的拓扑，也可以根据需要丢弃图元。
+几何着色器（Geometry Shader）是可选的顶点处理阶段。它以一个完整图元及其顶点为输入，并可输出零个、一个或多个图元。因此，几何着色器既可以丢弃输入图元，也可以改变图元拓扑或生成额外图元。
 
-几何着色器的典型用途包括生成额外的几何体、立方体贴图的多视口渲染以及逐图元处理。几何着色器的输出图元会继续进入顶点后处理阶段。
+几何着色器可用于逐图元处理、生成额外几何体，以及配合多视口功能进行立方体贴图渲染。其输出随后进入顶点后处理阶段。
 
 ### Vertex Post-Processing
 
-在顶点着色器处理之后，顶点还要经过一系列固定函数处理步骤，图元裁切、透视除法和视口变换就是这些固定函数处理步骤中的一环，位于顶点后处理([Vertex Post-Processing](https://www.khronos.org/opengl/wiki/Vertex_Post-Processing))阶段中。这里我们重点关注顶点后处理其中的图元裁切([Clipping](https://www.khronos.org/opengl/wiki/Vertex_Post-Processing#Clipping))、透视除法([Perspective Divide](https://www.khronos.org/opengl/wiki/Vertex_Post-Processing#Perspective_divide))和到窗口空间的视口变换([Viewport Transform](https://www.khronos.org/opengl/wiki/Vertex_Post-Processing#Viewport_transform))。首先顶点着色器有如下的预定义输出：
+在顶点处理阶段之后，顶点还要经过一系列固定函数处理步骤，包括图元装配、图元裁切、透视除和视口变换等，这些步骤统称为顶点后处理（[Vertex Post-Processing](https://www.khronos.org/opengl/wiki/Vertex_Post-Processing)）。这里我们重点关注顶点后处理中的图元裁切（[Clipping](https://www.khronos.org/opengl/wiki/Vertex_Post-Processing#Clipping)）、透视除（[Perspective Divide](https://www.khronos.org/opengl/wiki/Vertex_Post-Processing#Perspective_divide)）和视口变换（[Viewport Transform](https://www.khronos.org/opengl/wiki/Vertex_Post-Processing#Viewport_transform)）。首先顶点着色器有如下的预定义输出：
 
 ```glsl
 out gl_PerVertex
@@ -81,17 +62,17 @@ out gl_PerVertex
 };
 ```
 
-其中，gl_Position 是当前顶点的裁切空间输出位置。
+其中，gl_Position 是当前顶点在裁切空间中的输出位置。
 
 #### Primitive Assembly
 
-顶点着色器、细分着色器和几何着色器处理的数据最终会形成一组图元。图元装配（Primitive Assembly）将这些顶点按照绘制模式指定的拓扑组合为点、线或三角形。
+顶点处理阶段输出的顶点会被组成图元。图元装配（Primitive Assembly）根据绘制命令指定的绘制模式，将顶点组合为点、线、三角形等图元。
 
-图元装配之后，管线会进入顶点后处理阶段，执行裁切、透视除法和视口变换等固定功能操作。
+图元装配完成后，图元进入后续处理：先进行裁切，再经过透视除和视口变换，之后才进入光栅化。
 
 #### Clipping
 
-收集前几个阶段生成的图元，然后将其裁切到视锥体中。每个顶点都有一个裁切空间位置（即最后一个顶点处理阶段的 gl_Position 输出）。顶点的视锥体定义如下：
+裁切阶段会根据裁切体对图元进行裁剪，在裁切体内的被保留下来，在裁切体之外的会被裁剪丢掉，与裁切体相交的图元可能被裁剪并生成新的顶点。每个顶点的裁切空间位置来自顶点处理阶段最后一个启用的着色器阶段所写入的 `gl_Position`。在默认的 `GL_NEGATIVE_ONE_TO_ONE` 深度模式下，裁切体满足：
 
 $$
 -w_{clip} \leqslant x_{clip} \leqslant w_{clip}
@@ -105,11 +86,11 @@ $$
 -w_{clip} \leqslant z_{clip} \leqslant w_{clip}
 $$
 
-这可以通过 [Depth Clamping](https://www.khronos.org/opengl/wiki/Vertex_Post-Processing#Depth_clamping) 和添加用户定义的裁切平面来修改。
+若通过 `glClipControl` 选择 `GL_ZERO_TO_ONE` 深度模式，则深度方向的范围变为 $0 \leqslant z_{clip} \leqslant w_{clip}$。启用深度钳制（[Depth Clamping](https://www.khronos.org/opengl/wiki/Vertex_Post-Processing#Depth_clamping)）后，近、远裁切平面不再裁切图元，而是将深度值钳制到相应范围内。着色器还可通过 `gl_ClipDistance[]` 指定用户裁切距离。
 
 #### Perspective divide
 
-从裁切阶段返回的裁切空间位置通过下面等式转换为归一化设备坐标（NDC）：
+未被裁剪掉的顶点通过下面公式可将其在裁切空间位置转换为归一化设备坐标（NDC）：
 
 $$
 \begin{pmatrix}
@@ -127,11 +108,11 @@ z_{ndc} \\
 \end{pmatrix}
 $$
 
-经过透视除法后归一化设备坐标分量 $x_{ndc}$、$y_{ndc}$ 和 $z_{ndc}$ 都位于 [-1.0, 1.0] 区间内。
+经过透视除后，在默认的 `GL_NEGATIVE_ONE_TO_ONE` 深度模式下，归一化设备坐标分量 $x_{ndc}$、$y_{ndc}$ 和 $z_{ndc}$ 均位于 $[-1,1]$ 范围内；使用 `GL_ZERO_TO_ONE` 深度模式时，$x_{ndc}$、$y_{ndc}$ 位于 $[-1,1]$，而 $z_{ndc}$ 位于 $[0,1]$。
 
 #### Viewport Transform
 
-视口变换定义了顶点位置从 NDC 空间到窗口空间的变换。给定视口参数，我们可以通过下面的方程计算窗口空间坐标：
+视口变换定义了从 NDC 空间到窗口空间的变换，将顶点的 NDC 坐标映射到窗口坐标。给定视口参数，我们可以通过下面的方程计算窗口空间坐标（适用于默认的左下角坐标原点和 `GL_NEGATIVE_ONE_TO_ONE` 深度模式）：
 
 $$
 \begin{pmatrix}
@@ -157,7 +138,7 @@ y + \frac{y_{ndc} + 1}{2} height \\
 \end{pmatrix}
 $$
 
-在这里，$x$，$y$，$width$，$height$，$nearVal$，$farVal$ 是由下列视口定义函数的参数指定的：
+若通过 `glClipControl` 将原点设为 `GL_UPPER_LEFT`，$y$ 方向的映射会反转；若深度模式设为 `GL_ZERO_TO_ONE`，则深度映射公式改为 $z_{wnd} = nearVal + (farVal - nearVal)z_{ndc}$。其中，$x$、$y$、$width$ 和 $height$ 由 `glViewport` 指定，$nearVal$ 和 $farVal$ 由 `glDepthRange` 指定：
 
 ```c
 // set the viewport
@@ -173,33 +154,33 @@ void glDepthRange(GLdouble nearVal​, GLdouble farVal​);
 void glDepthRangef(GLfloat nearVal​, GLfloat farVal​);
 ```
 
-我们知道 $x_{ndc}$ 和 $y_{ndc}$ 都位于 [-1.0, 1.0] 区间内。当 $x=0$, $y=0$ 时，可有如下推导：
+下面推导一下窗口空间坐标的范围，我们知道，默认坐标原点位于左下角，且 $x_{ndc}$ 和 $y_{ndc}$ 均位于 $[-1,1]$ 区间内，那么：
 
 $$ 
-(x_{ndc} + 1), (y_{ndc} + 1) \in [0.0, 2.0]  
+(x_{ndc} + 1) \in [0.0, 2.0], \quad (y_{ndc} + 1) \in [0.0, 2.0]  
 $$
 
 继而：
 
 $$
-\frac{x_{ndc} + 1}{2}, \frac{y_{ndc} + 1}{2} \in [0.0, 1.0] \\
+\frac{x_{ndc} + 1}{2} \in [0.0, 1.0], \quad \frac{y_{ndc} + 1}{2} \in [0.0, 1.0] \\
 $$
 
 进而：
 
 $$
-(\frac{x_{ndc} + 1}{2}) width \in [0.0,\ width], \ (\frac{y_{ndc} + 1}{2}) height \in [0.0,\ height​] \\
+(\frac{x_{ndc} + 1}{2}) width \in [0.0,\ width], \quad (\frac{y_{ndc} + 1}{2}) height \in [0.0,\ height​] \\
 $$
 
-即有 $x_{wnd} \in [0, width]$，$y_{wnd} \in [0, height]$。当 $x$ 和 $y$ 都有值时：
+当视口左下角坐标原点的 $x$ 和 $y$ 分量都有值时：
 
 $$
-x + (\frac{x_{ndc} + 1}{2}) width \ \in \ [x, x + width], \ y + (\frac{y_{ndc} + 1}{2}) height \ \in \ [y, y + height​] \\
+x + (\frac{x_{ndc} + 1}{2}) width \ \in \ [x, x + width], \quad y + (\frac{y_{ndc} + 1}{2}) height \ \in \ [y, y + height​] \\
 $$
 
-即有 $x_{wnd} \in [x, x + width]$，$y_{wnd} \in [y, y + height​]$。
+即有 $x_{wnd} \in [x, x + width]$，$y_{wnd} \in [y, y + height​]$。当 $x=0$，$y=0$ 时，则有 $x_{wnd} \in [0, width]$，$y_{wnd} \in [0, height]$。
 
-我们还知道 $z_{ndc}$ 也位于 [-1.0, 1.0] 区间内，当 $z_{ndc} = -1.0$ 时：
+在默认深度模式下，我们还知道 $z_{ndc}$ 也位于 $[-1,1]$。当 $z_{ndc} = -1$ 时：
 
 $$
 \begin{aligned}
@@ -221,11 +202,11 @@ z_{wnd} &= \frac{farVal - nearVal}{2}z_{ndc} + \frac{farVal + nearVal}{2}  \\
 \end{aligned}
 $$
 
-可知 $z_{wnd}$ 位于 [nearVal, farVal] 区间内。
+因此，可知 $z_{wnd}$ 位于 $[nearVal, farVal]$ 区间内。
 
-### Face Culling
+#### Face Culling
 
-面剔除（[Face Culling](https://www.khronos.org/opengl/wiki/Face_Culling)）用于根据三角形的卷绕方向丢弃正面或背面三角形。对于封闭物体，朝向观察者内部的三角形通常不会被看到，因此面剔除可以减少需要光栅化和着色的图元数量。
+面剔除（[Face Culling](https://www.khronos.org/opengl/wiki/Face_Culling)）根据三角形投影到窗口坐标后的顶点绕序方向判定其正反面，并按设置丢弃相应三角形。对于封闭物体，背向观察者的表面通常不可见，因此启用背面剔除可以避免光栅化这些三角形。
 
 面剔除默认处于禁用状态，可通过下列函数启用或禁用：
 
@@ -234,7 +215,7 @@ glEnable(GL_CULL_FACE);
 glDisable(GL_CULL_FACE);
 ```
 
-`glFrontFace` 用于指定正面三角形的卷绕方向：
+`glFrontFace` 用于指定哪种绕序方向表示正面：
 
 ```c
 void glFrontFace(GLenum mode);
@@ -242,10 +223,10 @@ void glFrontFace(GLenum mode);
 
 `mode` 可设置为：
 
-- `GL_CCW`：逆时针卷绕的三角形为正面，这是初始设置；
-- `GL_CW`：顺时针卷绕的三角形为正面。
+- `GL_CCW`：逆时针绕序的三角形为正面，这是初始设置；
+- `GL_CW`：顺时针绕序的三角形为正面。
 
-卷绕方向根据三角形在窗口坐标中的投影进行判定，而不是根据建模坐标中的顶点顺序直接判定。
+正反面判定依据三角形在窗口坐标中的投影方向，而不是直接依据建模坐标中的顶点顺序；模型变换也可能改变最终的绕序方向。
 
 `glCullFace` 用于指定剔除正面还是背面：
 
@@ -267,112 +248,40 @@ glFrontFace(GL_CCW);
 glCullFace(GL_BACK);
 ```
 
-渲染封闭三角形网格时，通常将网格外表面的顶点按逆时针方向排列，这样观察者看到的正面会保留，而背面三角形会被剔除。
+若网格外表面经变换后呈逆时针绕序，并将 `GL_CCW` 设为正面，则配合背面剔除可保留朝向观察者的三角形。
 
-面剔除发生在片段着色器之前，因此被剔除的三角形不会产生片段，也不会执行片段着色器。点图元和线图元没有正面或背面，不受三角形面剔除规则影响。
+面剔除发生在光栅化之前，因此被剔除的三角形不会产生片段，也不会执行片段着色器。点图元和线图元没有正反面，不受面剔除影响。
 
 ### Rasterization
 
-光栅化（[Rasterization](https://www.khronos.org/opengl/wiki/Rendering_Pipeline_Overview#Rasterization)）是将二维窗口空间中的点、线或三角形转换为离散片段（Fragment）的过程。光栅化会确定图元覆盖了哪些像素或多重采样样本，并为每个片段生成插值后的顶点数据。片段通常可视为候选像素；启用多重采样时，一个片段可以关联多个像素样本。
+光栅化（[Rasterization](https://www.khronos.org/opengl/wiki/Rendering_Pipeline_Overview#Rasterization)）是将经过顶点后处理的图元转换为离散片段（Fragment）的过程。光栅化器根据图元在窗口空间中的位置和形状，确定其覆盖范围，并为生成的片段计算插值数据。
 
-光栅化阶段是固定功能阶段，不执行片段着色器。片段着色器是否执行以及片段是否最终写入帧缓冲区，取决于光栅化结果以及后续逐片段和逐样本测试。
-
-#### Primitive Coverage
-
-不同类型的图元使用不同的光栅化规则：
-
-- 点图元会依据顶点处理阶段写入的 gl_PointSize，将一个顶点光栅化为一个或多个窗口空间中的片段。
-- 线图元会确定一条线段覆盖的像素或片段，线宽可通过 glLineWidth 指定。
-- 三角形图元会确定三角形覆盖的像素或片段，并为片段着色器提供用于插值的数据。
-
-对于三角形，光栅化通常还会执行背面剔除（Face Culling）。背面剔除会根据三角形在窗口空间中的朝向丢弃正面或背面。可通过 glFrontFace 指定正面方向，通过 glCullFace 指定剔除正面还是背面，再通过 glEnable(GL_CULL_FACE) 启用剔除。
-
-glPolygonMode 可以控制三角形、四边形或多边形如何进行光栅化，例如以填充、线框或点的方式显示三角形。
-
-#### Fragment Generation
-
-光栅化会为图元覆盖的每个片段生成一组数据，其中包括片段在窗口空间中的位置、深度以及插值后的顶点属性。片段着色器中的 gl_FragCoord 就提供了片段位置和深度等窗口空间信息。
-
-顶点着色器声明的输出变量会按图元各顶点的窗口空间位置进行插值，再作为片段着色器的输入传入。插值在透视投影下使用透视校正，若顶点的裁切空间位置为：
-
-$$
-\mathbf{v}_{clip} =
-\begin{pmatrix}
-x_{clip} \\
-y_{clip} \\
-z_{clip} \\
-w_{clip}
-\end{pmatrix}
-$$
-
-则片段着色器接收的插值属性会考虑顶点裁切空间位置中的 $w_{clip}$，而不是简单地对原始顶点属性执行线性插值。因此，物体深度变化时，纹理坐标和颜色等属性也会保持透视投影后的正确比例。
-
-三角形片段的插值通常可用重心坐标表示。给定三角形三个顶点的属性 $A_0$、$A_1$、$A_2$，片段属性可写为：
-
-$$
-A =
-\alpha A_0 +
-\beta A_1 +
-\gamma A_2
-$$
-
-其中，重心坐标满足：
-
-$$
-\alpha + \beta + \gamma = 1
-$$
-
-对于透视投影的三角形，光栅化会先考虑顶点裁切空间中的 $w$ 分量，再根据片段位置恢复透视校正后的插值结果。
-
-光栅化完成后，片段会进入片段着色器阶段。片段着色器计算片段的颜色、深度和模板等输出，随后仍需通过裁剪测试、深度测试、模板测试和混合等逐片段操作。
+光栅化生成的片段随后进入片段着色器，但片段着色器不一定会对每个片段执行：例如，提前执行的深度或模板测试可能使片段在着色前被丢弃。
 
 ### Fragment Shader
 
-片段着色器（[Fragment Shader](https://www.khronos.org/opengl/wiki/Fragment_Shader)）是光栅化产生片段后执行的可编程着色器阶段。片段着色器可从光栅化插值数据、纹理或其他着色器资源中读取数据，并计算片段的颜色、深度及模板或取样遮罩等结果。片段着色器执行结束后，片段仍要经过逐样本处理。
-
-片段着色器没有固定的唯一输出类型。用户可通过布局限定符将多个输出变量绑定到帧缓冲区的多个颜色附件，例如：
-
-```glsl
-layout(location = 0) out vec4 outColor;
-layout(location = 1) out vec4 outNormal;
-```
+片段着色器（[Fragment Shader](https://www.khronos.org/opengl/wiki/Fragment_Shader)）是光栅化后的可编程阶段。它可以读取插值后的输入、纹理及其他着色器资源，并输出颜色、深度或样本遮罩等数据。
 
 #### Inputs
 
-片段着色器有下面这些内置输入变量：
+片段着色器有下列内置输入变量：
 
 ```glsl
 in vec4 gl_FragCoord;
 in bool gl_FrontFacing;
 in vec2 gl_PointCoord;
-in int gl_PrimitiveID;
-in int gl_SampleID;
-in vec2 gl_SamplePosition;
-in int gl_SampleMaskIn[];
-in int gl_Layer;
-in int gl_ViewportIndex;
 ```
 
-其中，gl_FragCoord 是窗口空间中片段的位置。X、Y 和 Z 分量是片段的窗口空间位置。如果此着色器阶段未将 gl_FragDepth 写入深度缓冲区，则 Z 值将被写入深度缓冲区。W 分量是 $1/\mathsf{W_{clip}}$，这里 $\mathsf{W_{clip}}$ 是最后一个顶点处理阶段输出到 gl_Position 中的裁切空间顶点位置的 W 分量的插值。
+`gl_FragCoord` 
+: 片段在窗口空间中的位置，分量依次为 $(x, y, z, w)$。其中，$x$ 和 $y$ 是窗口坐标；$z$ 是深度值，若片段着色器没有写入 `gl_FragDepth`，该值将作为片段深度供后续深度操作使用；$w$ 是 $1/w_{clip}$，这里 $w_{clip}$ 是插值后的裁切空间顶点位置的 $w$ 分量。
 
-gl_FragCoord 的空间可以通过使用特殊的输入布局限定符重新声明 gl_FragCoord 来修改：
+`gl_FrontFacing` 
+: 片段所属图元是否为正面。对三角形而言，该值由图元的窗口空间绕序及 `glFrontFace` 状态决定；点和线图元的该值为 `true`。可据此对正面和背面执行不同处理。
 
-```glsl
-layout(origin_upper_left) in vec4 gl_FragCoord;
-```
-这意味着 gl_FragCoord 窗口空间的原点将是屏幕的左上角，而不是通常的左下角。OpenGL 窗口空间中将像素中心定义在半整数边界上。因此左下角像素的中心点为 (0.5, 0.5)。
+`gl_PointCoord` 
+: 点图元片段在点覆盖区域内的二维坐标。该变量仅对点图元产生的片段有意义，其坐标原点方向可通过 `GL_POINT_SPRITE_COORD_ORIGIN` 状态设置。
 
-gl_FrontFacing 表示片段所属图元是否为正面。对于三角形，它根据顶点朝向和多边形正面规则判断；对于点和线图元，其值通常为 true。该变量可用于分别为正面和背面执行不同的计算。
-
-gl_PointCoord 是点图元片段在点范围内的二维坐标，取值范围通常为 [0, 1]。只在点图元光栅化产生片段时使用该变量。
-
-gl_PrimitiveID 是片段所属图元在图元装配中的编号。启用几何着色器时，也可由几何着色器写入。gl_SampleID 表示片段所在的多重采样样本编号，gl_SamplePosition 给出该样本相对于像素中心的位置。启用逐样本着色后，这些变量可帮助片段着色器进行逐样本计算。
-
-gl_SampleMaskIn 是当前片段覆盖的样本遮罩，数组长度由 GL_MAX_SAMPLE_MASK_WORDS 决定。片段着色器可读取该值，以判断哪些像素样本会执行后续逐样本处理。
-
-gl_Layer 表示片段应写入的几何着色器输出数组层或渲染目标层，gl_ViewportIndex 表示片段应使用的视口或裁剪区域。两者通常需要在几何着色器中显式写入，或配合相应的着色器扩展和帧缓冲配置使用。
-
-除了上述内置输入，片段着色器也可接收顶点着色器、细分计算着色器或几何着色器的插值输出。这些用户自定义变量可在声明时使用插值限定符：
+除内置变量外，片段着色器还可接收最后一个启用的顶点处理阶段着色器输出的用户自定义变量。声明这些输入时，可指定插值限定符：
 
 ```glsl
 smooth in vec4 vColor;
@@ -380,7 +289,7 @@ flat in int vPrimitiveType;
 noperspective in vec2 vTexCoord;
 ```
 
-其中，smooth 是透视校正插值，noperspective 是窗口空间中的线性插值，flat 表示不进行插值且直接使用图元的固定顶点值。
+其中，`smooth` 表示透视校正插值（默认方式），`noperspective` 表示窗口空间中的线性插值，`flat` 表示不插值，直接采用图元引发顶点（provoking vertex）的值。
 
 #### Outputs
 
@@ -391,20 +300,20 @@ out float gl_FragDepth;
 out int gl_SampleMask[];
 ```
 
-gl_FragDepth 用于覆盖片段的深度值。如果片段着色器没有写入 gl_FragDepth，则使用原始的片段深度 gl_FragCoord.z。写入 gl_FragDepth 会禁止或限制深度测试的提前执行，因为提前深度测试无法在片段着色器修改深度之前确定片段深度。
+`gl_FragDepth` 
+: 用于指定片段深度。若片段着色器未写入该变量，则使用光栅化产生的深度值 `gl_FragCoord.z`。如果着色器静态写入 `gl_FragDepth`，就必须确保所有可能执行到的路径都为其赋值；写入该变量也可能限制深度测试的提前执行。
 
-gl_SampleMask 用于控制片段写入哪些像素样本。设置对应二进制位为 1 表示允许写入该样本，设置为 0 表示阻止写入。未写入 gl_SampleMask 时，片段按当前片段覆盖率和光栅化结果写入。
+`gl_SampleMask` 
+: 用于控制片段覆盖的样本中哪些可继续处理：对应位为 1 表示保留该样本，为 0 表示屏蔽该样本。若着色器未写入此变量，则不会通过该输出进一步修改样本遮罩。
 
-片段着色器还可声明如下用户自定义输出：
+片段着色器还可声明如下用户自定义输出，用户可通过布局限定符将多个输出变量绑定到帧缓冲区的多个颜色附件，例如：
 
 ```glsl
 layout(location = 0) out vec4 fragColor;
 layout(location = 1) out vec4 fragNormal;
 ```
 
-每个输出的位置对应一个绘制缓冲区或帧缓冲颜色附件。片段着色器未声明的颜色附件不会写入。
-
-片段着色器可使用 discard 关键字丢弃当前片段：
+片段着色器可使用 `discard` 关键字丢弃当前片段：
 
 ```glsl
 if (alpha < 0.1)
@@ -413,15 +322,13 @@ if (alpha < 0.1)
 }
 ```
 
-discard 会终止片段着色器，且该片段不会继续执行逐样本处理，也不会写入帧缓冲区。由于片段着色器是并行执行的，片段控制流可能影响性能。
+`discard` 会丢弃当前片段，使其不再产生颜色输出或进入后续常规逐样本处理。片段着色器中的分支和丢弃操作也可能影响性能。
 
 ### Per-Sample Processing
 
 逐样本处理（[Per-Sample Processing](https://www.khronos.org/opengl/wiki/Per-Sample_Processing)）是片段着色器执行之后，按像素样本对片段进行测试、更新及写入帧缓冲区的一组固定功能操作。启用多重采样时，这些操作通常针对每个像素样本分别执行；未启用多重采样时，每个片段对应一个像素样本。
 
 片段经过逐样本处理后，只有通过全部启用测试且具备有效像素所有权的片段，才会更新帧缓冲区中的颜色、深度或模板值。
-
-逐样本处理按常见顺序依次包括像素所有权测试、裁剪测试、模板测试、深度测试、多重采样片段操作、混合、抖动及帧缓冲区写入。在片段着色器执行前启用提前片段测试（Early Fragment Test）时，深度和模板测试可提前执行；片段着色器修改 gl_FragDepth 时不能执行提前深度测试。
 
 #### Pixel Ownership Test
 
@@ -451,7 +358,7 @@ glDisable(GL_SCISSOR_TEST);
 
 #### Stencil Test
 
-模板测试（Stencil Test）使用模板缓冲区中的模板值决定片段是否能够继续处理。模板测试由 glStencilFunc 指定比较条件，由 glStencilOp 指定模板值应如何根据模板测试和深度测试结果被更新：
+模板测试（Stencil Test）使用模板缓冲区中的模板值决定片段是否能够继续处理。模板测试由 glStencilFunc 指定比较条件，由 glStencilOp 根据模板测试和深度测试的结果指定对模板缓冲区中的值执行何种操作：
 
 ```c
 void glStencilFunc(
@@ -469,8 +376,6 @@ void glStencilOp(
 
 其中，sfail 表示模板测试失败时的操作，dpfail 表示模板测试通过但深度测试失败时的操作，dppass 表示模板测试和深度测试都通过时的操作。模板缓冲区可用于限定后续绘制范围、绘制轮廓或实现遮罩等效果。
 
-模板测试和深度测试的执行顺序使模板操作既可以基于模板缓冲区的单独状态，也可以与深度可见性联合判定。
-
 #### Depth Test
 
 深度测试（Depth Test）比较片段深度与深度缓冲区中对应像素或样本保存的深度值。比较函数可通过 glDepthFunc 指定：
@@ -479,7 +384,7 @@ void glStencilOp(
 void glDepthFunc(GLenum func);
 ```
 
-常见设置包括 GL_LESS 和 GL_LEQUAL。若片段通过深度测试，深度值可写入深度缓冲区；该行为可由 glDepthMask 控制：
+常见设置包括 GL_LESS 和 GL_LEQUAL。若片段通过深度测试，深度值可写入深度缓冲区，该行为可由 glDepthMask 控制：
 
 ```c
 glDepthMask(GL_TRUE);
@@ -490,11 +395,7 @@ glDepthMask(GL_FALSE);
 
 #### Multisample Operations
 
-多重采样（Multisampling）为每个像素保存多个样本，以降低几何边缘锯齿。光栅化确定图元对哪些像素样本具有覆盖率，每个片段及其插值属性可用于对应的一组覆盖样本。
-
-片段着色器的执行粒度取决于多重采样配置：片段着色器通常为片段执行一次，片段结果再分发到被覆盖的样本。启用逐样本着色（Sample Shading）后，片段着色器还可以针对不同样本分别执行。
-
-多重采样片段操作还包括覆盖值合并和采样遮罩。覆盖值描述图元覆盖了像素中的哪些样本，采样遮罩可进一步决定哪些样本允许写入帧缓冲区。
+多重采样（Multisampling）所做的是将单一的采样点变为多个采样点。多重采样不再使用像素中心的单一采样点，取而代之的是以特定模式排列的多个子采样点，用这些子采样点来确定图元对像素的覆盖范围，以降低几何边缘锯齿。
 
 #### Blending
 
@@ -546,7 +447,7 @@ glDisable(GL_COLOR_LOGIC_OP);
 
 写入掩码（[Write mask](https://wikis.khronos.org/opengl/Per-Sample_Processing#Write_mask)）用于控制片段通过逐样本测试后，帧缓冲区中哪些分量允许被修改。
 
-颜色写入掩码由 glColorMask 指定，分别控制红、绿、蓝和 Alpha 分量：
+`glColorMask` 设置颜色写入掩码，分别控制红、绿、蓝和 Alpha 通道是否写入；该掩码对所有绘制缓冲区生效：
 
 ```c
 void glColorMask(
@@ -557,13 +458,17 @@ void glColorMask(
 );
 ```
 
-将对应参数设为 GL_FALSE 时，该颜色分量不会写入帧缓冲区。例如，下面的配置只允许写入 RGB 分量：
+将某个参数设为 `GL_FALSE` 时，对应通道会保留帧缓冲区中的原值，而不会被本次绘制更新。例如，下面的配置允许写入 RGB，但不更新 Alpha：
 
 ```c
 glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 ```
 
-可绘制缓冲区对应的独立颜色掩码由 glColorMaski 设置。
+如果使用多个绘制缓冲区，并希望为它们设置不同的颜色写入掩码，可使用 `glColorMaski`。它通过第一个参数指定绘制缓冲区索引，后续参数分别设置该缓冲区的 RGBA 通道掩码。例如：
+
+```c
+glColorMaski(1, GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+```
 
 深度和模板缓冲区也可分别使用写入掩码：
 
@@ -593,20 +498,12 @@ Vulkan 图形管线执行流程：
 
 ## Conclusion
 
-可以看到，图元装配是按照指定的拓扑将一个类似于 glDrawElements 这样的绘制指令涉及的一系列顶点组装成为目标形状的操作，OpenGL 的输入装配是在顶点着色器和片段着色器之间，而 Vulkan 的输入装配是在顶点着色器之前；OpenGL 的模版与深度测试默认是在【测试与混合】阶段执行，在后期 OpenGL 还加入了 Early Fragment Test 特性，允许模版与深度等测试在片段着色器之前执行。Vulkan 在片段着色器前后有一个 Early Per-Fragment Test 和 Late Per-Fragment Test, 可以指定模版与深度测试在哪个阶段执行，默认是在 Late Per-Fragment Test 阶段执行。
+可以看到，图元装配是按照指定的拓扑将一个类似于 glDrawElements 这样的绘制指令涉及的一系列顶点组装成为目标形状的操作，OpenGL 的输入装配是在顶点着色器和片段着色器之间，而 Vulkan 的输入装配是在顶点着色器之前；OpenGL 的模版与深度测试默认是在【测试与混合】阶段执行，在后期 OpenGL 还加入了 Early Fragment Test 特性，允许模版与深度等测试在片段着色器之前执行。Vulkan 在片段着色器前后有一个 Early Per-Fragment Test 和 Late Per-Fragment Test，可以指定模版与深度测试在哪个阶段执行，默认是在 Late Per-Fragment Test 阶段执行。
 
 
 ## References
 >
 > * [OpenGL Rendering Pipeline Overview](https://www.khronos.org/opengl/wiki/Rendering_Pipeline_Overview)
->
-> * [Vertex Processing](https://www.khronos.org/opengl/wiki/Vertex_Processing)
->
-> * [Rasterization](https://www.khronos.org/opengl/wiki/Rendering_Pipeline_Overview#Rasterization)
->
-> * [Face Culling](https://www.khronos.org/opengl/wiki/Face_Culling)
->
-> * [Per-Sample Processing](https://www.khronos.org/opengl/wiki/Per-Sample_Processing)
 >
 > * [Vulkan Rendering Pipeline Overview](https://docs.vulkan.org/spec/latest/chapters/pipelines.html)
 >
