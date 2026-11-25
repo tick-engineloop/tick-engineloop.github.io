@@ -1074,197 +1074,125 @@ custom_module_function()
 
 ## 7. CMake 包
 
-包为基于 CMake 的构建系统提供依赖信息。下游项目通过 [`find_package()`](https://cmake.com.cn/cmake/help/latest/command/find_package.html) 查找包，使用结果通常是一组 [`IMPORTED`](https://cmake.com.cn/cmake/help/latest/prop_tgt/IMPORTED.html) 目标，也可能是一组由包提供的变量。
+包用于向构建系统提供依赖信息。第 6 章介绍的查找模块解决的是“如何找到依赖”，而一个完整的包还要描述自身导出的目标及其使用要求，使依赖可以被直接链接使用。下游项目统一通过 [`find_package()`](https://cmake.com.cn/cmake/help/latest/command/find_package.html) 查找包，得到的结果通常是一组 [`IMPORTED`](https://cmake.com.cn/cmake/help/latest/prop_tgt/IMPORTED.html) 目标，也可能是一组由包提供的变量。
 
 CMake 直接支持两类包：
 
-* **配置文件包**：由上游提供 `*Config.cmake` 或 `*-config.cmake` 文件，其中包含包的位置、导出的目标及使用要求；
-* **查找模块包**：由下游提供 `Find<PackageName>.cmake` 文件，通过搜索平台中的头文件、库等资源来发现包。
+* **配置文件包**：由上游随库一起提供 `FooConfig.cmake` 或 `foo-config.cmake`，其中记录了包的位置、导出的目标及其使用要求；
+* **查找模块包**：由下游编写 `FindFoo.cmake`，通过搜索头文件、库等资源推断包的位置，适用于未使用 CMake 构建、也没有提供配置文件的上游。
 
-此外，CMake 可通过 [`FindPkgConfig`](https://cmake.com.cn/cmake/help/latest/module/FindPkgConfig.html) 模块间接支持 `pkg-config` 包。
+现代依赖大多以配置文件包的形式发布，因此本节以配置文件包为主；查找模块的编写方式已在第 6 章介绍。
 
 ### 7.1 查找和使用包
 
-[`find_package()`](https://cmake.com.cn/cmake/help/latest/command/find_package.html) 的基本形式如下：
-
-```cmake
-find_package(ZLIB)
-target_link_libraries(app PRIVATE ZLIB::ZLIB)
-```
-
-使用包时，可指定最低版本、必需状态、包类型和组件：
+[`find_package()`](https://cmake.com.cn/cmake/help/latest/command/find_package.html) 的基本形式是指定包名，并按需补充版本和关键字：
 
 ```cmake
 find_package(OpenSSL 3.0 REQUIRED)
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui)
-find_package(Foo 2.0 CONFIG REQUIRED)
-find_package(Bar 1.2 MODULE QUIET)
 ```
 
-其中：
+常用关键字如下：
 
-* `REQUIRED` 表示找不到包时立即终止配置；
-* `QUIET` 表示找不到包时不打印默认查找信息；
-* `CONFIG` 表示只使用配置文件包；
-* `MODULE` 表示只使用查找模块包；
-* `COMPONENTS` 表示请求包中的指定组件；
-* `OPTIONAL_COMPONENTS` 表示请求可选组件，缺少时仍允许继续配置。
+| 关键字 | 作用 |
+| --- | --- |
+| `REQUIRED` | 找不到包时终止配置 |
+| `QUIET` | 抑制默认的查找信息，结果仍由 `<PackageName>_FOUND` 表示 |
+| `CONFIG` | 只使用配置文件包 |
+| `MODULE` | 只使用查找模块包 |
+| `COMPONENTS` | 指定需要的组件 |
+| `OPTIONAL_COMPONENTS` | 指定可选组件，缺失时不视为失败 |
 
-包配置文件通常会提供带有命名空间的 [`IMPORTED`](https://cmake.com.cn/cmake/help/latest/prop_tgt/IMPORTED.html) 目标，例如 `Foo::Foo` 和 `Qt6::Core`。推荐优先链接这些目标，而不是直接在项目中填写头文件目录和库文件路径。导入目标携带了头文件目录、编译宏、链接库等使用要求，能让下游保持简单、统一的使用方式。
+找到包之后，应优先链接包提供的导入目标，而不是自行填写头文件目录和库文件路径：
 
-如果需要判断包是否找到，可使用 `<PackageName>_FOUND`：
+```cmake
+target_link_libraries(app PRIVATE OpenSSL::SSL Qt6::Core)
+```
+
+这些名称通常带有 `::` 命名空间，由包配置文件或查找模块定义。导入目标携带了依赖所需的包含目录、编译定义和链接库，会沿依赖关系自动传递给使用方，正是第 5 章所述“使用要求”在包场景下的体现。一旦链接了导入目标，CMake 还能在下游未查找该包时给出明确诊断。
+
+若包是可选依赖，应去掉 `REQUIRED`，并通过 `<PackageName>_FOUND` 判断结果：
 
 ```cmake
 find_package(Foo QUIET)
 
 if(Foo_FOUND)
   target_link_libraries(app PRIVATE Foo::Foo)
-else()
-  message(STATUS "Foo was not found")
 endif()
 ```
 
-使用配置文件包时，CMake 会设置：
+当依赖安装在非标准前缀时，可通过 `CMAKE_PREFIX_PATH` 告知 CMake 搜索位置：
 
-* `<PackageName>_FOUND`：记录包是否找到；
-* `<PackageName>_DIR`：记录包配置文件所在目录；
-* 一组由包提供的版本变量，例如 `<PackageName>_VERSION`；
-* 包自己的目标或变量，例如 `Foo::Foo`、`Foo_INCLUDE_DIRS`。
-
-查找模块包与配置文件包的区别在于：查找模块包的查找规则由下游定义，通常没有统一的 `<PackageName>_DIR` 或完整的导入目标约定；因此，查找模块文件应自行设置 `<PackageName>_FOUND`，并尽量提供形如 `<PackageName>::<Name>` 的导入目标。
-
-### 7.2 包配置文件和版本文件
-
-配置文件包通常位于安装前缀的以下位置：
-
-```text
-<prefix>/lib/cmake/Foo/FooConfig.cmake
-<prefix>/lib/cmake/Foo/FooConfigVersion.cmake
+```sh
+cmake -S . -B build -DCMAKE_PREFIX_PATH=/opt/deps
 ```
 
-它们也可以放在 `lib*/cmake/Foo` 等 CMake 约定的位置。给定包名 `Foo` 后，[`find_package()`](https://cmake.com.cn/cmake/help/latest/command/find_package.html) 会查找 `FooConfig.cmake` 或 `foo-config.cmake`；找到候选配置文件后，再查找相邻的版本文件。
+> 提示：已知上游提供配置文件时，在调用中显式写出 `CONFIG`，可以让找不到包时的诊断信息更准确。
+{: .prompt-tip }
 
-包配置文件负责加载导出的目标、查找依赖项并检查组件：
+### 7.2 导出并安装包
 
-```cmake
-# FooConfig.cmake
-
-include(CMakeFindDependencyMacro)
-find_dependency(Bar 2.0)
-
-include("${CMAKE_CURRENT_LIST_DIR}/FooTargets.cmake")
-```
-
-其中，[`find_dependency()`](https://cmake.com.cn/cmake/help/latest/module/CMakeFindDependencyMacro.html) 用于在包配置文件中查找其依赖项，并根据依赖项是否找到设置包的 `<PackageName>_FOUND` 状态。这里的包依赖关系应与目标的 `PUBLIC` 或 `INTERFACE` 使用要求保持一致：
-
-* 包自己的实现私有依赖可以不暴露给下游；
-* `PUBLIC` 和 `INTERFACE` 依赖应由包配置文件查找；
-* 依赖项最好使用导入目标，而不是变量中的绝对库路径。
-
-包版本文件由 [`write_basic_package_version_file()`](https://cmake.com.cn/cmake/help/latest/module/CMakePackageConfigHelpers.html) 生成，用于判断包版本是否与下游请求兼容：
+要让其他项目通过 `find_package(Foo)` 使用自己的库，除了安装库文件和头文件，还需要随安装提供包配置文件和版本文件。一个最小可用的结构如下：
 
 ```cmake
+project(Foo VERSION 1.2.0 LANGUAGES CXX)
+
+include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-write_basic_package_version_file(
-  "${CMAKE_CURRENT_BINARY_DIR}/FooConfigVersion.cmake"
-  VERSION ${Foo_VERSION}
-  COMPATIBILITY SameMajorVersion
-)
-```
-
-常用兼容模式包括：
-
-| 兼容模式 | 含义 |
-| --- | --- |
-| `ExactVersion` | 只接受精确版本 |
-| `SameMajorVersion` | 接受相同主版本的更高版本 |
-| `SameMinorVersion` | 接受相同主次版本的更高补丁版本 |
-| `AnyNewerVersion` | 接受不低于请求版本的任意版本 |
-| `SemanticVersion` | 主版本大于零时按 `SameMajorVersion`，主版本为零时按 `SameMinorVersion` |
-| `SamePatchVersion` | 只接受相同主版本、次版本和补丁版本 |
-| `SameFullVersion` | 要求所有指定版本组件完全匹配 |
-| `ExactVersion` | 要求精确版本；CMake 4.4 起已弃用 |
-
-兼容规则最终应由项目的 API 和 ABI 策略决定，而不应机械地选择最宽松的规则。
-
-### 7.3 创建可供下游使用的包
-
-为项目生成包时，一般需要完成以下工作：
-
-1. 使用 `install(TARGETS)` 安装库、可执行文件或头文件；
-2. 使用 `install(EXPORT)` 导出目标并生成目标配置文件；
-3. 使用 `configure_package_config_file()` 生成包含安装路径的包配置文件；
-4. 使用 `write_basic_package_version_file()` 生成包版本文件；
-5. 使用 `install(FILES)` 将配置文件和版本文件安装到相同目录。
-
-假设项目提供了名为 `Foo` 的库，可采用下面的结构：
-
-```cmake
 add_library(Foo foo.cpp)
 add_library(Foo::Foo ALIAS Foo)
 
-target_include_directories(Foo
-  PUBLIC
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include>"
-)
-
-set_target_properties(Foo PROPERTIES
-  EXPORT_NAME Foo
+target_include_directories(Foo PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
 )
 
 install(TARGETS Foo
   EXPORT FooTargets
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION bin
-  INCLUDES DESTINATION include
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
 )
 
-install(DIRECTORY include/
-  DESTINATION include
-)
+install(DIRECTORY include/ DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+
+set(Foo_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/Foo")
 
 install(EXPORT FooTargets
   FILE FooTargets.cmake
   NAMESPACE Foo::
-  DESTINATION lib/cmake/Foo
+  DESTINATION "${Foo_INSTALL_CMAKEDIR}"
 )
-```
-
-这里的：
-
-* `add_library(Foo::Foo ALIAS Foo)` 为构建树提供与安装包相同的目标名称；
-* `BUILD_INTERFACE` 描述源码目录中的头文件位置；
-* `INSTALL_INTERFACE` 描述安装后相对于安装前缀的头文件位置；
-* `NAMESPACE Foo::` 确保下游得到 `Foo::Foo` 等导入目标。
-
-接着，项目可使用 [`CMakePackageConfigHelpers`](https://cmake.com.cn/cmake/help/latest/module/CMakePackageConfigHelpers.html) 创建配置文件：
-
-```cmake
-include(CMakePackageConfigHelpers)
 
 configure_package_config_file(
   cmake/FooConfig.cmake.in
   "${CMAKE_CURRENT_BINARY_DIR}/FooConfig.cmake"
-  INSTALL_DESTINATION lib/cmake/Foo
+  INSTALL_DESTINATION "${Foo_INSTALL_CMAKEDIR}"
 )
 
 write_basic_package_version_file(
   "${CMAKE_CURRENT_BINARY_DIR}/FooConfigVersion.cmake"
-  VERSION ${PROJECT_VERSION}
+  VERSION "${PROJECT_VERSION}"
   COMPATIBILITY SameMajorVersion
 )
 
 install(FILES
   "${CMAKE_CURRENT_BINARY_DIR}/FooConfig.cmake"
   "${CMAKE_CURRENT_BINARY_DIR}/FooConfigVersion.cmake"
-  DESTINATION lib/cmake/Foo
+  DESTINATION "${Foo_INSTALL_CMAKEDIR}"
 )
 ```
 
-包配置模板通常只需要包含导出的目标：
+上述命令各自承担一部分工作：
+
+* `add_library(Foo::Foo ALIAS Foo)` 让项目内部与下游使用同一个目标名称；
+* `BUILD_INTERFACE` 与 `INSTALL_INTERFACE` 分别描述构建树和安装树中的包含目录，后者是相对安装前缀的路径；
+* `install(TARGETS ... EXPORT FooTargets)` 把 `Foo` 加入名为 `FooTargets` 的导出集，`install(EXPORT)` 据此生成供下游读取的目标文件；
+* `NAMESPACE Foo::` 使导出的目标名为 `Foo::Foo`；
+* `configure_package_config_file()` 生成 `FooConfig.cmake`，`write_basic_package_version_file()` 生成版本文件，二者与 `FooTargets.cmake` 安装到同一目录，一次完整的查找才得以成立。
+
+包配置模板通常只负责引入导出的目标：
 
 ```cmake
 @PACKAGE_INIT@
@@ -1274,132 +1202,75 @@ include("${CMAKE_CURRENT_LIST_DIR}/FooTargets.cmake")
 check_required_components(Foo)
 ```
 
-模板中的 `@PACKAGE_INIT@` 会初始化包的安装前缀处理逻辑；需要查找外部依赖时，也应在此处使用 `find_dependency()`。
-
-### 7.4 为构建树导出包
-
-包不一定非要先安装后使用。项目可使用 [`export(EXPORT)`](https://cmake.com.cn/cmake/help/latest/command/export.html) 或 [`export(TARGETS)`](https://cmake.com.cn/cmake/help/latest/command/export.html) 导出目标供构建树中的其他项目使用：
+`@PACKAGE_INIT@` 会被展开为根据配置文件自身位置推算安装前缀的代码，使包可以随安装目录移动；`check_required_components()` 则校验下游通过 `COMPONENTS` 请求的组件是否齐全。安装完成后，其他项目即可按常规方式使用：
 
 ```cmake
-export(EXPORT FooTargets
-  FILE "${CMAKE_CURRENT_BINARY_DIR}/FooTargets.cmake"
-  NAMESPACE Foo::
-)
+find_package(Foo 1.2 REQUIRED)
+target_link_libraries(app PRIVATE Foo::Foo)
 ```
 
-也可在顶层构建目录中配置包配置文件和版本文件，使下游项目无需安装即可查找包。但这种导出的目标通常包含构建目录中的绝对路径，只适合本机的构建树，不应作为可重定位的发行包。
+版本文件决定 `find_package()` 请求的版本是否被接受，其 `COMPATIBILITY` 应与项目的兼容策略一致。常用的 `SameMajorVersion` 表示同一主版本内向后兼容，因此版本 1.3 可以满足对 1.2 的请求，而 2.0 不能。
 
-下游项目可通过以下方式查找构建目录中的包：
+### 7.3 公开依赖与可重定位
+
+如果 `Foo` 的公开头文件依赖另一个包 `Bar`，就应将其声明为 `PUBLIC` 依赖，并在包配置文件中一并查找：
 
 ```cmake
-set(Foo_DIR "/path/to/build/Foo")
-find_package(Foo CONFIG REQUIRED)
-```
-
-或者将构建目录加入 `CMAKE_PREFIX_PATH`：
-
-```bash
-cmake -S . -B build -DCMAKE_PREFIX_PATH=/path/to/build
-```
-
-构建目录中的包主要用于开发和测试，不应替代正式的安装包。
-
-### 7.5 创建可重定位的包
-
-可重定位的包不应在配置文件中引用制作该包的机器上的绝对路径。[`install(EXPORT)`](https://cmake.com.cn/cmake/help/latest/command/install.html) 导出的目标会使用相对于包自身位置的路径，因此应优先使用它创建发行包。
-
-在声明目标的安装接口时，包含目录应使用相对于安装前缀的相对路径：
-
-```cmake
-# 错误：硬编码构建机器的安装前缀
-target_include_directories(Foo INTERFACE
-  "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/Foo>"
-)
-
-# 正确：相对于安装前缀
-target_include_directories(Foo INTERFACE
-  "$<INSTALL_INTERFACE:include/Foo>"
-)
-```
-
-也不要在可重定位包中直接填写外部依赖的绝对库路径：
-
-```cmake
-# 不推荐：Bar_INCLUDE_DIRS 和 Bar_LIBRARIES
-# 可能包含制作包机器上的绝对路径
-target_link_libraries(Foo INTERFACE
-  ${Bar_LIBRARIES}
-)
-target_include_directories(Foo INTERFACE
-  "$<INSTALL_INTERFACE:${Bar_INCLUDE_DIRS}>"
-)
-```
-
-应该让外部依赖提供自己的导入目标，并在本项目中按目标链接：
-
-```cmake
+# CMakeLists.txt
 find_package(Bar 2.0 REQUIRED)
 target_link_libraries(Foo PUBLIC Bar::Bar)
 ```
 
-对应的 `FooConfig.cmake` 应查找 `Bar` 包：
-
 ```cmake
+# cmake/FooConfig.cmake.in
+@PACKAGE_INIT@
+
 include(CMakeFindDependencyMacro)
 find_dependency(Bar 2.0)
 
 include("${CMAKE_CURRENT_LIST_DIR}/FooTargets.cmake")
+
+check_required_components(Foo)
 ```
 
-下游加载 `Foo` 包时，CMake 会根据自身机器上的位置查找 `Bar`，并填充 `Bar::Bar` 导入目标。这样一来，`Foo` 包只需引用 `Bar::Bar` 这个稳定名称，而不需要记录依赖项在制作机器上的绝对路径。
+[`find_dependency()`](https://cmake.com.cn/cmake/help/latest/module/CMakeFindDependencyMacro.html) 会沿用下游调用 `find_package(Foo)` 时的 `REQUIRED`、`QUIET` 等状态查找依赖，未找到时将 `Foo_FOUND` 置为 `FALSE` 并提前返回，从而避免下游拿到一个缺少依赖的 `Foo::Foo`。仅供 `Foo` 实现使用的私有依赖则应声明为 `PRIVATE`，无需在配置文件中暴露。
 
-如果依赖项本身只提供旧式变量而没有导入目标，可以通过查找模块提供包装目标；或者在打包时将库名写成 `foo` 等链接器可解析的名称，而不是硬编码绝路径。
-
-### 7.6 包注册表
-
-CMake 还提供包注册表，用于记录构建树或安装树中包配置文件的位置。当包安装在非标准位置，或正在本地开发尚未安装的包时，注册表可以帮助 [`find_package()`](https://cmake.com.cn/cmake/help/latest/command/find_package.html) 发现包。
-
-项目可在配置阶段使用 [`export(PACKAGE)`](https://cmake.com.cn/cmake/help/latest/command/export.html) 将构建树注册到用户包注册表：
+为了让安装后的包可以整体移动，包中不应出现构建机器上的绝对路径。`$<INSTALL_INTERFACE:...>` 中的路径应相对安装前缀书写，外部依赖也应通过导入目标引用，而不是把查找结果中的绝对路径写入接口：
 
 ```cmake
-export(PACKAGE Foo)
+# 错误：硬编码安装前缀，移动后失效
+target_include_directories(Foo INTERFACE
+  "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
+)
+
+# 正确：相对安装前缀
+target_include_directories(Foo INTERFACE
+  "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+)
 ```
 
-注册表分为：
-
-* 用户包注册表：记录当前用户的包，Windows 存储在 `HKEY_CURRENT_USER`，Unix-like 平台存储在 `~/.cmake/packages`；
-* 系统包注册表：记录系统范围的包，Windows 存储在 `HKEY_LOCAL_MACHINE`，非 Windows 平台通常没有系统包注册表。
-
-包注册表主要作为便利机制，不应取代明确的包查找参数。在脚本、CI 和可重复构建环境中，通常应优先使用 `CMAKE_PREFIX_PATH`、工具链文件或包管理器提供的安装前缀来定位依赖项。
-
-若不希望使用包注册表，可按策略禁用：
-
-* 将 [`CMAKE_FIND_USE_PACKAGE_REGISTRY`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_USE_PACKAGE_REGISTRY.html) 设置为 `FALSE` 可以在所有 `find_package()` 调用中禁用用户包注册表；
-* 将 [`CMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY.html) 设置为 `FALSE` 可以禁用系统包注册表；
-* 在策略 `CMP0090` 为 `NEW` 时，将 [`CMAKE_EXPORT_PACKAGE_REGISTRY`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_EXPORT_PACKAGE_REGISTRY.html) 设置为 `TRUE` 可以允许 `export(PACKAGE)` 向用户包注册表写入内容；未启用时则默认禁用；
-* 在策略 `CMP0090` 未设为 `NEW` 时，可通过 [`CMAKE_EXPORT_NO_PACKAGE_REGISTRY`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_EXPORT_NO_PACKAGE_REGISTRY.html) 禁止 `export(PACKAGE)` 向注册表写入内容。
+由 `install(EXPORT)` 生成的目标文件与 `configure_package_config_file()` 生成的配置文件都以包自身位置为基准解析路径，按上述方式书写接口即可得到可重定位的包。相比之下，`export(TARGETS)`、`export(EXPORT)` 生成的构建树导出文件包含构建目录中的绝对路径，只适合本机调试，不应随安装分发。
 
 ## 8. CMake 属性
 
-CMake 属性用于保存和读取构建过程中的配置信息。属性与变量相似，但归属于特定作用域，例如全局作用域、目录、目标、源文件、测试、缓存项或已安装文件。配置和生成构建系统时，CMake 会读取这些属性，并将其转换为编译器、链接器和构建工具所需的选项。
+CMake 属性用于保存和读取构建过程中的配置信息。属性与变量相似，但归属于特定作用域，例如全局作用域、目录、目标、源文件、测试或缓存项。配置和生成构建系统时，CMake 会读取这些属性，并转换为编译器、链接器和构建工具所需的选项。
 
 属性的主要作用范围包括：
 
-| 作用范围 | 常用属性前缀或示例 | 典型用途 |
+| 作用范围 | 常用属性示例 | 典型用途 |
 | --- | --- | --- |
-| 全局属性 | `USE_FOLDERS`、`DEBUG_CONFIGURATIONS` | 控制整个构建系统的行为 |
+| 全局属性 | `USE_FOLDERS` | 控制整个构建系统的行为 |
 | 目录属性 | `COMPILE_DEFINITIONS`、`INCLUDE_DIRECTORIES` | 为目录及其子目录中的目标设置默认配置 |
-| 目标属性 | `CXX_STANDARD`、`SOURCES`、`OUTPUT_NAME` | 描述目标的源码、编译、链接、输出和使用要求 |
-| 源文件属性 | `COMPILE_DEFINITIONS`、`COMPILE_OPTIONS` | 为某个源文件设置特殊编译选项 |
+| 目标属性 | `CXX_STANDARD`、`OUTPUT_NAME`、`INTERFACE_INCLUDE_DIRECTORIES` | 描述目标的编译、链接、输出和使用要求 |
+| 源文件属性 | `COMPILE_OPTIONS`、`LANGUAGE` | 为单个源文件设置例外配置 |
 | 测试属性 | `TIMEOUT`、`LABELS`、`ENVIRONMENT` | 配置测试的运行方式 |
-| 缓存项属性 | `ADVANCED`、`HELPSTRING` | 配置缓存变量在 GUI 或界面中的显示方式 |
-| 已安装文件属性 | `CPACK_` 等打包属性 | 控制构建产物的安装和打包 |
+| 缓存项属性 | `ADVANCED`、`HELPSTRING` | 控制缓存变量在 CMake GUI 中的显示方式 |
 
-属性名区分大小写。一个属性既可能存在于多个作用域，也可能只属于一个作用域；例如，`COMPILE_DEFINITIONS` 既是目录属性，也是目标属性，而不是所有属性都能在任意作用域中使用。
+属性名区分大小写。同一个名称也可能同时属于多个作用域，例如 `COMPILE_DEFINITIONS` 既是目录属性，也是目标属性，因此使用前应先确认它属于哪个作用域。
 
 ### 8.1 属性的读取和设置
 
-设置属性的通用命令是 [`set_property()`](https://cmake.com.cn/cmake/help/latest/command/set_property.html)：
+设置属性的通用命令是 [`set_property()`](https://cmake.com.cn/cmake/help/latest/command/set_property.html)，配合 `APPEND` 可在已有取值之后追加内容：
 
 ```cmake
 set_property(TARGET app PROPERTY CXX_STANDARD 20)
@@ -1407,13 +1278,9 @@ set_property(TARGET app PROPERTY CXX_STANDARD 20)
 set_property(TARGET app APPEND PROPERTY
   COMPILE_DEFINITIONS APP_WITH_NETWORK
 )
-
-set_property(SOURCE src/main.cpp APPEND PROPERTY
-  COMPILE_DEFINITIONS USE_MAIN_ENTRY
-)
 ```
 
-没有复杂追加需求时，也可使用 [`set_target_properties()`](https://cmake.com.cn/cmake/help/latest/command/set_target_properties.html) 集中设置多个目标属性：
+需要一次性设置多个目标属性时，[`set_target_properties()`](https://cmake.com.cn/cmake/help/latest/command/set_target_properties.html) 更简洁；读取属性则使用 [`get_property()`](https://cmake.com.cn/cmake/help/latest/command/get_property.html) 或具有特定作用域的便捷命令：
 
 ```cmake
 set_target_properties(app PROPERTIES
@@ -1422,61 +1289,24 @@ set_target_properties(app PROPERTIES
   CXX_EXTENSIONS NO
   OUTPUT_NAME my_app
 )
-```
-
-读取属性时，可使用 [`get_property()`](https://cmake.com.cn/cmake/help/latest/command/get_property.html) 或具有特定作用域的便捷命令：
-
-```cmake
-get_property(app_sources
-  TARGET app
-  PROPERTY SOURCES
-)
 
 get_target_property(app_standard app CXX_STANDARD)
-
-message(STATUS "app sources: ${app_sources}")
+message(STATUS "app standard: ${app_standard}")
 ```
 
-如果目标属性尚未定义，[`get_target_property()`](https://cmake.com.cn/cmake/help/latest/command/get_target_property.html) 将把变量设置为 `app-NOTFOUND`。因此，读取属性时应先判断变量是否为预期值，避免将未定义属性误用于后续逻辑。
+如果目标属性尚未定义，[`get_target_property()`](https://cmake.com.cn/cmake/help/latest/command/get_target_property.html) 会把变量设置为 `app-NOTFOUND`，因此读取结果后应先判断是否符合预期，再用于后续逻辑。
 
-对于有专用目标命令的属性，通常优先使用目标命令。例如：
-
-```cmake
-# 推荐
-target_include_directories(app PRIVATE include)
-target_compile_features(app PRIVATE cxx_std_20)
-target_link_libraries(app PRIVATE Foo::Foo)
-
-# 通用属性写法，等价含义较多
-set_property(TARGET app APPEND PROPERTY INCLUDE_DIRECTORIES include)
-set_property(TARGET app APPEND PROPERTY COMPILE_FEATURES cxx_std_20)
-set_property(TARGET app APPEND PROPERTY LINK_LIBRARIES Foo::Foo)
-```
-
-专用目标命令能通过 `PRIVATE`、`PUBLIC` 和 `INTERFACE` 明确区分目标自身的编译设置与提供给使用方的使用要求，因此在日常项目中更适合使用。
-
-> 提醒：不要为了简化代码就把所有属性都设置到全局或顶层目录。只有确实适用于作用域内所有目标的设置才适合放在目录属性中。
-{: .prompt-tip }
+对于已有专用目标命令的属性，第 5 章介绍了推荐的写法：目标命令能通过 `PRIVATE`、`PUBLIC` 和 `INTERFACE` 明确区分目标自身的设置与提供给使用方的使用要求，因此日常项目应优先使用目标命令。通用属性写法适合设置没有专用命令的属性，或一次性集中设置多个属性。
 
 ### 8.2 全局和目录属性
 
-全局属性影响整个构建系统，通常由 [`set_property(GLOBAL ...)`](https://cmake.com.cn/cmake/help/latest/command/set_property.html) 设置：
+全局属性通过 `set_property(GLOBAL ...)` 设置，日常主要用到 `USE_FOLDERS`，让支持的 IDE 按目标或目录组织工程：
 
 ```cmake
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 ```
 
-常用全局属性包括：
-
-| 属性 | 作用 |
-| --- | --- |
-| `USE_FOLDERS` | 在支持的 IDE 中按目标、工程或自定义文件夹组织目标 |
-| `DEBUG_CONFIGURATIONS` | 指定哪些构建配置应被视为调试配置 |
-| `PREDEFINED_TARGETS_FOLDER` | 指定 CMake 自动生成的预定义目标所在的 IDE 文件夹 |
-| `PACKAGES_FOUND` | 记录已找到的包名称 |
-| `PACKAGES_NOT_FOUND` | 记录未找到的包名称 |
-
-目录属性用于影响当前目录及其由 `add_subdirectory()` 或其他方式引入的子目录中的目标：
+目录属性为当前目录及其子目录中的目标提供默认配置，`add_compile_definitions()`、`add_compile_options()` 和 `include_directories()` 等便捷命令填充的正是这些属性：
 
 ```cmake
 add_compile_definitions(PROJECT_WITH_GUI)
@@ -1484,161 +1314,42 @@ add_compile_options(-Wall)
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 ```
 
-上述便捷命令分别填充目录的 `COMPILE_DEFINITIONS`、`COMPILE_OPTIONS` 和 `INCLUDE_DIRECTORIES` 属性。目录属性可通过 [`set_property(DIRECTORY ...)`](https://cmake.com.cn/cmake/help/latest/command/set_property.html) 显式设置：
+这些设置会被目录内的所有目标及其子目录继承，容易掩盖目标之间的差异，因此现代 CMake 更推荐用第 5 章的目标命令描述编译和链接设置。确有需要时，`COMPILE_DEFINITIONS`、`COMPILE_OPTIONS`、`INCLUDE_DIRECTORIES` 和 `LINK_OPTIONS` 是最常用的目录属性，也可通过 `set_property(DIRECTORY ...)` 显式设置。
 
-```cmake
-set_property(DIRECTORY PROPERTY
-  COMPILE_DEFINITIONS PROJECT_WITH_GUI
-)
-```
+### 8.3 目标属性
 
-常用目录属性包括：
+目标属性是使用频次最高的一类属性。第 5 章已结合目标命令介绍了描述构建规范的 `COMPILE_*`、`LINK_*` 属性和描述使用要求的 `INTERFACE_*` 属性，这里再列举几类没有专用目标命令、只能直接设置的属性：
 
 | 属性 | 作用 |
 | --- | --- |
-| `COMPILE_DEFINITIONS` | 为目录及其子目录中的目标添加编译宏 |
-| `COMPILE_OPTIONS` | 为目录及其子目录中的目标添加编译选项 |
-| `INCLUDE_DIRECTORIES` | 为目录及其子目录中的目标添加包含目录 |
-| `LINK_DIRECTORIES` | 为目录及其子目录中的目标添加链接搜索目录 |
-| `LINK_OPTIONS` | 为目录及其子目录中的目标添加链接选项 |
-| `SOURCE_DIR` | 只读属性，获取目录的源码目录 |
-| `BINARY_DIR` | 只读属性，获取目录的构建目录 |
-
-目录属性对构建规范具有继承关系，但现代 CMake 更推荐优先使用目标命令。目标命令具有更明确的依赖关系，也能把设置限制在需要该设置的目标范围内。
-
-### 8.3 常用目标属性
-
-目标属性是 CMake 中最常用的属性类型。它们可描述目标所需的语言标准、源文件、编译参数、链接参数、输出位置以及向下游暴露的使用要求。
-
-#### 8.3.1 编译属性
-
-| 属性 | 作用 |
-| --- | --- |
-| `C_STANDARD` | 指定 C 语言标准 |
 | `CXX_STANDARD` | 指定 C++ 语言标准 |
-| `C_STANDARD_REQUIRED` | 是否要求严格使用指定的 C 语言标准 |
-| `CXX_STANDARD_REQUIRED` | 是否要求严格使用指定的 C++ 语言标准 |
-| `C_EXTENSIONS` | 是否允许编译器扩展的 C 语言特性 |
+| `CXX_STANDARD_REQUIRED` | 是否严格要求使用指定标准，而不是回退到编译器默认的旧标准 |
 | `CXX_EXTENSIONS` | 是否允许编译器扩展的 C++ 语言特性 |
-| `COMPILE_DEFINITIONS` | 编译目标源文件时使用的编译宏 |
-| `COMPILE_FEATURES` | 编译目标所需的语言或编译器特性 |
-| `COMPILE_OPTIONS` | 编译目标源文件时使用的编译选项 |
-| `INCLUDE_DIRECTORIES` | 编译目标源文件时搜索头文件的目录 |
-| `PRECOMPILE_HEADERS` | 编译目标时需要预编译的头文件 |
-| `COMPILE_WARNING_AS_ERROR` | 是否将编译警告视为错误 |
+| `OUTPUT_NAME` | 输出文件的基础名称，不含平台前缀和扩展名 |
+| `RUNTIME_OUTPUT_DIRECTORY` | 可执行文件等运行时产物的输出目录 |
+| `LIBRARY_OUTPUT_DIRECTORY` | 共享库和模块库的输出目录 |
+| `ARCHIVE_OUTPUT_DIRECTORY` | 静态库和导入库的输出目录 |
+| `DEBUG_POSTFIX` | 调试构建时追加到文件名后的后缀 |
+| `POSITION_INDEPENDENT_CODE` | 是否生成位置无关代码 |
 
-常用写法是直接使用目标命令：
-
-```cmake
-target_compile_features(app PRIVATE cxx_std_20)
-target_compile_definitions(app PRIVATE APP_VERSION=\"1.0\")
-target_compile_options(app PRIVATE -Wall -Wextra)
-target_include_directories(app PRIVATE include)
-target_precompile_headers(app PRIVATE include/pch.h)
-```
-
-设置语言标准时，还可使用以下属性：
+下面把语言标准、输出名称和输出目录集中设置，C 语言项目只需把 `CXX_STANDARD` 等换成 `C_STANDARD` 等对应属性：
 
 ```cmake
 set_target_properties(app PROPERTIES
   CXX_STANDARD 20
   CXX_STANDARD_REQUIRED YES
   CXX_EXTENSIONS NO
-)
-```
-
-#### 8.3.2 链接属性
-
-| 属性 | 作用 |
-| --- | --- |
-| `LINK_LIBRARIES` | 链接目标时使用的库或目标 |
-| `LINK_DIRECTORIES` | 链接目标时搜索库的目录 |
-| `LINK_OPTIONS` | 链接目标时传递给链接器的选项 |
-| `LINK_DEPENDS` | 链接目标所依赖的文件 |
-| `INTERPROCEDURAL_OPTIMIZATION` | 是否启用过程间优化或链接时优化 |
-| `BUILD_RPATH` | 构建产物运行时搜索共享库的路径 |
-| `INSTALL_RPATH` | 安装产物运行时搜索共享库的路径 |
-
-例如：
-
-```cmake
-target_link_libraries(app PRIVATE Foo::Foo)
-target_link_options(app PRIVATE -Wl,--as-needed)
-
-set_target_properties(app PROPERTIES
-  BUILD_RPATH_USE_ORIGIN YES
-  INSTALL_RPATH "$ORIGIN/../lib"
-)
-```
-
-一般应优先让依赖项通过导入目标提供链接和包含目录，而不是在目标上直接写绝对库路径。
-
-#### 8.3.3 输出属性
-
-| 属性 | 作用 |
-| --- | --- |
-| `OUTPUT_NAME` | 设置输出文件的基础名称 |
-| `ARCHIVE_OUTPUT_DIRECTORY` | 设置静态库的输出目录 |
-| `LIBRARY_OUTPUT_DIRECTORY` | 设置共享库和模块库的输出目录 |
-| `RUNTIME_OUTPUT_DIRECTORY` | 设置可执行文件和共享库运行时产物的输出目录 |
-| `PDB_OUTPUT_DIRECTORY` | 设置程序数据库文件的输出目录 |
-| `DEBUG_POSTFIX` | 调试构建产物附加的文件名后缀 |
-| `POSITION_INDEPENDENT_CODE` | 是否使用位置无关代码 |
-
-多配置生成器还可通过带配置后缀的属性分别指定每种配置：
-
-```cmake
-set_target_properties(app PROPERTIES
-  OUTPUT_NAME "tool"
+  OUTPUT_NAME tool
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
   DEBUG_POSTFIX "_d"
 )
-
-set_target_properties(app PROPERTIES
-  RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin/Debug"
-  RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin/Release"
-)
 ```
 
-`OUTPUT_NAME` 设置的是产物的基础名称，不包括平台生成的前缀和扩展名。例如，名为 `Foo` 的库在 Linux 上可能生成 `libFoo.so`，在 Windows 上可能生成 `Foo.dll`。
-
-#### 8.3.4 使用要求属性
-
-名称以 `INTERFACE_` 开头的目标属性表示该目标提供给使用方的使用要求：
-
-| 属性 | 作用 |
-| --- | --- |
-| `INTERFACE_COMPILE_DEFINITIONS` | 使用方需要的编译宏 |
-| `INTERFACE_COMPILE_FEATURES` | 使用方需要的编译语言特性 |
-| `INTERFACE_COMPILE_OPTIONS` | 使用方需要的编译选项 |
-| `INTERFACE_INCLUDE_DIRECTORIES` | 使用方需要的公开头文件目录 |
-| `INTERFACE_LINK_LIBRARIES` | 使用方需要链接的库或目标 |
-| `INTERFACE_LINK_DIRECTORIES` | 使用方需要的链接搜索目录 |
-| `INTERFACE_LINK_OPTIONS` | 使用方需要的链接选项 |
-| `INTERFACE_SOURCES` | 使用方构建时需要加入的源文件 |
-
-使用要求应通过作用域关键字设置：
-
-```cmake
-add_library(Foo foo.cpp)
-
-target_include_directories(Foo
-  PUBLIC
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include>"
-)
-
-target_link_libraries(Foo
-  PUBLIC FooCore
-  PRIVATE FooInternal
-)
-```
-
-上例中，`FooCore` 的使用要求会继续传递给 `Foo` 的使用方；`FooInternal` 只用于构建 `Foo`，不会传递给使用方。公开头文件使用的依赖和配置应当由 `PUBLIC` 或 `INTERFACE` 暴露，专供实现使用的依赖应使用 `PRIVATE`。
+上例把目标产物统一输出到构建目录的 `bin` 下，调试构建生成 `tool_d`，其它配置生成 `tool`。名称中的前缀和扩展名由 CMake 按平台补全，例如名为 `Foo` 的库在 Linux 上生成 `libFoo.so`，在 Windows 上生成 `Foo.dll`。使用多配置生成器时，还可用 `RUNTIME_OUTPUT_DIRECTORY_DEBUG`、`RUNTIME_OUTPUT_DIRECTORY_RELEASE` 等带配置后缀的属性，为每种配置分别指定输出目录。
 
 ### 8.4 源文件属性
 
-源文件属性可为单个文件设置特殊编译配置：
+源文件属性用于为单个文件设置例外的编译配置，例如为生成代码添加宏，或为遗留代码关闭告警：
 
 ```cmake
 set_property(SOURCE src/generated.cpp APPEND PROPERTY
@@ -1650,22 +1361,11 @@ set_property(SOURCE src/legacy.cpp PROPERTY
 )
 ```
 
-常用源文件属性包括：
-
-| 属性 | 作用 |
-| --- | --- |
-| `COMPILE_DEFINITIONS` | 为该源文件设置编译宏 |
-| `COMPILE_OPTIONS` | 为该源文件设置编译选项 |
-| `INCLUDE_DIRECTORIES` | 为该源文件设置包含目录 |
-| `LANGUAGE` | 指定源文件的编译语言 |
-| `SKIP_UNITY_BUILD_INCLUSION` | 不把该源文件加入统一构建 |
-| `HEADER_FILE_ONLY` | 将该文件视为头文件，不直接参与编译 |
-
-如果一组源文件都需要相同配置，优先使用目标属性；只有少量文件需要例外配置时，再使用源文件属性。
+除 `COMPILE_DEFINITIONS`、`COMPILE_OPTIONS` 和 `INCLUDE_DIRECTORIES` 外，`LANGUAGE` 可指定源文件的编译语言。如果一组文件都需要相同配置，应优先使用目标属性；只有少量文件需要例外时才使用源文件属性。
 
 ### 8.5 测试属性
 
-启用 [`CTest`](https://cmake.com.cn/cmake/help/latest/module/CTest.html) 后，可为测试设置超时、标签、工作目录、环境变量和失败重试等属性：
+启用 [`CTest`](https://cmake.com.cn/cmake/help/latest/module/CTest.html) 后，可为测试设置超时、标签、工作目录和运行环境等属性：
 
 ```cmake
 include(CTest)
@@ -1679,130 +1379,161 @@ set_tests_properties(math_test PROPERTIES
 )
 ```
 
-常用测试属性包括：
-
-| 属性 | 作用 |
-| --- | --- |
-| `TIMEOUT` | 测试允许的最长运行时间 |
-| `LABELS` | 测试标签，可用于筛选执行的测试集 |
-| `WORKING_DIRECTORY` | 测试进程的工作目录 |
-| `ENVIRONMENT` | 测试进程的环境变量 |
-| `ENVIRONMENT_MODIFICATION` | 以更精细的方式修改测试环境变量 |
-| `WILL_FAIL` | 测试的预期结果是否为失败 |
-| `RUN_SERIAL` | 测试是否要求串行执行 |
-| `REQUIRED_FILES` | 测试运行前必须存在的文件 |
-
-测试属性可通过 [`set_tests_properties()`](https://cmake.com.cn/cmake/help/latest/command/set_tests_properties.html) 集中设置，也可通过 [`set_property(TEST ...)`](https://cmake.com.cn/cmake/help/latest/command/set_property.html) 一般方法设置。
+常用测试属性中，`TIMEOUT` 限定单个测试的最长运行时间；`LABELS` 为测试打标签，便于用 `ctest -L` 筛选测试集；`WORKING_DIRECTORY` 指定测试进程的工作目录；`ENVIRONMENT` 设置测试进程的环境变量；`RUN_SERIAL` 要求该测试独占执行，不与其他测试并行。这些属性既可用 [`set_tests_properties()`](https://cmake.com.cn/cmake/help/latest/command/set_tests_properties.html) 集中设置，也可通过 [`set_property(TEST ...)`](https://cmake.com.cn/cmake/help/latest/command/set_property.html) 设置。
 
 ### 8.6 缓存变量属性
 
-缓存变量本身由变量管理，但可以附加属性，常用于控制 CMake GUI 中的显示方式：
-
-```cmake
-set(ENABLE_TRACE OFF CACHE BOOL "Enable trace logging")
-
-mark_as_advanced(ENABLE_TRACE)
-
-set_property(CACHE ENABLE_TRACE PROPERTY
-  HELPSTRING "Enable detailed runtime trace logging"
-)
-```
-
-常用缓存变量属性包括：
-
-| 属性 | 作用 |
-| --- | --- |
-| `HELPSTRING` | 缓存变量的说明文本 |
-| `ADVANCED` | 是否将变量显示在高级选项中 |
-| `STRINGS` | 使字符串缓存变量在界面中以选项列表呈现 |
-
-例如：
+缓存变量由变量系统创建，但可以附加属性，最常用的是控制它在 CMake GUI 中的显示方式：
 
 ```cmake
 set(LOG_LEVEL "INFO" CACHE STRING "Log level")
 set_property(CACHE LOG_LEVEL PROPERTY STRINGS DEBUG INFO WARN ERROR)
+
+mark_as_advanced(ENABLE_TRACE)
 ```
 
-这样，CMake GUI 可将 `LOG_LEVEL` 显示为下拉选项，而不是普通的文本框。
+`STRINGS` 让字符串缓存变量以选项列表呈现；`HELPSTRING` 补充或修改说明文本；`ADVANCED` 把变量折叠进高级选项，通常通过 `mark_as_advanced()` 设置，避免普通用户被大量调试开关干扰。
 
-### 8.7 属性的继承和作用域
-
-属性的作用范围不同，继承和传递方式也不同：
-
-* 目录属性主要影响当前目录及其子目录中的目标；
-* 目标自身属性只影响该目标；
-* 以 `INTERFACE_` 开头的目标属性用于影响依赖该目标的使用方；
-* 源文件属性只影响指定源文件；
-* 测试属性只影响指定测试；
-* 全局属性影响整个构建系统。
-
-使用属性时，可遵循以下原则：
-
-1. 优先使用目标命令表达目标的编译、链接和使用要求；
-2. 只有少量目标确实需要同一配置时，再考虑目录属性；
-3. 优先使用导入目标传递依赖，而不是直接传递绝对目录和库路径；
-4. 公开头文件和公开依赖项使用 `PUBLIC` 或 `INTERFACE`，实现私有依赖使用 `PRIVATE`；
-5. 只在文件确实需要例外配置时使用源文件属性；
-6. 用 `RUNTIME_OUTPUT_DIRECTORY`、`LIBRARY_OUTPUT_DIRECTORY` 和 `ARCHIVE_OUTPUT_DIRECTORY` 管理产物位置，而不是依赖构建系统的默认位置。
-
-合理使用属性可以让编译配置随目标和依赖关系准确传递。滥用全局目录属性或接口属性则可能导致配置意外扩散，使不同平台、目标和构建模式之间的行为难以预料。
+属性所在的作用域决定了配置的传播范围：目录属性影响本目录及其子目录中的目标，目标属性只影响自身，`INTERFACE_` 开头的属性随依赖关系传递给使用方，源文件属性、测试属性和缓存变量属性则只作用于对应对象。日常项目中应优先用目标命令表达编译、链接和使用要求，仅在目标命令无法表达时才回退到通用属性写法，并避免把个别目标的需求提升为全局或目录级配置。
 
 ## 9. CMake 自定义命令
 
-通常，软件项目的构建过程不仅包括编译库和可执行文件。在许多情况下，在构建过程期间或之后可能需要额外的任务。常见的示例包括：移动生成的可执行文件；对可执行文件进行后处理等。CMake 支持使用 add_custom_command 和 add_custom_target 命令来执行这些其他任务。本章将描述如何使用自定义命令和目标来执行 CMake 本身不支持的复杂任务。
+软件项目的构建过程并不只有编译库和可执行文件，还经常需要额外任务，例如用脚本生成源代码、拷贝资源文件，或在构建完成后对产物进行后处理。CMake 用两个命令描述这类任务：[`add_custom_command()`](https://cmake.com.cn/cmake/help/latest/command/add_custom_command.html) 为某个目标或某个待生成的文件定义构建规则，[`add_custom_target()`](https://cmake.com.cn/cmake/help/latest/command/add_custom_target.html) 定义一个没有编译产物的“动作”目标。前者描述“某个文件如何生成、某个目标构建后做什么”，后者描述“执行某个动作”。
 
 ### 9.1 添加自定义命令
 
-要添加一个自定义命令，请使用 [`add_custom_command`](https://cmake.com.cn/cmake/help/latest/command/add_custom_command.html#command:add_custom_command) 命令。现在自定义一个在可执行文件构建后对其进行复制的命令：
+[`add_custom_command()`](https://cmake.com.cn/cmake/help/latest/command/add_custom_command.html) 有 `TARGET` 和 `OUTPUT` 两种常用形式。以 `TARGET ... POST_BUILD` 形式在目标构建完成后追加动作，适合拷贝产物或运行后处理工具：
 
 ```cmake
-# first define the executable target as usual
-add_executable(Foo bar.c)
+add_executable(app main.cpp)
 
-# then add the custom command to copy it
-add_custom_command(
-  TARGET Foo
-  POST_BUILD
-  COMMAND ${CMAKE_COMMAND}
-  ARGS -E copy $<TARGET_FILE:Foo> /testing_department/files
-  )
+add_custom_command(TARGET app POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/dist"
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:app> "${CMAKE_BINARY_DIR}/dist"
+  COMMENT "Copying app to dist"
+)
 ```
 
-这将在构建后把生成的 Foo 可执行文件从其构建位置复制到 /testing_department/files 目录。
+上例在 `app` 链接完成后，先创建输出目录，再把刚生成的可执行文件复制过去。`$<TARGET_FILE:app>` 是生成器表达式，在生成阶段才展开为产物的完整路径，因此不受平台前缀、后缀和输出目录的影响。一次调用可以包含多条 `COMMAND`，它们按书写顺序执行。
+
+以 `OUTPUT` 形式声明一个待生成的文件，适合代码生成：
+
+```cmake
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/proto/message.pb.cc"
+  COMMAND protoc --cpp_out "${CMAKE_CURRENT_BINARY_DIR}/proto" message.proto
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/message.proto"
+  COMMENT "Generating protobuf sources"
+  VERBATIM
+)
+
+add_library(messages "${CMAKE_CURRENT_BINARY_DIR}/proto/message.pb.cc")
+```
+
+`DEPENDS` 声明输入文件，输入变化时 CMake 会重新执行命令；`VERBATIM` 让参数按原样传给命令，路径中含空格或特殊字符时尤其必要。这种形式的命令只在同一目录中、有目标把它的输出作为源文件或依赖时才会执行，因此必须像上例那样把输出加入目标，而不是只写一条孤立的 `OUTPUT`。
+
+两种形式都支持用 `COMMENT` 打印构建说明，用 `WORKING_DIRECTORY` 指定命令的执行目录。
 
 ### 9.2 添加自定义目标
 
-通常情况下，CMake 目标是指可执行文件和库。在此之外，CMake 还支持一个更通用的目标概念，称为自定义目标，可以在你想要目标概念但不想要最终产品是库或可执行文件时使用，即定义一个“动作”目标。要添加一个自定义目标，请使用 [`add_custom_target`](https://cmake.com.cn/cmake/help/latest/command/add_custom_target.html#command:add_custom_target) 命令。以下示例展示了如何使用 add_custom_target 创建一个目标来运行 Python 脚本：
+通常情况下，CMake 目标指的是可执行文件和库。在此之外，还支持一种更通用的目标，称为自定义目标，用于需要目标概念、但最终产物不是库或可执行文件的场景，即定义一个“动作”目标。要添加自定义目标，请使用 [`add_custom_target()`](https://cmake.com.cn/cmake/help/latest/command/add_custom_target.html) 命令：
 
 ```cmake
-# 创建一个自定义目标，运行 Python 脚本
-add_custom_target(run_script
-   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/setup.py
-   COMMENT "Running setup script..."
+find_package(Python COMPONENTS Interpreter REQUIRED)
+
+add_custom_target(run_setup
+  COMMAND ${Python_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/scripts/setup.py"
+  COMMENT "Running setup script"
 )
 ```
 
-运行 `make run_script` 即可触发该目标，执行脚本。如果希望自定义目标成为默认构建的一部分，可以添加 `ALL` 参数：
+该目标不会自动执行，需要显式指定：
+
+```sh
+cmake --build build --target run_setup
+```
+
+为它加上 `ALL` 参数，即可让目标参与默认构建，`COMMAND` 同样可以有多条：
 
 ```cmake
-add_custom_target(clean_all ALL
-   COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/output
-   COMMENT "Cleaning all generated files..."
+add_custom_target(copy_assets ALL
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/assets"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${CMAKE_BINARY_DIR}/assets"
+  COMMENT "Copying assets"
 )
 ```
 
-直接运行 `make` 时，该目标会自动执行。如果自定义目标依赖其他内容，可使用 `DEPENDS` 参数指定：
+自定义目标与普通目标之间没有隐含的顺序关系，即使两者都参与默认构建，`copy_assets` 也可能在 `app` 之后才执行。需要保证顺序时，用 [`add_dependencies()`](https://cmake.com.cn/cmake/help/latest/command/add_dependencies.html) 声明依赖：
 
 ```cmake
-add_custom_command(
-    OUTPUT printout
-    COMMAND ${CMAKE_COMMAND} -E echo "Compile finish"
-)
-add_custom_target(finish ALL DEPENDS printout)
-
+add_dependencies(app copy_assets)
 ```
+
+此外，自定义目标没有输出文件，CMake 每次都认为它已过期，其 `COMMAND` 会在每次构建时执行，因此它适合“总要做”的动作。需要按输入变化决定是否重新生成时，应改用带 `OUTPUT` 的自定义命令，再通过 `add_custom_target(... DEPENDS <output>)` 或目标的源文件引用它的输出。
+
+两个命令经常配合使用：用 `OUTPUT` 形式描述生成规则，再用 `add_custom_target()` 把生成过程聚合成一个可单独调用的目标，使代码生成既能参与默认构建，也能按需触发。
 
 ## 10. CMake 工具链
+
+CMake 默认在当前主机上自动探测编译器、链接器和构建工具，即使用宿主工具链。当需要换一套编译器，或为其它平台交叉编译（如 aarch64 嵌入式 Linux、Android）时，自动探测会得到与目标不一致的结果，此时需要用工具链文件（toolchain file）描述本次配置要使用的编译器、目标系统和搜索路径。工具链文件是普通的 `.cmake` 脚本，在 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html) 之前由 CMake 读取，通过预先设置编译器相关的变量来改变探测方式。
+
+### 10.1 指定工具链文件
+
+通过 `CMAKE_TOOLCHAIN_FILE` 缓存变量传入工具链文件路径，建议使用绝对路径：
+
+```sh
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=/path/to/toolchains/aarch64-linux.cmake
+```
+
+也可以在 `CMakePresets.json` 的 `toolchainFile` 字段中指定，或用同名环境变量提供默认值，效果一致。有两点需要留意：该变量在首次配置时生效并写入缓存，更换工具链后应删除构建目录重新配置，否则编译器探测结果仍会沿用旧值；工具链文件只负责“用哪套工具编译”，项目本身的构建逻辑仍由 `CMakeLists.txt` 描述。
+
+没有交叉编译需求时，工具链文件同样适合在同一主机上固定编译器，例如为 Windows 构建改用 MinGW 的 `gcc`，此时只需设置 `CMAKE_C_COMPILER` 和 `CMAKE_CXX_COMPILER` 两个变量。
+
+### 10.2 编写工具链文件
+
+交叉编译是最典型的场景。以在 x86_64 主机上构建 aarch64 Linux 程序为例：
+
+```cmake
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR aarch64)
+
+set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
+set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
+
+set(CMAKE_SYSROOT /opt/sysroot/aarch64)
+set(CMAKE_FIND_ROOT_PATH "${CMAKE_SYSROOT}")
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+```
+
+上述变量各自的作用是：
+
+| 变量 | 作用 |
+| --- | --- |
+| `CMAKE_SYSTEM_NAME` | 目标系统名称，设为非空值即进入交叉编译模式，`CMAKE_CROSSCOMPILING` 随之为真 |
+| `CMAKE_SYSTEM_PROCESSOR` | 目标处理器架构，供项目内条件判断使用 |
+| `CMAKE_C_COMPILER`、`CMAKE_CXX_COMPILER` | 目标平台的 C 和 C++ 编译器，可写绝对路径，也可写 `PATH` 中的名字 |
+| `CMAKE_SYSROOT` | 目标根文件系统，编译器据此查找目标平台的头文件和运行库 |
+| `CMAKE_FIND_ROOT_PATH` | `find_package()`、`find_library()` 等命令的搜索根目录，指向目标平台的安装前缀 |
+| `CMAKE_FIND_ROOT_PATH_MODE_*` | 控制各类 `find_*()` 命令是否在搜索根目录内查找 |
+
+将 `CMAKE_FIND_ROOT_PATH_MODE_PROGRAM` 设为 `NEVER`，是因为代码生成器一类的工具（如 `protoc`）需要在主机上运行，只有库、头文件和包才应从目标平台的前缀中查找，这正是第 7 章中 `find_package()` 在交叉编译环境下的搜索依据。若工具链没有可用的链接器（常见于裸机嵌入式），可再设置 `CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY`，让 CMake 改用静态库完成编译器探测，避免因链接失败而误判编译器不可用。
+
+### 10.3 与包管理器配合
+
+除交叉编译外，工具链文件最常用于接入包管理器。以 vcpkg 为例，把它的工具链文件传给 CMake，`find_package()` 便会从 vcpkg 安装的依赖中查找：
+
+```sh
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake
+```
+
+配合 `VCPKG_TARGET_TRIPLET` 可以选择目标三元组，例如 `x64-windows-static` 使用静态链接的依赖，`x64-linux` 用于 Linux 目标。由于 `CMAKE_TOOLCHAIN_FILE` 只能有一个，需要同时做交叉编译时，应改用 vcpkg 的 `VCPKG_CHAINLOAD_TOOLCHAIN_FILE` 指定自己的工具链文件，由 vcpkg 工具链在其后加载，两套设置才能叠加生效。
+
+工具链文件把“如何找到并驱动编译器”从项目中分离出来，同一份 `CMakeLists.txt` 只需切换工具链文件，就能分别构建主机程序和目标平台程序。日常使用中最需要记住三点：工具链文件在 `project()` 之前生效，更换工具链后要重新配置构建目录，交叉编译时的库和头文件应通过搜索根路径查找，而不是写死绝对路径。
 
 ## 11. References
 
