@@ -1020,6 +1020,7 @@ target_link_libraries(project_target PRIVATE ZLIB::ZLIB)
 | [`CMakePrintSystemInformation`](https://cmake.com.cn/cmake/help/latest/module/CMakePrintSystemInformation.html) | 包含此模块将会自动打印系统信息
 | [`CMakePackageConfigHelpers`](https://cmake.com.cn/cmake/help/latest/module/CMakePackageConfigHelpers.html)     | 提供命令用于创建可被其他项目包含以查找和使用包的配置文件
 | [`CMakeDependentOption`](https://cmake.com.cn/cmake/help/latest/module/CMakeDependentOption.html)               | 提供用于定义布尔选项的命令
+| [`CMakeFindDependencyMacro`](https://cmake.com.cn/cmake/help/latest/module/CMakeFindDependencyMacro.html)       | 提供用于查找包的依赖项的宏命令
 | [`CPack`](https://cmake.com.cn/cmake/help/latest/module/CPack.html)                                             | 该模块为二进制安装程序和源码包配置生成器
 | [`CTest`](https://cmake.com.cn/cmake/help/latest/module/CTest.html)                                             | 在项目的顶层 `CMakeLists.txt` 文件中包含此模块，可启用 `CTest` 测试
 | [`ExternalData`](https://cmake.com.cn/cmake/help/latest/module/ExternalData.html)                               | 提供用于管理存储在源树之外的数据文件的命令
@@ -1030,6 +1031,7 @@ target_link_libraries(project_target PRIVATE ZLIB::ZLIB)
 | [`GenerateExportHeader`](https://cmake.com.cn/cmake/help/latest/module/GenerateExportHeader.html)               | 提供用于生成头文件的命令
 | [`GoogleTest`](https://cmake.com.cn/cmake/help/latest/module/GoogleTest.html)                                   | 提供用于辅助使用 Google Test 框架的命令
 | [`ProcessorCount`](https://cmake.com.cn/cmake/help/latest/module/ProcessorCount.html)                           | 提供用于确定处理器/核心数量的命令
+| [`GNUInstallDirs`](https://cmake.com.cn/cmake/help/latest/module/GNUInstallDirs.html)                           | 根据 GNU 编码标准定义了安装目录变量，<br>并提供了一个用于计算与安装相关的绝对路径的命令。
 
 以 [`CheckIncludeFile`](https://cmake.com.cn/cmake/help/latest/module/CheckIncludeFile.html) 检查 C 头文件模块为例，查找 C 头文件 `<unistd.h>` 是否存在，并将检查结果存储在 `HAVE_UNISTD_H` 缓存变量中。使用方式如下：
 
@@ -1078,8 +1080,8 @@ custom_module_function()
 
 CMake 直接支持两类包：
 
-* **配置文件包**：由上游随库一起提供 `FooConfig.cmake` 或 `foo-config.cmake`，其中记录了包的位置、导出的目标及其使用要求；
-* **查找模块包**：由下游编写 `FindFoo.cmake`，通过搜索头文件、库等资源推断包的位置，适用于未使用 CMake 构建、也没有提供配置文件的上游。
+* **配置文件包**：由上游随库一起提供 `<PackageName>Config.cmake` 或 `<PackageName>-config.cmake`，其中记录了包的位置、导出的目标及其使用要求；
+* **查找模块包**：由下游编写 `Find<PackageName>.cmake`，通过搜索头文件、库等资源推断包的位置，适用于未使用 CMake 构建、也没有提供配置文件的上游。
 
 现代依赖大多以配置文件包的形式发布，因此本节以配置文件包为主；查找模块的编写方式已在第 6 章介绍。
 
@@ -1097,7 +1099,7 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui)
 | 关键字 | 作用 |
 | --- | --- |
 | `REQUIRED` | 找不到包时终止配置 |
-| `QUIET` | 抑制默认的查找信息，结果仍由 `<PackageName>_FOUND` 表示 |
+| `QUIET` | 抑制输出默认的查找信息，查找结果仍可通过 `<PackageName>_FOUND` 判断 |
 | `CONFIG` | 只使用配置文件包 |
 | `MODULE` | 只使用查找模块包 |
 | `COMPONENTS` | 指定需要的组件 |
@@ -1109,7 +1111,7 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui)
 target_link_libraries(app PRIVATE OpenSSL::SSL Qt6::Core)
 ```
 
-这些名称通常带有 `::` 命名空间，由包配置文件或查找模块定义。导入目标携带了依赖所需的包含目录、编译定义和链接库，会沿依赖关系自动传递给使用方，正是第 5 章所述“使用要求”在包场景下的体现。一旦链接了导入目标，CMake 还能在下游未查找该包时给出明确诊断。
+这些导入目标名称通常带有 `::` 命名空间，由包配置文件或查找模块定义。导入目标携带了依赖所需的包含目录、编译定义和链接库，会沿依赖关系自动传递给使用方。
 
 若包是可选依赖，应去掉 `REQUIRED`，并通过 `<PackageName>_FOUND` 判断结果：
 
@@ -1132,7 +1134,7 @@ cmake -S . -B build -DCMAKE_PREFIX_PATH=/opt/deps
 
 ### 7.2 导出并安装包
 
-要让其他项目通过 `find_package(Foo)` 使用自己的库，除了安装库文件和头文件，还需要随安装提供包配置文件和版本文件。一个最小可用的结构如下：
+要让其他项目通过 [`find_package()`](https://cmake.com.cn/cmake/help/latest/command/find_package.html) 使用自己的库，除了安装库文件和头文件，还需要随安装提供包配置文件和版本文件。一套最小但完整的 CMake 安装/导出配置如下：
 
 ```cmake
 project(Foo VERSION 1.2.0 LANGUAGES CXX)
@@ -1190,9 +1192,9 @@ install(FILES
 * `BUILD_INTERFACE` 与 `INSTALL_INTERFACE` 分别描述构建树和安装树中的包含目录，后者是相对安装前缀的路径；
 * `install(TARGETS ... EXPORT FooTargets)` 把 `Foo` 加入名为 `FooTargets` 的导出集，`install(EXPORT)` 据此生成供下游读取的目标文件；
 * `NAMESPACE Foo::` 使导出的目标名为 `Foo::Foo`；
-* `configure_package_config_file()` 生成 `FooConfig.cmake`，`write_basic_package_version_file()` 生成版本文件，二者与 `FooTargets.cmake` 安装到同一目录，一次完整的查找才得以成立。
+* `configure_package_config_file()` 生成 `FooConfig.cmake`，`write_basic_package_version_file()` 生成版本文件，二者与 `FooTargets.cmake` 安装到同一目录，一次完整的查找才得以成立。版本文件决定 [`find_package()`](https://cmake.com.cn/cmake/help/latest/command/find_package.html) 请求的版本是否被接受，其 `COMPATIBILITY` 应与项目的兼容策略一致。常用的 `SameMajorVersion` 表示同一主版本内向后兼容，因此版本 1.3 可以满足对 1.2 的请求，而 2.0 不能。
 
-包配置模板通常只负责引入导出的目标：
+其中，包配置模板文件 FooConfig.cmake.in 通常只负责引入导出的目标，内容如下：
 
 ```cmake
 @PACKAGE_INIT@
@@ -1209,11 +1211,9 @@ find_package(Foo 1.2 REQUIRED)
 target_link_libraries(app PRIVATE Foo::Foo)
 ```
 
-版本文件决定 `find_package()` 请求的版本是否被接受，其 `COMPATIBILITY` 应与项目的兼容策略一致。常用的 `SameMajorVersion` 表示同一主版本内向后兼容，因此版本 1.3 可以满足对 1.2 的请求，而 2.0 不能。
-
 ### 7.3 公开依赖与可重定位
 
-如果 `Foo` 的公开头文件依赖另一个包 `Bar`，就应将其声明为 `PUBLIC` 依赖，并在包配置文件中一并查找：
+如果一个包（如 `Foo`）的公开头文件依赖另一个包（如 `Bar`），就应将其声明为 `PUBLIC` 依赖，并在包配置文件中一并查找：
 
 ```cmake
 # CMakeLists.txt
@@ -1222,7 +1222,7 @@ target_link_libraries(Foo PUBLIC Bar::Bar)
 ```
 
 ```cmake
-# cmake/FooConfig.cmake.in
+# FooConfig.cmake.in
 @PACKAGE_INIT@
 
 include(CMakeFindDependencyMacro)
@@ -1476,7 +1476,7 @@ add_dependencies(app copy_assets)
 
 ## 10. CMake 工具链
 
-CMake 默认在当前主机上自动探测编译器、链接器和构建工具，即使用宿主工具链。当需要换一套编译器，或为其它平台交叉编译（如 aarch64 嵌入式 Linux、Android）时，自动探测会得到与目标不一致的结果，此时需要用工具链文件（toolchain file）描述本次配置要使用的编译器、目标系统和搜索路径。工具链文件是普通的 `.cmake` 脚本，在 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html) 之前由 CMake 读取，通过预先设置编译器相关的变量来改变探测方式。
+CMake 默认在当前主机上自动探测编译器、链接器和构建工具，即使用宿主工具链。当需要换一套编译器，或为其它平台交叉编译（如 aarch64 嵌入式 Linux）时，自动探测会得到与目标不一致的结果，此时需要用工具链文件描述本次配置要使用的编译器、目标系统和搜索路径。工具链文件是普通的 `.cmake` 脚本，在 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html) 之前由 CMake 读取，通过预先设置编译器相关的变量来改变探测方式。
 
 ### 10.1 指定工具链文件
 
