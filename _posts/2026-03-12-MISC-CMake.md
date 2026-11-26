@@ -1472,7 +1472,7 @@ add_dependencies(app copy_assets)
 
 此外，自定义目标没有输出文件，CMake 每次都认为它已过期，其 `COMMAND` 会在每次构建时执行，因此它适合“总要做”的动作。需要按输入变化决定是否重新生成时，应改用带 `OUTPUT` 的自定义命令，再通过 `add_custom_target(... DEPENDS <output>)` 或目标的源文件引用它的输出。
 
-两个命令经常配合使用：用 `OUTPUT` 形式描述生成规则，再用 `add_custom_target()` 把生成过程聚合成一个可单独调用的目标，使代码生成既能参与默认构建，也能按需触发。
+两个命令经常配合使用：用 `OUTPUT` 形式描述生成规则，再用 [`add_custom_target()`](https://cmake.com.cn/cmake/help/latest/command/add_custom_target.html) 把生成过程聚合成一个可单独调用的目标，使代码生成既能参与默认构建，也能按需触发。
 
 ## 10. CMake 工具链
 
@@ -1510,30 +1510,9 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 ```
 
-上述变量各自的作用是：
+将 `CMAKE_FIND_ROOT_PATH_MODE_PROGRAM` 设为 `NEVER`，是因为代码生成器一类的工具（如 `protoc`）需要在主机上运行，只有库、头文件和包才应从目标平台的前缀中查找，这正是第 7 章中 [`find_package()`](https://cmake.com.cn/cmake/help/latest/command/find_package.html) 在交叉编译环境下的搜索依据。若工具链没有可用的链接器（常见于裸机嵌入式），可再设置 `CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY`，让 CMake 改用静态库完成编译器探测，避免因链接失败而误判编译器不可用。
 
-| 变量 | 作用 |
-| --- | --- |
-| `CMAKE_SYSTEM_NAME` | 目标系统名称，设为非空值即进入交叉编译模式，`CMAKE_CROSSCOMPILING` 随之为真 |
-| `CMAKE_SYSTEM_PROCESSOR` | 目标处理器架构，供项目内条件判断使用 |
-| `CMAKE_C_COMPILER`、`CMAKE_CXX_COMPILER` | 目标平台的 C 和 C++ 编译器，可写绝对路径，也可写 `PATH` 中的名字 |
-| `CMAKE_SYSROOT` | 目标根文件系统，编译器据此查找目标平台的头文件和运行库 |
-| `CMAKE_FIND_ROOT_PATH` | `find_package()`、`find_library()` 等命令的搜索根目录，指向目标平台的安装前缀 |
-| `CMAKE_FIND_ROOT_PATH_MODE_*` | 控制各类 `find_*()` 命令是否在搜索根目录内查找 |
-
-将 `CMAKE_FIND_ROOT_PATH_MODE_PROGRAM` 设为 `NEVER`，是因为代码生成器一类的工具（如 `protoc`）需要在主机上运行，只有库、头文件和包才应从目标平台的前缀中查找，这正是第 7 章中 `find_package()` 在交叉编译环境下的搜索依据。若工具链没有可用的链接器（常见于裸机嵌入式），可再设置 `CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY`，让 CMake 改用静态库完成编译器探测，避免因链接失败而误判编译器不可用。
-
-### 10.3 与包管理器配合
-
-除交叉编译外，工具链文件最常用于接入包管理器。以 vcpkg 为例，把它的工具链文件传给 CMake，`find_package()` 便会从 vcpkg 安装的依赖中查找：
-
-```sh
-cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake
-```
-
-配合 `VCPKG_TARGET_TRIPLET` 可以选择目标三元组，例如 `x64-windows-static` 使用静态链接的依赖，`x64-linux` 用于 Linux 目标。由于 `CMAKE_TOOLCHAIN_FILE` 只能有一个，需要同时做交叉编译时，应改用 vcpkg 的 `VCPKG_CHAINLOAD_TOOLCHAIN_FILE` 指定自己的工具链文件，由 vcpkg 工具链在其后加载，两套设置才能叠加生效。
-
-工具链文件把“如何找到并驱动编译器”从项目中分离出来，同一份 `CMakeLists.txt` 只需切换工具链文件，就能分别构建主机程序和目标平台程序。日常使用中最需要记住三点：工具链文件在 `project()` 之前生效，更换工具链后要重新配置构建目录，交叉编译时的库和头文件应通过搜索根路径查找，而不是写死绝对路径。
+工具链文件把“如何找到并驱动编译器”从项目中分离出来，同一份 `CMakeLists.txt` 只需切换工具链文件，就能分别构建主机程序和目标平台程序。日常使用中最需要记住三点：工具链文件在 [`project()`](https://cmake.com.cn/cmake/help/latest/command/project.html) 之前生效，更换工具链后要重新配置构建目录，交叉编译时的库和头文件应通过搜索根路径查找。
 
 ## 11. References
 
