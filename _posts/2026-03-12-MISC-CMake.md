@@ -62,27 +62,26 @@ CMakeLists 文件的第一行应始终是 [`cmake_minimum_required`](https://cma
 
 #### 3.2.1 从命令行运行 CMake
 
-在命令行中运行 `cmake`，并通过参数指定源码目录、构建目录及所需配置，即可完成项目配置并生成对应的构建系统文件。下面介绍几个常用参数。
+在命令行中运行 `cmake`，并通过参数指定源码目录、构建目录及所需配置，即可完成项目配置并生成对应的构建系统文件。下面介绍常用格式及参数。
 
-cmake -S dir
+##### 3.2.1.1 生成构建系统阶段
+
+使用下述任一命令形式运行 CMake，以指定源码树与构建树，并生成构建系统：
+
+```shell
+cmake [<options>] -B <path-to-build> [-S <path-to-source>]
+cmake [<options>] <path-to-source | path-to-existing-build>
+```
+支持以下常用选项：
+
+`-S <path-to-source>`
 : 指定项目根目录，该目录应包含根 CMakeLists.txt 文件，CMake 将在此寻找要构建的项目。如果未指定，则默认为当前工作目录。
 
-cmake -B dir
+`-B <path-to-build>`
 : 指定构建目录，CMake 将在此目录中输出生成的构建系统的文件，以及在运行构建系统时产生的缓存文件。如果未指定，则默认为当前工作目录。
 
-cmake --build dir
-: 在指定的构建目录中运行构建系统。
-
-cmake -G
-: 指定生成器，生成器决定 CMake 为构建目录生成哪种原生构建系统文件，例如 Ninja 或 Makefile。
-
-![Single Source Build](/assets/img/post/MISC-Tools-SingleSourceBuild.png){: .shadow }{: width="600" height="337" }
-
-向 CMake 指定编译器
-: 若需使用特定编译器，可在首次配置时通过 `CMAKE_C_COMPILER`、`CMAKE_CXX_COMPILER` 指定，或使用 `CC`、`CXX` 环境变量。`CFLAGS`、`CXXFLAGS` 和 `LDFLAGS` 可用于初始化相应的编译或链接标志。编译器选择会记录在构建目录的缓存中；更换编译器时，建议使用新的构建目录。
-
-向 CMake 指定构建配置
-: 构建配置允许以调试、优化等不同的方式构建项目。默认情况下，CMake 支持 `Debug`、`Release`、`MinSizeRel` 和 `RelWithDebInfo` 配置。`Debug` 是启用基本的调试标志。`Release` 是启用基本的优化标志。`MinSizeRel` 具有生成最小目标代码的标志，但不一定是速度最快的代码。`RelWithDebInfo` 构建具有调试信息的优化版本。
+`-D <var=value>`
+: 创建或更新一个 CMake 缓存项。<br><br>例如向 CMake 指定编译器，若需使用特定编译器，可在首次配置时通过 `CMAKE_C_COMPILER`、`CMAKE_CXX_COMPILER` 指定，或使用 `CC`、`CXX` 环境变量。`CFLAGS`、`CXXFLAGS` 和 `LDFLAGS` 可用于初始化相应的编译或链接标志。编译器选择会记录在构建目录的缓存中；更换编译器时，建议使用新的构建目录。<br><br>又例如向 CMake 指定构建配置。构建配置允许以调试、优化等不同的方式构建项目。默认情况下，CMake 支持 `Debug`、`Release`、`MinSizeRel` 和 `RelWithDebInfo` 配置。`Debug` 是启用基本的调试标志。`Release` 是启用基本的优化标志。`MinSizeRel` 具有生成最小目标代码的标志，但不一定是速度最快的代码。`RelWithDebInfo` 构建具有调试信息的优化版本。
 
   | 构建类型             | 编译选项               | 适用场景
   | ---                 | ---                   | ---
@@ -91,15 +90,150 @@ cmake -G
   | `RelWithDebInfo`    | `-O2 -g`              | 需要性能分析或调试优化的发布版本
   | `MinSizeRel`        | `-Os`                 | 嵌入式或对体积敏感的场景
 
-对于基于 Makefile 的生成器，在运行 CMake 时只能激活一个配置，并使用 `CMAKE_BUILD_TYPE` 变量指定。如果变量为空，则不会向构建添加任何标志。要构建调试和发布树，用户应使用 CMake 的源外构建功能创建多个构建目录，并将 `CMAKE_BUILD_TYPE` 设置为每个构建所需的选项。例如：
+  对于基于 Makefile 的生成器，在运行 CMake 时只能激活一个配置，并使用 `CMAKE_BUILD_TYPE` 变量指定。如果变量为空，则不会向构建添加任何标志。要构建调试和发布树，用户应使用 CMake 的源外构建功能创建多个构建目录，并将 `CMAKE_BUILD_TYPE` 设置为每个构建所需的选项。例如：
 
-```cmake
-# With source code in the directory MyProject
-# to build MyProject-debug create that directory, cd into it and
-cmake ../MyProjectd -DCMAKE_BUILD_TYPE=Debug
-# the same idea is used for the release tree MyProject-release
-cmake ../MyProject -DCMAKE_BUILD_TYPE=Release
+  ```cmake
+  # With source code in the directory MyProject
+  # to build MyProject-debug create that directory, cd into it and
+  cmake ../MyProjectd -DCMAKE_BUILD_TYPE=Debug
+  # the same idea is used for the release tree MyProject-release
+  cmake ../MyProject -DCMAKE_BUILD_TYPE=Release
+  ```
+
+`-U <variables|globbing expressions>`
+: 从 CMake 缓存中移除匹配的项。
+
+`-G <generator-name>`
+: 指定生成器，生成器决定 CMake 为构建目录生成哪种原生构建系统文件，例如 Ninja 或 Makefile。
+
+  ![Single Source Build](/assets/img/post/MISC-Tools-SingleSourceBuild.png){: .shadow }{: width="600" height="337" }
+
+`--toolchain <path-to-toolchainfile>`
+: 指定交叉编译工具链文件，等价于设置 [`CMAKE_TOOLCHAIN_FILE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_TOOLCHAIN_FILE.html) 变量。
+
+`--install-prefix <directory>`
+: 指定安装目录，供 [`CMAKE_INSTALL_PREFIX`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_INSTALL_PREFIX.html) 变量使用。必须为绝对路径。
+
+`--fresh`
+: 重置构建树的配置，移除任何已存在的 CMakeCache.txt 文件和关联的 CMakeFiles/ 目录。
+
+`--log-level=<level>`
+: 设置 [`message()`](https://cmake.org/cmake/help/latest/command/message.html#command:message) 命令只输出指定级别或更高级别的日志信息，有效的日志级别是 `ERROR`，`WARNING`，`NOTICE`，`STATUS`（默认），`VERBOSE`，`DEBUG`，或 `TRACE`。
+
+`--system-information`
+: 输出系统信息。
+
+##### 3.2.1.2 构建阶段
+
+在指定的构建目录中运行构建系统：
+
+```shell
+cmake --build <dir> [<options>]
 ```
+
+支持以下常用选项：
+
+`-t <tgt> ..., --target <tgt> ...`
+: 用 `tgt` 目标取代默认目标的构建，可以给定多个目标，目标间以空格分隔。
+
+`--clean-first`
+: 先构建 `clean` 目标，执行清理操作，再构建默认或指定目标。如果只执行清理，请使用 `--target clean`。
+
+##### 3.2.1.3 安装阶段
+
+安装一个已经生成的项目二进制树：
+
+```shell
+cmake --install <dir> [<options>]
+```
+
+支持以下常用选项：
+
+`--prefix <prefix>`
+: 指定一个安装前缀，在安装阶段临时取代 `CMAKE_INSTALL_PREFIX` 变量的值，仅在本次 `cmake --install` 执行时临时生效，不修改构建缓存。
+
+##### 3.2.1.4 运行脚本
+
+`cmake -P` 让 CMake 以脚本模式处理指定文件：只按顺序执行其中的 CMake 命令，既不进行配置和生成，也不读取或修改构建树中的缓存。因此脚本模式适合完成与构建系统无关的任务，例如生成文件、调用 `cmake -E` 提供的命令行工具、检查环境或执行自定义逻辑。由于没有配置阶段，依赖构建目标的命令（如 `add_executable`）无法在脚本模式中使用。
+
+```shell
+cmake [-D <var>=<value>]... -P <cmake-script-file> [-- <unparsed-options>...]
+```
+
+支持以下常用选项：
+
+`-D <var>=<value>`
+: 为脚本模式定义一个变量。该选项必须位于 `-P` 之前，脚本中可通过 `${<var>}` 引用其值。
+
+`-P <cmake-script-file>`
+: 按脚本模式处理给定的 CMake 文件，文件中的命令会在执行到该文件时依次运行。
+
+##### 3.2.1.5 运行命令行工具
+
+`cmake -E` 提供一组文件操作和进程操作命令，由 CMake 自身实现，不依赖当前平台的 shell，因此可在 CMake 脚本、自定义构建规则和命令行中跨平台复用。运行 `cmake -E` 或 `cmake -E help` 可列出全部可用命令及简要说明。
+
+```shell
+cmake -E <command> [<options>]
+```
+
+支持以下常用命令选项：
+
+`copy <file>... <destination>`
+: 复制文件到目标文件或目录。指定多个文件时，目标必须是一个已存在的目录。
+
+`copy_if_different <file>... <destination>`
+: 仅当目标文件不存在或内容不同时才复制，可避免因无条件复制而更新目标文件的时间戳。
+
+`copy_directory <dir>... <destination>`
+: 将源目录的内容复制到目标目录；目标目录不存在时会自动创建。
+
+`copy_directory_if_different <dir>... <destination>`
+: 拷贝 `<dir>...` 目录中发生变化的内容到 `<destination>` 目录，如果 `<destination>` 目录不存在则创建它。
+
+`make_directory <dir>...`
+: 创建目录，必要时一并创建父目录；目录已存在时直接忽略，不视为错误。
+
+`rm [-rRf] <file|dir>...`
+: 删除文件或目录。`-r` 或 `-R` 递归删除目录及其内容；`-f` 使不存在的路径不产生错误。已被取代的 `remove` 和 `remove_directory` 不再推荐使用。
+
+`rename <oldname> <newname>`
+: 在同一卷内重命名文件或目录。若 `<newname>` 已存在，将被静默替换。
+
+`echo <string>...`
+: 将参数作为一行文本输出。`echo_append` 用法相同，但不在末尾输出换行符。
+
+`cat <file>...`
+: 依次输出文件内容到标准输出。参数为 `-` 时读取标准输入。
+
+`compare_files [--ignore-eol] <file1> <file2>`
+: 比较两个文件的内容：相同时返回 0，不同时返回 1。`--ignore-eol` 忽略 LF 与 CRLF 的差异。
+
+`chdir <dir> <command> [<arg>...]`
+: 先切换到指定工作目录，再运行给定命令。
+
+`env [<name>=<value>]... [--] <command> [<arg>...]`
+: 在修改后的环境变量下运行命令。`NAME=VALUE` 用于设置或覆盖变量，`--unset=NAME` 用于取消变量。
+
+`touch <file>...`
+: 文件不存在时创建空文件，已存在时更新其访问时间和修改时间。`touch_nocreate` 仅更新已存在文件的时间戳，不会新建文件。
+
+`create_symlink <old> <new>`
+: 创建指向 `old` 的符号链接 `new`，`create_hardlink` 则用于创建硬链接。两者都要求 `new` 所在的父目录已存在。
+
+`md5sum <file>...`
+: 计算文件的 MD5 校验和，输出格式与同名的 Unix 工具兼容。此外还提供 `sha1sum`、`sha224sum`、`sha256sum`、`sha384sum` 和 `sha512sum`。
+
+`tar [cxt][vf][zjJ] <archive> [<pathname>...]`
+: 创建、解压或列出归档文件。`c` 创建归档，`x` 解压，`t` 列出内容；`z`、`j`、`J` 分别使用 gzip、bzip2、XZ 压缩，`v` 输出详细过程。
+
+`time <command> [<arg>...]`
+: 运行命令并输出其执行耗时，该耗时包含 CMake 前端自身的开销。
+
+`true` / `false`
+: 不执行任何操作，分别返回成功（0）和失败（1）的退出码，可用于在脚本中显式控制返回值。
+
+`sleep <number>`
+: 等待指定秒数，`<number>` 可为浮点数，常用于在脚本中插入延时。
 
 #### 3.2.2 从 GUI 运行 CMake
 
@@ -211,6 +345,7 @@ CMake 内置了五种类别的变量，分别是提供信息、改变行为、�
 | [`CMAKE_PREFIX_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PREFIX_PATH.html)        | 指定 [`find_package()`](https://cmake.com.cn/cmake/help/latest/command/find_package.html#command:find_package)、[`find_library()`](https://cmake.com.cn/cmake/help/latest/command/find_library.html#command:find_library) 等的搜索路径前缀列表
 | [`CMAKE_PROGRAM_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_PROGRAM_PATH.html)      | 指定 [`find_program()`](https://cmake.com.cn/cmake/help/latest/command/find_program.html#command:find_program) 命令的搜索路径列表
 | [`CMAKE_MODULE_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_MODULE_PATH.html)        | 指定由 [`include()`](https://cmake.com.cn/cmake/help/latest/command/include.html#command:include) 或 [`find_package()`](https://cmake.com.cn/cmake/help/latest/command/find_package.html#command:find_package) 命令加载 CMake 模块的搜索路径
+| [`CMAKE_MESSAGE_LOG_LEVEL`](https://cmake.org/cmake/help/latest/variable/CMAKE_MESSAGE_LOG_LEVEL.html)  | 指定 [`message()`](https://cmake.org/cmake/help/latest/command/message.html#command:message) 命令的日志等级
 | [`CMAKE_SYSROOT`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSROOT.html) | 指定编译器的 `--sysroot` 标志的根目录路径
 | [`CMAKE_FIND_ROOT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH.html)  | 指定备选的根目录查找路径列表
 | [`CMAKE_FIND_`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_INCLUDE.html)<br>[`ROOT_PATH_MODE_INCLUDE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_INCLUDE.html) | 控制查找文件和目录时，<br>是否搜索 [`CMAKE_FIND_ROOT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH.html) 和 [`CMAKE_SYSROOT`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSROOT.html) 中定义的路径
@@ -218,6 +353,7 @@ CMake 内置了五种类别的变量，分别是提供信息、改变行为、�
 | [`CMAKE_FIND_`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_PACKAGE.html)<br>[`ROOT_PATH_MODE_PACKAGE`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_PACKAGE.html) | 控制查找包时，<br>是否搜索 [`CMAKE_FIND_ROOT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH.html) 和 [`CMAKE_SYSROOT`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSROOT.html) 中定义的路径
 | [`CMAKE_FIND_`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_PROGRAM.html)<br>[`ROOT_PATH_MODE_PROGRAM`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_PROGRAM.html) | 控制查找程序时，<br>是否搜索 [`CMAKE_FIND_ROOT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH.html) 和 [`CMAKE_SYSROOT`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_SYSROOT.html) 中定义的路径
 | [`CMAKE_FIND_`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH.html)<br>[`USE_SYSTEM_ENVIRONMENT_PATH`](https://cmake.com.cn/cmake/help/latest/variable/CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH.html) | 默认为 `TRUE`，决定是否搜索由标准系统环境变量提供的路径
+
 
 | 描述系统的内置变量                          | 作用                                   
 | ---                                       | ---    
@@ -481,7 +617,7 @@ add_executable(hello world.c)
 | [`include`](https://cmake.com.cn/cmake/help/latest/command/include.html) | 从文件或模块加载并运行 CMake 代码
 | [`list`](https://cmake.com.cn/cmake/help/latest/command/list.html) | 对分号分隔的列表进行操作
 | [`macro`](https://cmake.com.cn/cmake/help/latest/command/macro.html) / [`endmacro`](https://cmake.com.cn/cmake/help/latest/command/endmacro.html) | 定义一个宏
-| [`message`](https://cmake.com.cn/cmake/help/latest/command/message.html) | 记录并输出消息
+| [`message`](https://cmake.com.cn/cmake/help/latest/command/message.html) | 记录并输出信息
 | [`option`](https://cmake.com.cn/cmake/help/latest/command/option.html) | 提供可以选择的布尔选项
 | [`return`](https://cmake.com.cn/cmake/help/latest/command/return.html) | 从文件、目录或函数中返回
 | [`separate_arguments`](https://cmake.com.cn/cmake/help/latest/command/separate_arguments.html) | 将命令行参数解析为以分号分隔的列表
