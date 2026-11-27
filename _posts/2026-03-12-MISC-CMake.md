@@ -726,7 +726,7 @@ endif()
 : 如果给定名称对应一个可调用的命令、宏或函数，则为真。
 
 `if(TARGET <target-name>)`
-: 如果给定名称对应一个已创建的逻辑目标，则为真。目标须已由 `add_executable()`、`add_library()` 或 `add_custom_target()` 创建。
+: 如果给定名称对应一个已创建的逻辑目标，则为真。目标须已由 `[`add_executable()`](https://cmake.com.cn/cmake/help/latest/command/add_executable.html#command:add_executable)`、[`add_library()`](https://cmake.com.cn/cmake/help/latest/command/add_library.html#command:add_library) 或 [`add_custom_target()`](https://cmake.com.cn/cmake/help/latest/command/add_custom_target.html) 创建。
 
 `if(TEST <test-name>)`
 : 如果给定名称对应一个已由 `add_test()` 创建的测试，则为真。
@@ -1391,18 +1391,18 @@ target_include_directories(Foo INTERFACE
 
 CMake 属性用于保存和读取构建过程中的配置信息。属性与变量相似，但归属于特定作用域，例如全局作用域、目录、目标、源文件、测试或缓存项。配置和生成构建系统时，CMake 会读取这些属性，并转换为编译器、链接器和构建工具所需的选项。
 
-属性的主要作用范围包括：
+属性主要分类包括：
 
-| 作用范围 | 常用属性示例 | 典型用途 |
-| --- | --- | --- |
-| 全局属性 | `USE_FOLDERS` | 控制整个构建系统的行为 |
-| 目录属性 | `COMPILE_DEFINITIONS`、`INCLUDE_DIRECTORIES` | 为目录及其子目录中的目标设置默认配置 |
-| 目标属性 | `CXX_STANDARD`、`OUTPUT_NAME`、`INTERFACE_INCLUDE_DIRECTORIES` | 描述目标的编译、链接、输出和使用要求 |
-| 源文件属性 | `COMPILE_OPTIONS`、`LANGUAGE` | 为单个源文件设置例外配置 |
-| 测试属性 | `TIMEOUT`、`LABELS`、`ENVIRONMENT` | 配置测试的运行方式 |
-| 缓存项属性 | `ADVANCED`、`HELPSTRING` | 控制缓存变量在 CMake GUI 中的显示方式 |
+| 作用范围 | 典型用途 |
+| --- | --- |
+| 全局属性 |  控制整个构建系统的行为 |
+| 目录属性 |  为目录及其子目录中的目标设置默认配置 |
+| 目标属性 |  描述目标的编译、链接、输出和使用要求 |
+| 源文件属性 |  为单个源文件设置例外配置 |
+| 测试属性 |  配置测试的运行方式 |
+| 缓存项属性 |  控制缓存变量在 CMake GUI 中的显示方式 |
 
-属性名区分大小写。同一个名称也可能同时属于多个作用域，例如 `COMPILE_DEFINITIONS` 既是目录属性，也是目标属性，因此使用前应先确认它属于哪个作用域。
+属性名区分大小写。同一个名称也可能同时属于多个作用域，例如 [`COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_dir/COMPILE_DEFINITIONS.html) 既是目录属性，也是目标属性，因此使用前应先确认它属于哪个作用域。
 
 ### 8.1 属性的读取和设置
 
@@ -1436,21 +1436,26 @@ message(STATUS "app standard: ${app_standard}")
 
 ### 8.2 全局和目录属性
 
-全局属性通过 `set_property(GLOBAL ...)` 设置，日常主要用到 `USE_FOLDERS`，让支持的 IDE 按目标或目录组织工程：
+全局属性日常主要用到 [`PACKAGES_FOUND`](https://cmake.com.cn/cmake/help/latest/prop_gbl/PACKAGES_FOUND.html) 和 [`PACKAGES_NOT_FOUND`](https://cmake.com.cn/cmake/help/latest/prop_gbl/PACKAGES_NOT_FOUND.html)，指在 CMake 运行期间找到和未找到的软件包列表。
 
-```cmake
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-```
+目录属性为当前目录及其子目录中的目标提供默认配置，常用属性包括：
 
-目录属性为当前目录及其子目录中的目标提供默认配置，`add_compile_definitions()`、`add_compile_options()` 和 `include_directories()` 等便捷命令填充的正是这些属性：
+| 属性 | 作用 |
+| --- | --- |
+| [`BINARY_DIR`](https://cmake.com.cn/cmake/help/latest/prop_dir/BINARY_DIR.html) | 只读目录属性，与读取该属性的源目录相对应的二进制目录的绝对路径 |
+| [`BUILDSYSTEM_TARGETS`](https://cmake.com.cn/cmake/help/latest/prop_dir/BUILDSYSTEM_TARGETS.html) | 只读目录属性，在该目录中添加的构建系统目标列表 |
+| [`CACHE_VARIABLES`](https://cmake.com.cn/cmake/help/latest/prop_dir/CACHE_VARIABLES.html) | 只读目录属性，当前目录中可用的缓存变量列表 |
+| [`COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_dir/COMPILE_DEFINITIONS.html) | 编译目录源代码的预处理器定义 |
+| [`COMPILE_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_dir/COMPILE_DEFINITIONS.html) | 编译目录源代码的编译器选项列表 |
+| [`INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_dir/INCLUDE_DIRECTORIES.html) | 预处理器包含文件搜索目录列表 |
+| [`LINK_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_dir/LINK_DIRECTORIES.html) | 链接器搜索目录列表 |
+| [`LINK_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_dir/LINK_OPTIONS.html) | 传递给链接器的链接选项列表 |
+| [`PARENT_DIRECTORY`](https://cmake.com.cn/cmake/help/latest/prop_dir/PARENT_DIRECTORY.html) | 只读目录属性，当前子目录的源目录 |
+| [`SOURCE_DIR`](https://cmake.com.cn/cmake/help/latest/prop_dir/SOURCE_DIR.html) | 只读目录属性，源目录的绝对路径 |
+| [`SUBDIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_dir/SUBDIRECTORIES.html) | 只读目录属性，由 [`add_subdirectory()`](https://cmake.com.cn/cmake/help/latest/command/add_subdirectory.html#command:add_subdirectory) 或 [`subdirs()`](https://cmake.com.cn/cmake/help/latest/command/subdirs.html#command:subdirs) 命令处理的子目录列表 |
+| [`VARIABLES`](https://cmake.com.cn/cmake/help/latest/prop_dir/VARIABLES.html) | 只读目录属性，当前目录下定义的变量列表 |
 
-```cmake
-add_compile_definitions(PROJECT_WITH_GUI)
-add_compile_options(-Wall)
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
-```
-
-这些设置会被目录内的所有目标及其子目录继承，容易掩盖目标之间的差异，因此现代 CMake 更推荐用第 5 章的目标命令描述编译和链接设置。确有需要时，`COMPILE_DEFINITIONS`、`COMPILE_OPTIONS`、`INCLUDE_DIRECTORIES` 和 `LINK_OPTIONS` 是最常用的目录属性，也可通过 `set_property(DIRECTORY ...)` 显式设置。
+对于 [`COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_dir/COMPILE_DEFINITIONS.html)、[`COMPILE_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_dir/COMPILE_DEFINITIONS.html)、[`INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_dir/INCLUDE_DIRECTORIES.html)、[`LINK_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_dir/LINK_DIRECTORIES.html)、[`LINK_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_dir/LINK_OPTIONS.html) 这些属性，目录级的显式设置会在目标创建时用来初始化该目录内所有目标（以及后续子目录中的目标）的同名属性，容易掩盖目标之间的差异。因此现代 CMake 更推荐使用第 5 章的 [`target_compile_definitions()`](https://cmake.com.cn/cmake/help/latest/command/target_compile_definitions.html#command:target_compile_definitions) 等目标命令进行按目标配置。确有需要操作目录级属性时，也可通过 [`set_property(DIRECTORY ...)`](https://cmake.com.cn/cmake/help/latest/command/set_property.html) 显式设置，但需在创建目标之前完成。
 
 ### 8.3 目标属性
 
@@ -1458,17 +1463,17 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 | 属性 | 作用 |
 | --- | --- |
-| `CXX_STANDARD` | 指定 C++ 语言标准 |
-| `CXX_STANDARD_REQUIRED` | 是否严格要求使用指定标准，而不是回退到编译器默认的旧标准 |
-| `CXX_EXTENSIONS` | 是否允许编译器扩展的 C++ 语言特性 |
-| `OUTPUT_NAME` | 输出文件的基础名称，不含平台前缀和扩展名 |
-| `RUNTIME_OUTPUT_DIRECTORY` | 可执行文件等运行时产物的输出目录 |
-| `LIBRARY_OUTPUT_DIRECTORY` | 共享库和模块库的输出目录 |
-| `ARCHIVE_OUTPUT_DIRECTORY` | 静态库和导入库的输出目录 |
-| `DEBUG_POSTFIX` | 调试构建时追加到文件名后的后缀 |
-| `POSITION_INDEPENDENT_CODE` | 是否生成位置无关代码 |
+| [`CXX_STANDARD`](https://cmake.com.cn/cmake/help/latest/prop_tgt/CXX_STANDARD.html#prop_tgt:CXX_STANDARD) | 指定 C++ 语言标准 |
+| [`CXX_STANDARD_REQUIRED`](https://cmake.com.cn/cmake/help/latest/prop_tgt/CXX_STANDARD_REQUIRED.html) | 是否严格要求使用指定标准，而不是回退到编译器默认的旧标准 |
+| [`CXX_EXTENSIONS`](https://cmake.com.cn/cmake/help/latest/prop_tgt/CXX_EXTENSIONS.html) | 是否允许编译器扩展的 C++ 语言特性 |
+| [`OUTPUT_NAME`](https://cmake.com.cn/cmake/help/latest/prop_tgt/OUTPUT_NAME.html) | 输出文件的基础名称，不含平台前缀和扩展名 |
+| [`RUNTIME_OUTPUT_DIRECTORY`](https://cmake.com.cn/cmake/help/latest/prop_tgt/RUNTIME_OUTPUT_DIRECTORY.html) | 可执行文件等运行时产物的输出目录 |
+| [`LIBRARY_OUTPUT_DIRECTORY`](https://cmake.com.cn/cmake/help/latest/prop_tgt/LIBRARY_OUTPUT_DIRECTORY.html) | 共享库和模块库的输出目录 |
+| [`ARCHIVE_OUTPUT_DIRECTORY`](https://cmake.com.cn/cmake/help/latest/prop_tgt/ARCHIVE_OUTPUT_DIRECTORY.html) | 静态库和导入库的输出目录 |
+| [`DEBUG_POSTFIX`](https://cmake.com.cn/cmake/help/latest/prop_tgt/DEBUG_POSTFIX.html) | 调试构建时追加到文件名后的后缀 |
+| [`POSITION_INDEPENDENT_CODE`](https://cmake.com.cn/cmake/help/latest/prop_tgt/POSITION_INDEPENDENT_CODE.html) | 是否生成位置无关代码 |
 
-下面把语言标准、输出名称和输出目录集中设置，C 语言项目只需把 `CXX_STANDARD` 等换成 `C_STANDARD` 等对应属性：
+下面示例把语言标准、输出名称和输出目录集中进行设置，C 语言项目只需把 [`CXX_STANDARD`](https://cmake.com.cn/cmake/help/latest/prop_tgt/CXX_STANDARD.html#prop_tgt:CXX_STANDARD) 等换成 [`C_STANDARD`](https://cmake.com.cn/cmake/help/latest/prop_tgt/C_STANDARD.html) 等对应属性：
 
 ```cmake
 set_target_properties(app PROPERTIES
@@ -1481,7 +1486,7 @@ set_target_properties(app PROPERTIES
 )
 ```
 
-上例把目标产物统一输出到构建目录的 `bin` 下，调试构建生成 `tool_d`，其它配置生成 `tool`。名称中的前缀和扩展名由 CMake 按平台补全，例如名为 `Foo` 的库在 Linux 上生成 `libFoo.so`，在 Windows 上生成 `Foo.dll`。使用多配置生成器时，还可用 `RUNTIME_OUTPUT_DIRECTORY_DEBUG`、`RUNTIME_OUTPUT_DIRECTORY_RELEASE` 等带配置后缀的属性，为每种配置分别指定输出目录。
+上例中，目标产物被统一输出到构建目录的 `bin` 下，调试构建生成为 `tool_d`，其它配置生成为 `tool`。名称中的前缀和扩展名由 CMake 按平台补全，例如名为 `Foo` 的库在 Linux 上生成 `libFoo.so`，在 Windows 上生成 `Foo.dll`。使用多配置生成器时，还可用 `RUNTIME_OUTPUT_DIRECTORY_DEBUG`、`RUNTIME_OUTPUT_DIRECTORY_RELEASE` 等带配置后缀的属性，为每种配置分别指定输出目录。
 
 ### 8.4 源文件属性
 
@@ -1497,7 +1502,7 @@ set_property(SOURCE src/legacy.cpp PROPERTY
 )
 ```
 
-除 `COMPILE_DEFINITIONS`、`COMPILE_OPTIONS` 和 `INCLUDE_DIRECTORIES` 外，`LANGUAGE` 可指定源文件的编译语言。如果一组文件都需要相同配置，应优先使用目标属性；只有少量文件需要例外时才使用源文件属性。
+除 [`COMPILE_DEFINITIONS`](https://cmake.com.cn/cmake/help/latest/prop_fs/COMPILE_DEFINITIONS.html)、[`COMPILE_OPTIONS`](https://cmake.com.cn/cmake/help/latest/prop_fs/COMPILE_OPTIONS.html) 和 [`INCLUDE_DIRECTORIES`](https://cmake.com.cn/cmake/help/latest/prop_fs/INCLUDE_DIRECTORIES.html) 外，[`LANGUAGE`](https://cmake.com.cn/cmake/help/latest/prop_sf/LANGUAGE.html) 可指定源文件的编译语言。如果一组文件都需要相同配置，应优先使用目标属性；只有少量文件需要例外时才使用源文件属性。
 
 ### 8.5 测试属性
 
@@ -1515,7 +1520,7 @@ set_tests_properties(math_test PROPERTIES
 )
 ```
 
-常用测试属性中，`TIMEOUT` 限定单个测试的最长运行时间；`LABELS` 为测试打标签，便于用 `ctest -L` 筛选测试集；`WORKING_DIRECTORY` 指定测试进程的工作目录；`ENVIRONMENT` 设置测试进程的环境变量；`RUN_SERIAL` 要求该测试独占执行，不与其他测试并行。这些属性既可用 [`set_tests_properties()`](https://cmake.com.cn/cmake/help/latest/command/set_tests_properties.html) 集中设置，也可通过 [`set_property(TEST ...)`](https://cmake.com.cn/cmake/help/latest/command/set_property.html) 设置。
+常用测试属性中，[`TIMEOUT`](https://cmake.com.cn/cmake/help/latest/prop_test/TIMEOUT.html) 限定单个测试的最长运行时间；[`LABELS`](https://cmake.com.cn/cmake/help/latest/prop_test/LABELS.html) 为测试打标签，便于用 `ctest -L` 筛选测试集；[`WORKING_DIRECTORY`](https://cmake.com.cn/cmake/help/latest/prop_test/WORKING_DIRECTORY.html) 指定测试进程的工作目录；[`ENVIRONMENT`](https://cmake.com.cn/cmake/help/latest/prop_test/ENVIRONMENT.html) 设置测试进程的环境变量；[`RUN_SERIAL`](https://cmake.com.cn/cmake/help/latest/prop_test/RUN_SERIAL.html) 要求该测试独占执行，不与其他测试并行。这些属性既可用 [`set_tests_properties()`](https://cmake.com.cn/cmake/help/latest/command/set_tests_properties.html) 集中设置，也可通过 [`set_property(TEST ...)`](https://cmake.com.cn/cmake/help/latest/command/set_property.html) 设置。
 
 ### 8.6 缓存变量属性
 
@@ -1528,7 +1533,7 @@ set_property(CACHE LOG_LEVEL PROPERTY STRINGS DEBUG INFO WARN ERROR)
 mark_as_advanced(ENABLE_TRACE)
 ```
 
-`STRINGS` 让字符串缓存变量以选项列表呈现；`HELPSTRING` 补充或修改说明文本；`ADVANCED` 把变量折叠进高级选项，通常通过 `mark_as_advanced()` 设置，避免普通用户被大量调试开关干扰。
+[`STRINGS`](https://cmake.com.cn/cmake/help/latest/prop_cache/STRINGS.html) 让字符串缓存变量以选项列表呈现；[`HELPSTRING`](https://cmake.com.cn/cmake/help/latest/prop_cache/HELPSTRING.html) 补充或修改说明文本；[`ADVANCED`](https://cmake.com.cn/cmake/help/latest/prop_cache/ADVANCED.html) 把变量折叠进高级选项，通常通过 [`mark_as_advanced()`](https://cmake.com.cn/cmake/help/latest/command/mark_as_advanced.html#command:mark_as_advanced) 设置，避免普通用户被大量调试开关干扰。
 
 属性所在的作用域决定了配置的传播范围：目录属性影响本目录及其子目录中的目标，目标属性只影响自身，`INTERFACE_` 开头的属性随依赖关系传递给使用方，源文件属性、测试属性和缓存变量属性则只作用于对应对象。日常项目中应优先用目标命令表达编译、链接和使用要求，仅在目标命令无法表达时才回退到通用属性写法，并避免把个别目标的需求提升为全局或目录级配置。
 
